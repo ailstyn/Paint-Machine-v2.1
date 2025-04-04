@@ -1,37 +1,31 @@
 from tkinter import Tk, Label, Button, StringVar
-import serial
-import time
 
-#class RelayControlApp:
-#    def __init__(self, master):
-#        self.master = master
-#        master.title("Relay Control")
-#
-#        self.data_var = StringVar()
-#        self.data_label = Label(master, textvariable=self.data_var)
-#        self.data_label.pack()
-#
-#        self.relay_button = Button(master, text="Toggle Relay", command=self.toggle_relay)
-#        self.relay_button.pack()
+class RelayControlApp:
+    def __init__(self, master):
+        self.master = master
+        master.title("Relay Control")
 
-        # Open the serial port using pyserial
-#        self.serial_port = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)  # Adjust port as necessary
-#        self.update_data()
-#
-#    def update_data(self):
-#        while True:
-#            if self.serial_port.in_waiting > 0:  # Check if data is available
-#                data = self.serial_port.readline().decode('utf-8').strip()  # Read and decode the data
-#                if data:
-#                    self.data_var.set(data)
-#            self.master.update()
-#            time.sleep(1)
-#
-#    def toggle_relay(self):
-        # Send the toggle command to the serial port
-#        self.serial_port.write(b'TOGGLE_RELAY\n')
+        # Variable to display data
+        self.data_var = StringVar()
+        self.data_var.set("Waiting for data...")
+
+        # Label to display data
+        self.data_label = Label(master, textvariable=self.data_var, font=("Arial", 14))
+        self.data_label.pack(pady=10)
+
+        # Button to simulate relay control (optional, for GUI testing)
+        self.relay_button = Button(master, text="Simulate Relay Action", command=self.simulate_relay_action)
+        self.relay_button.pack(pady=10)
+
+    def update_data(self, new_data):
+        """Update the displayed data."""
+        self.data_var.set(new_data)
+
+    def simulate_relay_action(self):
+        """Simulate a relay action (for testing purposes)."""
+        print("Simulated relay action triggered!")
 
 if __name__ == "__main__":
     root = Tk()
-#    app = RelayControlApp(root)
+    app = RelayControlApp(root)
     root.mainloop()

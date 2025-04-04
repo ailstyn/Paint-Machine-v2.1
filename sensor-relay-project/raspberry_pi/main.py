@@ -2,6 +2,7 @@ import serial
 import time
 import logging
 from threading import Thread
+from queue import Queue
 from gui.machine_gui import RelayControlApp
 from tkinter import Tk
 
@@ -55,7 +56,7 @@ def write_config(calibration_values):
     except Exception as e:
         logging.error(f"Error writing to {config_file}: {e}")
 
-def arduino_communication():
+def arduino_communication(data_queue):
     """Handle communication with Arduinos."""
     # Load scale calibration values
     scale_calibrations = read_config()
@@ -78,6 +79,7 @@ def arduino_communication():
                             print(f"Updated calibration for Arduino on {arduino.port}: {value}")
                         else:
                             print(f"Received from Arduino on {arduino.port}: {message}")
+                            data_queue.put(message)  # Send data to the GUI
                 except serial.SerialException as e:
                     logging.error(f"Error communicating with Arduino on {arduino.port}: {e}")
                 except Exception as e:
@@ -96,20 +98,32 @@ def arduino_communication():
             except serial.SerialException as e:
                 logging.error(f"Error closing connection to Arduino on {arduino.port}: {e}")
 
-def run_gui():
+def run_gui(data_queue):
     """Run the GUI."""
     root = Tk()
     app = RelayControlApp(root)
+
+    def update_gui():
+        """Update the GUI with data from the queue."""
+        while not data_queue.empty():
+            new_data = data_queue.get()
+            app.update_data(new_data)
+        root.after(100, update_gui)  # Schedule the next update
+
+    update_gui()  # Start the update loop
     root.mainloop()
 
 def main():
+    # Create a thread-safe queue for communication between threads
+    data_queue = Queue()
+
     # Run the GUI in a separate thread
-    gui_thread = Thread(target=run_gui)
+    gui_thread = Thread(target=run_gui, args=(data_queue,))
     gui_thread.daemon = True  # Ensure the thread exits when the main program exits
     gui_thread.start()
 
     # Start Arduino communication
-    arduino_communication()
+    arduino_communication(data_queue)
 
 if __name__ == "__main__":
     main()
