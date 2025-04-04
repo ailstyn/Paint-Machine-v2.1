@@ -1,6 +1,9 @@
 import serial
 import time
 import logging
+from threading import Thread
+from gui.machine_gui import RelayControlApp  # Updated import
+from tkinter import Tk
 
 # Configure logging
 logging.basicConfig(
@@ -52,7 +55,8 @@ def write_config(calibration_values):
     except Exception as e:
         logging.error(f"Error writing to {config_file}: {e}")
 
-def main():
+def arduino_communication():
+    """Handle communication with Arduinos."""
     # Load scale calibration values
     scale_calibrations = read_config()
     print(f"Loaded scale calibration values: {scale_calibrations}")
@@ -65,7 +69,7 @@ def main():
                         message = arduino.readline().decode('utf-8').strip()
                         if message == "REQUEST_TARGET_WEIGHT":
                             print(f"Arduino on {arduino.port} requested target weight.")
-                            arduino.write(f"{target_weight}\n".encode('utf-8'))
+                            arduino.write(f"tw_{target_weight}\n".encode('utf-8'))
                         elif message.startswith("SET_CALIBRATION"):
                             # Example: "SET_CALIBRATION 1.23"
                             _, value = message.split()
@@ -91,6 +95,21 @@ def main():
                 arduino.close()
             except serial.SerialException as e:
                 logging.error(f"Error closing connection to Arduino on {arduino.port}: {e}")
+
+def run_gui():
+    """Run the GUI."""
+    root = Tk()
+    app = RelayControlApp(root)
+    root.mainloop()
+
+def main():
+    # Run the GUI in a separate thread
+    gui_thread = Thread(target=run_gui)
+    gui_thread.daemon = True  # Ensure the thread exits when the main program exits
+    gui_thread.start()
+
+    # Start Arduino communication
+    arduino_communication()
 
 if __name__ == "__main__":
     main()

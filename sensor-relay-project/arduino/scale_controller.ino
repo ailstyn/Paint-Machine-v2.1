@@ -32,10 +32,17 @@ void loop() {
 void fill() {
     // Request target weight from Raspberry Pi
     Serial.println("REQUEST_TARGET_WEIGHT");
-    while (!Serial.available()) {
-        // Wait for response from Raspberry Pi
+    
+    String receivedData = "";
+    while (true) {
+        if (Serial.available()) {
+            receivedData = Serial.readStringUntil('\n'); // Read the incoming data
+            if (receivedData.startsWith("tw_")) { // Check if the data starts with "tw_"
+                targetWeight = receivedData.substring(3).toFloat(); // Extract the number after "tw_"
+                break; // Exit the loop once the correct data is received
+            }
+        }
     }
-    targetWeight = Serial.readStringUntil('\n').toFloat();
 
     // Start filling process
     Serial.print("Target Weight Received: ");
