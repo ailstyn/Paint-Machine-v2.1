@@ -22,16 +22,6 @@ void loop() {
         fill();
     }
 
-    // Handle serial commands
-    if (Serial.available()) {
-        String command = Serial.readStringUntil('\n');
-        if (command == "ON") {
-            digitalWrite(RELAY_PIN, HIGH);
-        } else if (command == "OFF") {
-            digitalWrite(RELAY_PIN, LOW);
-        }
-    }
-
     // Read and print weight from HX711
     long weight = scale.get_units(10);
     Serial.println(weight);
