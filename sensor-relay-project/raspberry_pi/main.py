@@ -2,7 +2,7 @@ import serial
 import time
 import logging
 from threading import Thread
-from gui.machine_gui import RelayControlApp  # Updated import
+from gui.machine_gui import RelayControlApp
 from tkinter import Tk
 
 # Configure logging
