@@ -15,10 +15,10 @@ class RelayControlApp:
         # Create a dictionary to hold the widgets and variables for each Arduino
         self.arduino_frames = {}
 
-        # Create a section for each Arduino
+        # Create a section for each Arduino and arrange them in a grid
         for i in range(4):  # Assuming 4 Arduinos
-            frame = Frame(master, borderwidth=2, relief="groove")
-            frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
+            frame = Frame(master, borderwidth=2, relief="groove", padx=10, pady=10)
+            frame.grid(row=i // 2, column=i % 2, padx=10, pady=10, sticky="nsew")  # Arrange in a 2x2 grid
 
             # Variables to display data for this Arduino
             target_weight_var = StringVar()
@@ -42,6 +42,12 @@ class RelayControlApp:
                 "current_weight_var": current_weight_var,
                 "time_remaining_var": time_remaining_var,
             }
+
+        # Configure grid weights to make the layout responsive
+        master.grid_rowconfigure(0, weight=1)
+        master.grid_rowconfigure(1, weight=1)
+        master.grid_columnconfigure(0, weight=1)
+        master.grid_columnconfigure(1, weight=1)
 
     def update_data(self, arduino_id, data):
         """
