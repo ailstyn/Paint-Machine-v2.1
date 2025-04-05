@@ -105,6 +105,55 @@ def arduino_communication(data_queue):
                 logging.error(f"Error closing connection to Arduino on {arduino.port}: {e}")
 
 
+def calibrate_scale(arduino_id, data_queue):
+    """
+    Initiate the scale recalibration process for the specified Arduino.
+
+    Args:
+        arduino_id: The ID of the Arduino to recalibrate (0-3).
+    """
+    if arduino_id < 0 or arduino_id >= len(arduinos):
+        logging.error(f"Invalid Arduino ID: {arduino_id}")
+        return
+
+    arduino = arduinos[arduino_id]
+
+    try:
+        # Send the RESET_CALIBRATION message to the selected Arduino
+        arduino.write("RESET_CALIBRATION\n".encode('utf-8'))
+        print(f"Sent RESET_CALIBRATION to Arduino {arduino_id}")
+
+        # Update the GUI to display "CLEAR SCALE"
+        data_queue.put((arduino_id, {"current_weight": "CLEAR SCALE", "time_remaining": ""}))
+
+        while True:
+            if arduino.in_waiting > 0:
+                message = arduino.readline().decode('utf-8').strip()
+
+                # Display the current weight being sent from the Arduino
+                if message.startswith("Current Weight:"):
+                    current_weight = message.split(":")[1].strip()
+                    data_queue.put((arduino_id, {"current_weight": current_weight, "time_remaining": ""}))
+
+                # Handle Arduino messages for recalibration steps
+                elif message == "Scale reset and tared. Place calibration weight.":
+                    data_queue.put((arduino_id, {"current_weight": "PLACE WEIGHT ON SCALE", "time_remaining": ""}))
+                    print("Arduino requested to place calibration weight.")
+
+                elif message == "Recalibration complete":
+                    data_queue.put((arduino_id, {"current_weight": "CALIBRATION COMPLETE", "time_remaining": ""}))
+                    print("Recalibration complete. Displaying message for 3 seconds...")
+                    time.sleep(3)  # Wait for 3 seconds
+                    break
+
+            time.sleep(0.1)  # Small delay to avoid overwhelming the CPU
+
+    except serial.SerialException as e:
+        logging.error(f"Error communicating with Arduino {arduino_id}: {e}")
+    except Exception as e:
+        logging.error(f"Unexpected error during calibration: {e}")
+
+
 def run_gui(data_queue):
     """Run the GUI."""
     root = Tk()
@@ -121,7 +170,7 @@ def run_gui(data_queue):
     root.mainloop()
 
 
-def main():
+def main(data_queue):
     # Load scale calibration values at startup
     load_scale_calibrations()
 
@@ -138,4 +187,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    data_queue = Queue()
+    main(data_queue)

@@ -9,6 +9,7 @@
 // Global variables
 HX711 scale;
 float scaleCalibration = 1.0; // Default calibration value
+float calibWeight = 50.0;     // Calibration weight in grams
 
 void setup() {
     Serial.begin(9600); // Start serial communication
@@ -41,6 +42,14 @@ void loop() {
     // Check for button press
     if (digitalRead(BUTTON_PIN) == LOW) { // Button pressed (LOW due to pull-up)
         fill();
+    }
+
+    // Check for incoming serial messages
+    if (Serial.available()) {
+        String receivedData = Serial.readStringUntil('\n'); // Read the incoming data
+        if (receivedData == "RESET_CALIBRATION") {
+            recalibrate(); // Trigger recalibration
+        }
     }
 
     // Read and print weight from HX711
@@ -77,4 +86,46 @@ void fill() {
     }
     digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
     Serial.println("Filling Complete");
+}
+
+// Function to handle recalibration
+void recalibrate() {
+    Serial.println("Starting recalibration...");
+
+    // Continuously send current scale readings to the Raspberry Pi
+    while (true) {
+        long weight = scale.get_units(10);
+        Serial.print("Current Weight: ");
+        Serial.println(weight);
+
+        // Check for button press to start the first step of recalibration
+        if (digitalRead(BUTTON_PIN) == LOW) {
+            delay(200); // Debounce delay
+            scale.set_scale(); // Reset the scale
+            scale.tare();      // Tare the scale
+            Serial.println("Scale reset and tared. Place calibration weight.");
+            break;
+        }
+        delay(500); // Delay to avoid overwhelming the serial output
+    }
+
+    // Wait for the second button press to finalize calibration
+    while (true) {
+        long weight = scale.get_units(10);
+        Serial.print("Current Weight: ");
+        Serial.println(weight);
+
+        if (digitalRead(BUTTON_PIN) == LOW) {
+            delay(200); // Debounce delay
+            float rawUnits = scale.get_units(10); // Get the raw units
+            scaleCalibration = rawUnits / calibWeight; // Calculate the new calibration factor
+            scale.set_scale(scaleCalibration); // Apply the new calibration factor
+            Serial.print("New calibration factor applied: ");
+            Serial.println(scaleCalibration);
+            break;
+        }
+        delay(500); // Delay to avoid overwhelming the serial output
+    }
+
+    Serial.println("Recalibration complete.");
 }
