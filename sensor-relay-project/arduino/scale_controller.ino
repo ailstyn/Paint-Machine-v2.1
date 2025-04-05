@@ -65,6 +65,8 @@ void fill() {
 
     String receivedData = "";
     float targetWeight = 0.0;
+
+    // Wait to receive the target weight from the Raspberry Pi
     while (true) {
         if (Serial.available()) {
             receivedData = Serial.readStringUntil('\n'); // Read the incoming data
@@ -75,15 +77,59 @@ void fill() {
         }
     }
 
-    // Start filling process
+    // Request time limit from Raspberry Pi
+    Serial.println("REQUEST_TIME_LIMIT");
+
+    unsigned long timeLimit = 0;
+
+    // Wait to receive the time limit from the Raspberry Pi
+    while (true) {
+        if (Serial.available()) {
+            receivedData = Serial.readStringUntil('\n'); // Read the incoming data
+            if (receivedData.startsWith("tl_")) { // Check if the data starts with "tl_"
+                timeLimit = receivedData.substring(3).toInt(); // Extract the time limit
+                break; // Exit the loop once the time limit is received
+            }
+        }
+    }
+
+    // Start the validation process
     Serial.print("Target Weight Received: ");
     Serial.println(targetWeight);
+    Serial.print("Time Limit Received: ");
+    Serial.println(timeLimit);
 
-    digitalWrite(RELAY_PIN, HIGH); // Turn relay ON
-    while (scale.get_units(10) < targetWeight) {
-        // Keep filling until the target weight is reached
-        delay(100); // Small delay to avoid overwhelming the scale
+    // Check the current weight on the scale
+    long currentWeight = scale.get_units(10); // Get the current weight
+    Serial.print("Current Weight: ");
+    Serial.println(currentWeight);
+
+    // If the current weight is greater than 20% of the target weight, abort the fill process
+    if (currentWeight > 0.2 * targetWeight) {
+        Serial.println("ERROR: CLEAR SCALE"); // Send error message to the Raspberry Pi
+        return; // Exit the function without starting the fill process
     }
+
+    // Start filling process
+    unsigned long startTime = millis(); // Record the start time
+    digitalWrite(RELAY_PIN, HIGH);      // Turn relay ON
+
+    while (scale.get_units(5) < targetWeight) { // Use 5 samples for faster response
+        unsigned long currentTime = millis(); // Get the current time
+        unsigned long elapsedTime = currentTime - startTime; // Calculate elapsed time
+        timeLimit -= elapsedTime; // Subtract elapsed time from the time limit
+        startTime = currentTime;  // Update the start time for the next iteration
+
+        // Check if the time limit has been exceeded
+        if (timeLimit <= 0) {
+            Serial.println("ERROR: TIME LIMIT EXCEEDED"); // Send error message to the Raspberry Pi
+            digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+            return; // Exit the function
+        }
+
+        delay(50); // Small delay to allow the loop to run faster
+    }
+
     digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
     Serial.println("Filling Complete");
 }

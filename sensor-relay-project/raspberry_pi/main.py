@@ -35,7 +35,7 @@ scale_calibrations = []  # List to hold calibration values
 
 
 def load_scale_calibrations():
-    """Load scale calibration values from the config file."""
+    # Load scale calibration values from the config file
     global scale_calibrations
     try:
         with open(config_file, "r") as file:
@@ -51,7 +51,7 @@ def load_scale_calibrations():
 
 
 def write_scale_calibrations():
-    """Write scale calibration values to the config file."""
+    # Write scale calibration values to the config file
     try:
         with open(config_file, "w") as file:
             for value in scale_calibrations:
@@ -61,7 +61,7 @@ def write_scale_calibrations():
 
 
 def arduino_communication(data_queue):
-    """Handle communication with Arduinos."""
+    # Handle communication with Arduinos
     try:
         while True:
             for i, arduino in enumerate(arduinos):
@@ -69,12 +69,19 @@ def arduino_communication(data_queue):
                     # Check if the Arduino is connected and has data to read
                     if arduino.in_waiting > 0:
                         message = arduino.readline().decode('utf-8').strip()
+                        
                         if message == "REQUEST_TARGET_WEIGHT":
                             print(f"Arduino on {arduino.port} requested target weight.")
                             arduino.write(f"tw_{target_weight}\n".encode('utf-8'))
+                        
                         elif message == "REQUEST_CALIBRATION":
                             print(f"Arduino on {arduino.port} requested calibration value.")
                             arduino.write(f"cal_{scale_calibrations[i]}\n".encode('utf-8'))
+                        
+                        elif message == "REQUEST_TIME_LIMIT":
+                            print(f"Arduino on {arduino.port} requested time limit.")
+                            time_limit = 3000  # Example: Set the time limit to 3000 ms (3 seconds)
+                            arduino.write(f"tl_{time_limit}\n".encode('utf-8'))
 
                     # Continuously send updates for current weight and time remaining
                     # If the Arduino is connected, send the data
@@ -106,12 +113,11 @@ def arduino_communication(data_queue):
 
 
 def calibrate_scale(arduino_id, data_queue):
-    """
-    Initiate the scale recalibration process for the specified Arduino.
+    # Initiate the scale recalibration process for the specified Arduino.
 
-    Args:
-        arduino_id: The ID of the Arduino to recalibrate (0-3).
-    """
+    # Args:
+    #    arduino_id: The ID of the Arduino to recalibrate (0-3).
+    
     if arduino_id < 0 or arduino_id >= len(arduinos):
         logging.error(f"Invalid Arduino ID: {arduino_id}")
         return
@@ -155,12 +161,12 @@ def calibrate_scale(arduino_id, data_queue):
 
 
 def run_gui(data_queue):
-    """Run the GUI."""
+    # Run the GUI
     root = Tk()
     app = RelayControlApp(root)
 
     def update_gui():
-        """Update the GUI with data from the queue."""
+        # Update the GUI with data from the queue
         while not data_queue.empty():
             arduino_id, new_data = data_queue.get()
             app.update_data(arduino_id, new_data)
