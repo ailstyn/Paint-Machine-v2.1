@@ -1,4 +1,4 @@
-from tkinter import Tk, Label, Button, StringVar
+from tkinter import Tk, Label, Frame, StringVar
 
 # This class defines the GUI application for controlling and displaying relay-related data.
 class RelayControlApp:
@@ -12,34 +12,54 @@ class RelayControlApp:
         self.master = master
         master.title("Relay Control")  # Set the title of the GUI window.
 
-        # Variable to display data in the GUI.
-        self.data_var = StringVar()  # A Tkinter variable to hold dynamic text.
-        self.data_var.set("Waiting for data...")  # Default text displayed in the GUI.
+        # Create a dictionary to hold the widgets and variables for each Arduino
+        self.arduino_frames = {}
 
-        # Label to display the current data (e.g., messages from the Arduino).
-        self.data_label = Label(master, textvariable=self.data_var, font=("Arial", 14))
-        self.data_label.pack(pady=10)  # Add padding around the label for better layout.
+        # Create a section for each Arduino
+        for i in range(4):  # Assuming 4 Arduinos
+            frame = Frame(master, borderwidth=2, relief="groove")
+            frame.pack(side="left", padx=10, pady=10, fill="both", expand=True)
 
-        # Button to simulate a relay action (for testing purposes).
-        # This button doesn't control actual hardware but is useful for GUI testing.
-        self.relay_button = Button(master, text="Simulate Relay Action", command=self.simulate_relay_action)
-        self.relay_button.pack(pady=10)  # Add padding around the button for better layout.
+            # Variables to display data for this Arduino
+            target_weight_var = StringVar()
+            target_weight_var.set("Target Weight: N/A")
 
-    def update_data(self, new_data):
+            current_weight_var = StringVar()
+            current_weight_var.set("Current Weight: N/A")
+
+            time_remaining_var = StringVar()
+            time_remaining_var.set("Time Remaining: N/A")
+
+            # Labels to display the data
+            Label(frame, text=f"Arduino {i + 1}", font=("Arial", 16, "bold")).pack(pady=5)
+            Label(frame, textvariable=target_weight_var, font=("Arial", 14)).pack(pady=5)
+            Label(frame, textvariable=current_weight_var, font=("Arial", 14)).pack(pady=5)
+            Label(frame, textvariable=time_remaining_var, font=("Arial", 14)).pack(pady=5)
+
+            # Store the variables in the dictionary
+            self.arduino_frames[i] = {
+                "target_weight_var": target_weight_var,
+                "current_weight_var": current_weight_var,
+                "time_remaining_var": time_remaining_var,
+            }
+
+    def update_data(self, arduino_id, data):
         """
-        Update the displayed data in the GUI.
+        Update the displayed data for a specific Arduino.
 
         Args:
-            new_data: The new data to display (e.g., messages from the Arduino).
+            arduino_id: The ID of the Arduino (0-3).
+            data: A dictionary containing the new data to display.
+                  Expected keys: 'target_weight', 'current_weight', 'time_remaining'.
         """
-        self.data_var.set(new_data)  # Update the text displayed in the label.
-
-    def simulate_relay_action(self):
-        """
-        Simulate a relay action (for testing purposes).
-        This method is triggered when the "Simulate Relay Action" button is clicked.
-        """
-        print("Simulated relay action triggered!")  # Print a message to the console.
+        if arduino_id in self.arduino_frames:
+            frame = self.arduino_frames[arduino_id]
+            if "target_weight" in data:
+                frame["target_weight_var"].set(f"Target Weight: {data['target_weight']}")
+            if "current_weight" in data:
+                frame["current_weight_var"].set(f"Current Weight: {data['current_weight']}")
+            if "time_remaining" in data:
+                frame["time_remaining_var"].set(f"Time Remaining: {data['time_remaining']}")
 
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
