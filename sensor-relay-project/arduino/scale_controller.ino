@@ -47,8 +47,15 @@ void loop() {
     // Check for incoming serial messages
     if (Serial.available()) {
         String receivedData = Serial.readStringUntil('\n'); // Read the incoming data
+
+        // Handle recalibration request
         if (receivedData == "RESET_CALIBRATION") {
             recalibrate(); // Trigger recalibration
+        }
+
+        // Handle connection test
+        else if (receivedData == "CONNECTION_TEST") {
+            Serial.println("ARDUINO_ONLINE"); // Respond to connection test
         }
     }
 
