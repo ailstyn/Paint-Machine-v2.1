@@ -5,6 +5,7 @@
 #define LOADCELL_SCK_PIN 2
 #define RELAY_PIN 4
 #define BUTTON_PIN 5
+#define STATUS_LED 13 // Built-in LED on pin 13 for Arduino Leonardo
 
 // Global variables
 HX711 scale;
@@ -15,7 +16,9 @@ void setup() {
     Serial.begin(9600); // Start serial communication
     pinMode(RELAY_PIN, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP); // Use INPUT_PULLUP for a momentary button
-    digitalWrite(RELAY_PIN, LOW); // Ensure relay is LOW on startup
+    pinMode(STATUS_LED, OUTPUT);      // Set the status LED pin as output
+    digitalWrite(RELAY_PIN, LOW);     // Ensure relay is LOW on startup
+    digitalWrite(STATUS_LED, LOW);    // Turn off the status LED initially
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
     // Request calibration value from Raspberry Pi
@@ -23,7 +26,7 @@ void setup() {
 
     // Wait for the calibration value from the Raspberry Pi
     while (true) {
-        if (Serial.available()) {
+        if (Serial.available() > 0) {
             String receivedData = Serial.readStringUntil('\n'); // Read the incoming data
             if (receivedData.startsWith("cal_")) { // Check if the data starts with "cal_"
                 scaleCalibration = receivedData.substring(4).toFloat(); // Extract the calibration value
@@ -39,13 +42,19 @@ void setup() {
 }
 
 void loop() {
+    // Blink the status LED to indicate the loop is running
+    digitalWrite(STATUS_LED, HIGH); // Turn the LED on
+    delay(500);                     // Wait for 500ms
+    digitalWrite(STATUS_LED, LOW);  // Turn the LED off
+    delay(500);                     // Wait for 500ms
+
     // Check for button press
     if (digitalRead(BUTTON_PIN) == LOW) { // Button pressed (LOW due to pull-up)
         fill();
     }
 
     // Check for incoming serial messages
-    if (Serial.available()) {
+    if (Serial.available() > 0) {
         String receivedData = Serial.readStringUntil('\n'); // Read the incoming data
 
         // Handle recalibration request

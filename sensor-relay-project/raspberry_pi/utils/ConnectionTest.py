@@ -3,12 +3,13 @@ import time
 
 def main():
     # Replace '/dev/ttyUSB0' with the correct port for your Arduino
-    arduino_port = '/dev/ttyUSB0'
+    arduino_port = '/dev/ttyACM0'
     baud_rate = 9600
 
     try:
         # Initialize the serial connection
         arduino = serial.Serial(arduino_port, baud_rate, timeout=1)
+        arduino.reset_input_buffer()  # Clear the input buffer
         print(f"Connected to Arduino on {arduino_port}")
     except serial.SerialException as e:
         print(f"Error: Could not connect to Arduino on {arduino_port}. {e}")
