@@ -17,22 +17,14 @@ def main():
 
     try:
         while True:
-            input("Press Enter to send signal...")  # Wait for user input
-            arduino.write("CONNECTION_TEST\n".encode('utf-8'))  # Send the test message
-            print("Signal sent. Waiting for response...")
-
-            # Wait for the response from the Arduino
-            start_time = time.time()
+            input("Press Enter to start reading from serial...")  # Wait for user input
+            print("Reading from serial. Press Ctrl+C to stop.")
+            
+            # Continuously read and print data from the serial port
             while True:
                 if arduino.in_waiting > 0:
                     response = arduino.readline().decode('utf-8').strip()
-                    if response == "ARDUINO_ONLINE":
-                        print("arduino is connected")
-                        break
-                # Timeout after 5 seconds if no response
-                if time.time() - start_time > 5:
-                    print("Error: No response from Arduino.")
-                    break
+                    print(f"Received: {response}")
 
     except KeyboardInterrupt:
         print("\nExiting program.")
