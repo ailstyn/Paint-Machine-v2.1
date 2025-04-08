@@ -5,7 +5,6 @@
 #define LOADCELL_SCK_PIN 2
 #define RELAY_PIN 4
 #define BUTTON_PIN 5
-#define STATUS_LED 13 // Built-in LED on pin 13 for Arduino Leonardo
 
 // Global variables
 HX711 scale;
@@ -16,9 +15,7 @@ void setup() {
     Serial.begin(9600); // Start serial communication
     pinMode(RELAY_PIN, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP); // Use INPUT_PULLUP for a momentary button
-    pinMode(STATUS_LED, OUTPUT);      // Set the status LED pin as output
     digitalWrite(RELAY_PIN, LOW);     // Ensure relay is LOW on startup
-    digitalWrite(STATUS_LED, LOW);    // Turn off the status LED initially
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
     // Request calibration value from Raspberry Pi
@@ -42,12 +39,6 @@ void setup() {
 }
 
 void loop() {
-    // Blink the status LED to indicate the loop is running
-    digitalWrite(STATUS_LED, HIGH); // Turn the LED on
-    delay(500);                     // Wait for 500ms
-    digitalWrite(STATUS_LED, LOW);  // Turn the LED off
-    delay(500);                     // Wait for 500ms
-
     // Check for button press
     if (digitalRead(BUTTON_PIN) == LOW) { // Button pressed (LOW due to pull-up)
         fill();
