@@ -18,6 +18,7 @@ def main():
     try:
         while True:
             input("Press Enter to start reading from serial...")  # Wait for user input
+            arduino.reset_input_buffer()  # Clear the serial buffer
             print("Reading from serial for 20 iterations. Press Ctrl+C to stop.")
 
             response_values = []  # List to store numeric response values
