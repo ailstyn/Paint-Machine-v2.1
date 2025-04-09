@@ -18,13 +18,36 @@ def main():
     try:
         while True:
             input("Press Enter to start reading from serial...")  # Wait for user input
-            print("Reading from serial. Press Ctrl+C to stop.")
-            
-            # Continuously read and print data from the serial port
-            while True:
+            print("Reading from serial for 20 iterations. Press Ctrl+C to stop.")
+
+            response_values = []  # List to store numeric response values
+
+            for i in range(20):  # Run for 20 iterations
                 if arduino.in_waiting > 0:
                     response = arduino.readline().decode('utf-8').strip()
-                    print(f"Received: {response}")
+                    print(f"Iteration {i + 1}: Received: {response}")
+
+                    # Extract numeric value from the response
+                    if response.startswith("Weight:"):
+                        try:
+                            value = float(response.split(":")[1].strip())
+                            response_values.append(value)
+                        except ValueError:
+                            print(f"Warning: Could not parse numeric value from response: {response}")
+
+            # Calculate the range of response values
+            if response_values:
+                max_value = max(response_values)
+                min_value = min(response_values)
+                value_range = max_value - min_value
+
+                print(f"\nHighest value: {max_value}")
+                print(f"Lowest value: {min_value}")
+                print(f"Range of values: {value_range}")
+            else:
+                print("\nNo valid numeric responses received.")
+
+            break  # Exit after 20 iterations
 
     except KeyboardInterrupt:
         print("\nExiting program.")
