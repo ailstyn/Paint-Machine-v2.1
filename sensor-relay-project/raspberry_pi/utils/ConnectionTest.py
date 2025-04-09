@@ -26,17 +26,20 @@ def main():
             for i in range(20):  # Run for 20 iterations
                 start_time = time.time()  # Record the start time
 
-                if arduino.in_waiting > 0:
+                # Wait until a response is received
+                response = ""
+                while not response:
                     response = arduino.readline().decode('utf-8').strip()
-                    print(f"Iteration {i + 1}: Received: {response}")
 
-                    # Extract numeric value from the response
-                    if response.startswith("Weight:"):
-                        try:
-                            value = float(response.split(":")[1].strip())
-                            response_values.append(value)
-                        except ValueError:
-                            print(f"Warning: Could not parse numeric value from response: {response}")
+                print(f"Iteration {i + 1}: Received: {response}")
+
+                # Extract numeric value from the response
+                if response.startswith("Weight:"):
+                    try:
+                        value = float(response.split(":")[1].strip())
+                        response_values.append(value)
+                    except ValueError:
+                        print(f"Warning: Could not parse numeric value from response: {response}")
 
                 end_time = time.time()  # Record the end time
                 iteration_time = end_time - start_time  # Calculate the time taken
