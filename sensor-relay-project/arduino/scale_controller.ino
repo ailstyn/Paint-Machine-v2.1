@@ -6,6 +6,17 @@
 #define RELAY_PIN 4
 #define BUTTON_PIN 5
 
+// Byte-based protocol for communication
+#define REQUEST_TARGET_WEIGHT 0x01
+#define TARGET_WEIGHT 0x08
+#define REQUEST_CALIBRATION 0x02
+#define REQUEST_TIME_LIMIT 0x03
+#define CURRENT_WEIGHT 0x04
+#define RESET_CALIBRATION 0x05
+#define PLACE_CALIBRATION_WEIGHT 0x06
+#define CALIBRATION_COMPLETE 0x07
+#define TARE_SCALE 0x09  // New byte for tare command
+
 // Global variables
 HX711 scale;
 float scaleCalibration = 1.0; // Default calibration value
@@ -19,14 +30,15 @@ void setup() {
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
     // Request calibration value from Raspberry Pi
-    Serial.println("REQUEST_CALIBRATION");
+    Serial.write(REQUEST_CALIBRATION);
 
     // Wait for the calibration value from the Raspberry Pi
     while (true) {
         if (Serial.available() > 0) {
-            String receivedData = Serial.readStringUntil('\n'); // Read the incoming data
-            if (receivedData.startsWith("cal_")) { // Check if the data starts with "cal_"
-                scaleCalibration = receivedData.substring(4).toFloat(); // Extract the calibration value
+            byte messageType = Serial.read(); // Read the message type
+            if (messageType == REQUEST_CALIBRATION) {
+                String receivedData = Serial.readStringUntil('\n'); // Read the calibration value
+                scaleCalibration = receivedData.toFloat(); // Convert to float
                 scale.set_scale(scaleCalibration); // Apply the calibration value
                 break; // Exit the loop once the calibration value is received
             }
@@ -46,55 +58,65 @@ void loop() {
 
     // Check for incoming serial messages
     if (Serial.available() > 0) {
-        String receivedData = Serial.readStringUntil('\n'); // Read the incoming data
+        byte messageType = Serial.read(); // Read the message type
+
+        // Handle tare command
+        if (messageType == TARE_SCALE) {
+            Serial.println("Taring scale...");
+            scale.tare();  // Tare the scale
+            Serial.println("Scale tared.");
+        }
 
         // Handle recalibration request
-        if (receivedData == "RESET_CALIBRATION") {
+        else if (messageType == RESET_CALIBRATION) {
             recalibrate(); // Trigger recalibration
         }
 
         // Handle connection test
-        else if (receivedData == "CONNECTION_TEST") {
+        else if (messageType == 0x08) { // Example: Use 0x08 for CONNECTION_TEST
             Serial.println("ARDUINO_ONLINE"); // Respond to connection test
         }
     }
 
-    // Read and print weight from HX711
+    // Read and send current weight to Raspberry Pi
     long weight = scale.get_units(10); // Apply calibration automatically
-    Serial.println(weight);
+    Serial.write(CURRENT_WEIGHT); // Send the message type
+    Serial.println(weight);       // Send the weight as a string
     delay(1000);
 }
 
 // Function to handle the fill process
 void fill() {
     // Request target weight from Raspberry Pi
-    Serial.println("REQUEST_TARGET_WEIGHT");
+    Serial.write(REQUEST_TARGET_WEIGHT);
 
     String receivedData = "";
     float targetWeight = 0.0;
 
     // Wait to receive the target weight from the Raspberry Pi
     while (true) {
-        if (Serial.available()) {
-            receivedData = Serial.readStringUntil('\n'); // Read the incoming data
-            if (receivedData.startsWith("tw_")) { // Check if the data starts with "tw_"
-                targetWeight = receivedData.substring(3).toFloat(); // Extract the target weight
+        if (Serial.available() > 0) {
+            byte messageType = Serial.read(); // Read the message type
+            if (messageType == TARGET_WEIGHT) { // Check for the TARGET_WEIGHT response
+                receivedData = Serial.readStringUntil('\n'); // Read the target weight
+                targetWeight = receivedData.toFloat(); // Convert to float
                 break; // Exit the loop once the target weight is received
             }
         }
     }
 
     // Request time limit from Raspberry Pi
-    Serial.println("REQUEST_TIME_LIMIT");
+    Serial.write(REQUEST_TIME_LIMIT);
 
     unsigned long timeLimit = 0;
 
     // Wait to receive the time limit from the Raspberry Pi
     while (true) {
-        if (Serial.available()) {
-            receivedData = Serial.readStringUntil('\n'); // Read the incoming data
-            if (receivedData.startsWith("tl_")) { // Check if the data starts with "tl_"
-                timeLimit = receivedData.substring(3).toInt(); // Extract the time limit
+        if (Serial.available() > 0) {
+            byte messageType = Serial.read(); // Read the message type
+            if (messageType == REQUEST_TIME_LIMIT) {
+                receivedData = Serial.readStringUntil('\n'); // Read the time limit
+                timeLimit = receivedData.toInt(); // Convert to integer
                 break; // Exit the loop once the time limit is received
             }
         }

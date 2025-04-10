@@ -1,7 +1,6 @@
-from tkinter import Tk, Label, Frame, StringVar
-from tkinter.ttk import Progressbar  # Import Progressbar from ttk
+from tkinter import Tk, Label, Frame, StringVar, Canvas
+from tkinter.ttk import Progressbar
 
-# This class defines the GUI application for controlling and displaying relay-related data.
 class RelayControlApp:
     def __init__(self, master):
         """
@@ -21,7 +20,7 @@ class RelayControlApp:
 
         # Create a section for the single Arduino
         frame = Frame(master, borderwidth=2, relief="groove", padx=10, pady=10, bg="#2e3192")
-        frame.pack(padx=10, pady=10, fill="both", expand=True)  # Center the frame in the window
+        frame.pack(padx=10, pady=10, fill="both", expand=True, side="left")  # Center the frame in the window
 
         # Variables to display data for the Arduino
         self.weight_fraction_var = StringVar()
@@ -40,8 +39,56 @@ class RelayControlApp:
 
         Label(frame, textvariable=self.time_remaining_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
 
+        # Add a column of icons on the right side
+        self.icon_canvas = Canvas(master, width=100, height=300, bg="#2e3192", highlightthickness=0)
+        self.icon_canvas.pack(side="right", padx=20, pady=20)
+
+        # Draw icons (small circles and a dumbbell)
+        self.icons = []
+        self.icons.append(self.icon_canvas.create_oval(30, 30, 70, 70, fill="white"))  # First icon (circle)
+
+        # Add a dumbbell icon
+        self.dumbbell_bar = self.icon_canvas.create_rectangle(45, 145, 55, 155, fill="black")  # Center bar (half as thick)
+
+        # Left weights (two vertically oriented rectangles)
+        self.left_inner_weight = self.icon_canvas.create_rectangle(30, 140, 45, 160, fill="gray", outline="black")  # Inner rectangle (larger)
+        self.left_outer_weight = self.icon_canvas.create_rectangle(25, 145, 30, 155, fill="gray", outline="black")  # Outer rectangle (smaller)
+
+        # Right weights (two vertically oriented rectangles)
+        self.right_inner_weight = self.icon_canvas.create_rectangle(55, 140, 70, 160, fill="gray", outline="black")  # Inner rectangle (larger)
+        self.right_outer_weight = self.icon_canvas.create_rectangle(70, 145, 75, 155, fill="gray", outline="black")  # Outer rectangle (smaller)
+
+        # Add the dumbbell components to the icons list
+        self.icons.append(self.dumbbell_bar)
+
+        # Add a clock icon
+        self.clock_icon = self.icon_canvas.create_oval(30, 190, 70, 230, fill="white")  # Clock face
+        self.icon_canvas.create_line(50, 210, 50, 195, width=2, fill="black")  # Clock hour hand
+        self.icon_canvas.create_line(50, 210, 60, 210, width=1, fill="black")  # Clock minute hand
+        self.icons.append(self.clock_icon)  # Add the clock icon to the icons list
+
+        # Add a selection box (rectangle)
+        self.selection_box = self.icon_canvas.create_rectangle(25, 25, 75, 75, outline="yellow", width=3)
+        self.selected_index = 0  # Start with the first icon selected
+
         # Add a keybinding to exit fullscreen mode
         master.bind("<Escape>", self.exit_fullscreen)
+
+    def move_selection(self, direction):
+        """
+        Move the selection box up or down.
+
+        Args:
+            direction: "up" or "down" to move the selection.
+        """
+        if direction == "up" and self.selected_index > 0:
+            self.selected_index -= 1
+        elif direction == "down" and self.selected_index < len(self.icons) - 1:
+            self.selected_index += 1
+
+        # Update the position of the selection box
+        x1, y1, x2, y2 = self.icon_canvas.coords(self.icons[self.selected_index])
+        self.icon_canvas.coords(self.selection_box, x1 - 5, y1 - 5, x2 + 5, y2 + 5)
 
     def update_data(self, data):
         """
@@ -81,6 +128,24 @@ class RelayControlApp:
         Exit fullscreen mode when the Escape key is pressed.
         """
         self.master.attributes("-fullscreen", False)
+
+    def reload_main_screen(self):
+        """
+        Reload the main GUI screen with the current weight, target weight, and other elements.
+        """
+        # Clear the GUI
+        for widget in self.master.winfo_children():
+            widget.destroy()
+
+        # Add the main screen elements
+        Label(self.master, text="SCALE 1", font=('Cascadia Code SemiBold', 24), bg="#2e3192", fg="white").pack(pady=5)
+        Label(self.master, textvariable=self.weight_fraction_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
+
+        # Add a progress bar
+        self.progress_bar = Progressbar(self.master, orient="horizontal", length=300, mode="determinate")
+        self.progress_bar.pack(pady=10)
+
+        Label(self.master, textvariable=self.time_remaining_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
 
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
