@@ -15,10 +15,10 @@ logging.basicConfig(
 
 # List of serial ports for the Arduinos
 arduino_ports = [
-    '/dev/ttyUSB0',  # Adjust these ports as needed
-    '/dev/ttyUSB1',
-    '/dev/ttyUSB2',
-    '/dev/ttyUSB3'
+    '/dev/ttyACM0',  # Adjust these ports as needed
+    '/dev/ttyACM1',
+    '/dev/ttyACM2',
+    '/dev/ttyACM3'
 ]
 
 # Create a list of serial connections
