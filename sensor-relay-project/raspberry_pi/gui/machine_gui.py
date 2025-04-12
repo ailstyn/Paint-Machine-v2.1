@@ -1,5 +1,6 @@
-from tkinter import Tk, Label, Frame, StringVar, Canvas
+from tkinter import Tk, Canvas, Frame, StringVar, Label
 from tkinter.ttk import Progressbar
+from PIL import Image, ImageTk
 
 class RelayControlApp:
     def __init__(self, master):
@@ -18,9 +19,17 @@ class RelayControlApp:
         # Set the background color of the root window
         master.configure(bg="#2e3192")
 
-        # Create a section for the single Arduino
-        frame = Frame(master, borderwidth=2, relief="groove", padx=10, pady=10, bg="#2e3192")
-        frame.pack(padx=10, pady=10, fill="both", expand=True, side="left")  # Center the frame in the window
+        # Create a container frame for horizontal layout
+        container = Frame(master, bg="#2e3192")
+        container.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Add a vertical progress bar on the left side
+        self.progress_bar = Progressbar(container, orient="vertical", length=300, mode="determinate")
+        self.progress_bar.pack(side="left", padx=20, pady=20)
+
+        # Create a section for the scale in the center
+        scale_frame = Frame(container, borderwidth=2, relief="groove", padx=10, pady=10, bg="#2e3192")
+        scale_frame.pack(side="left", padx=20, pady=20, fill="both", expand=True)  # Center the scale
 
         # Variables to display data for the Arduino
         self.weight_fraction_var = StringVar()
@@ -30,45 +39,41 @@ class RelayControlApp:
         self.time_remaining_var.set("N/A")
 
         # Labels to display the data
-        Label(frame, text="SCALE 1", font=('Cascadia Code SemiBold', 24), bg="#2e3192", fg="white").pack(pady=5)
-        Label(frame, textvariable=self.weight_fraction_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
+        Label(scale_frame, text="SCALE 1", font=('Cascadia Code SemiBold', 24), bg="#2e3192", fg="white").pack(pady=5)
+        Label(scale_frame, textvariable=self.weight_fraction_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
 
-        # Add a progress bar
-        self.progress_bar = Progressbar(frame, orient="horizontal", length=300, mode="determinate")
-        self.progress_bar.pack(pady=10)
-
-        Label(frame, textvariable=self.time_remaining_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
+        Label(scale_frame, textvariable=self.time_remaining_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
 
         # Add a column of icons on the right side
-        self.icon_canvas = Canvas(master, width=100, height=300, bg="#2e3192", highlightthickness=0)
-        self.icon_canvas.pack(side="right", padx=20, pady=20)
+        self.icon_canvas = Canvas(container, width=75, height=225, bg="#2e3192", highlightthickness=0)
+        self.icon_canvas.pack(side="left", padx=20, pady=20)  # Align to the right
 
         # Draw icons (small circles and a dumbbell)
         self.icons = []
-        self.icons.append(self.icon_canvas.create_oval(30, 30, 70, 70, fill="white"))  # First icon (circle)
+        self.icons.append(self.icon_canvas.create_oval(22.5, 22.5, 52.5, 52.5, fill="white"))  # First icon (circle, scaled down)
 
         # Add a dumbbell icon
-        self.dumbbell_bar = self.icon_canvas.create_rectangle(45, 145, 55, 155, fill="black")  # Center bar (half as thick)
+        self.dumbbell_bar = self.icon_canvas.create_rectangle(33.75, 108.75, 41.25, 116.25, fill="black")  # Center bar (scaled down)
 
         # Left weights (two vertically oriented rectangles)
-        self.left_inner_weight = self.icon_canvas.create_rectangle(30, 140, 45, 160, fill="gray", outline="black")  # Inner rectangle (larger)
-        self.left_outer_weight = self.icon_canvas.create_rectangle(25, 145, 30, 155, fill="gray", outline="black")  # Outer rectangle (smaller)
+        self.left_inner_weight = self.icon_canvas.create_rectangle(22.5, 105, 33.75, 120, fill="gray", outline="black")  # Inner rectangle (scaled down)
+        self.left_outer_weight = self.icon_canvas.create_rectangle(18.75, 108.75, 22.5, 116.25, fill="gray", outline="black")  # Outer rectangle (scaled down)
 
         # Right weights (two vertically oriented rectangles)
-        self.right_inner_weight = self.icon_canvas.create_rectangle(55, 140, 70, 160, fill="gray", outline="black")  # Inner rectangle (larger)
-        self.right_outer_weight = self.icon_canvas.create_rectangle(70, 145, 75, 155, fill="gray", outline="black")  # Outer rectangle (smaller)
+        self.right_inner_weight = self.icon_canvas.create_rectangle(41.25, 105, 52.5, 120, fill="gray", outline="black")  # Inner rectangle (scaled down)
+        self.right_outer_weight = self.icon_canvas.create_rectangle(52.5, 108.75, 56.25, 116.25, fill="gray", outline="black")  # Outer rectangle (scaled down)
 
         # Add the dumbbell components to the icons list
         self.icons.append(self.dumbbell_bar)
 
         # Add a clock icon
-        self.clock_icon = self.icon_canvas.create_oval(30, 190, 70, 230, fill="white")  # Clock face
-        self.icon_canvas.create_line(50, 210, 50, 195, width=2, fill="black")  # Clock hour hand
-        self.icon_canvas.create_line(50, 210, 60, 210, width=1, fill="black")  # Clock minute hand
+        self.clock_icon = self.icon_canvas.create_oval(22.5, 142.5, 52.5, 172.5, fill="white")  # Clock face (scaled down)
+        self.icon_canvas.create_line(37.5, 157.5, 37.5, 146.25, width=1.5, fill="black")  # Clock hour hand (scaled down)
+        self.icon_canvas.create_line(37.5, 157.5, 45, 157.5, width=0.75, fill="black")  # Clock minute hand (scaled down)
         self.icons.append(self.clock_icon)  # Add the clock icon to the icons list
 
         # Add a selection box (rectangle)
-        self.selection_box = self.icon_canvas.create_rectangle(25, 25, 75, 75, outline="yellow", width=3)
+        self.selection_box = self.icon_canvas.create_rectangle(18.75, 18.75, 56.25, 56.25, outline="yellow", width=3)  # Adjusted for smaller buttons
         self.selected_index = 0  # Start with the first icon selected
 
         # Add a keybinding to exit fullscreen mode
@@ -86,9 +91,12 @@ class RelayControlApp:
         elif direction == "down" and self.selected_index < len(self.icons) - 1:
             self.selected_index += 1
 
-        # Update the position of the selection box
+        # Get the coordinates of the currently selected icon
         x1, y1, x2, y2 = self.icon_canvas.coords(self.icons[self.selected_index])
-        self.icon_canvas.coords(self.selection_box, x1 - 5, y1 - 5, x2 + 5, y2 + 5)
+
+        # Adjust the selection box to be slightly larger than the icon
+        padding = 3  # Add padding around the icon
+        self.icon_canvas.coords(self.selection_box, x1 - padding, y1 - padding, x2 + padding, y2 + padding)
 
     def update_data(self, data):
         """
@@ -110,18 +118,28 @@ class RelayControlApp:
                 target_weight = float(target_weight)
                 current_weight = float(current_weight)
                 progress = (current_weight / target_weight) * 100 if target_weight > 0 else 0
-                self.progress_bar["value"] = progress
+                self.set_progress(progress)
             except ValueError:
-                self.progress_bar["value"] = 0
+                self.set_progress(0)
         else:
             self.weight_fraction_var.set("N/A / N/A")
-            self.progress_bar["value"] = 0
+            self.set_progress(0)
 
         # Update the time remaining
         if "time_remaining" in data:
             self.time_remaining_var.set(f"{data['time_remaining']}")
         else:
             self.time_remaining_var.set("N/A")
+
+    def set_progress(self, value):
+        """
+        Update the vertical progress bar to the specified value.
+
+        Args:
+            value: The progress percentage (0 to 100).
+        """
+        value = max(0, min(100, value))  # Clamp value between 0 and 100
+        self.progress_bar["value"] = value  # Update the progress bar value
 
     def exit_fullscreen(self, event=None):
         """
@@ -149,6 +167,19 @@ class RelayControlApp:
 
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
+
     root = Tk()  # Create the root Tkinter window.
     app = RelayControlApp(root)  # Create an instance of the RelayControlApp class.
+
+    # Simulate progress
+    def simulate_progress():
+        progress = getattr(app, "progress", 0)
+        if progress < 100:
+            app.set_progress(progress + 5)
+            app.progress = progress + 5
+            root.after(500, simulate_progress)
+
+    app.progress = 0
+    simulate_progress()
+
     root.mainloop()  # Start the Tkinter event loop to display the GUI.
