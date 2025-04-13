@@ -171,13 +171,29 @@ if __name__ == "__main__":
 
     # Simulate progress
     def simulate_progress():
-        progress = getattr(app, "progress", 0)
-        if progress < 100:
-            app.set_progress(progress + 5)
-            app.progress = progress + 5
-            root.after(500, simulate_progress)
+        current_weight = getattr(app, "current_weight", 0)  # Start with 0 weight
+        target_weight = 300  # Set a target weight for simulation
 
+        if current_weight < target_weight:
+            # Increment current weight smoothly
+            app.current_weight = current_weight + 1.5  # Increment weight
+            current_weight = app.current_weight
+
+            # Update weight fraction display
+            app.weight_fraction_var.set(f"{current_weight:.1f} / {target_weight}")
+
+            # Calculate and update progress bar
+            progress = (current_weight / target_weight) * 100 if target_weight > 0 else 0
+            app.set_progress(progress)
+
+            # Schedule the next update
+            root.after(33, simulate_progress)  # Update every 33ms (30 frames per second)
+
+    # Initialize simulation variables
     app.progress = 0
+    app.time_remaining = 100
+    app.current_weight = 0
+
     simulate_progress()
 
     root.mainloop()  # Start the Tkinter event loop to display the GUI.

@@ -1,3 +1,4 @@
+import os
 import serial
 import time
 import logging
@@ -48,6 +49,22 @@ UP_BUTTON_PIN = 17      # GPIO pin for the "up" button
 DOWN_BUTTON_PIN = 27    # GPIO pin for the "down" button
 SELECT_BUTTON_PIN = 22  # GPIO pin for the "select" button
 
+# USB power control functions
+def turn_usb_power_on():
+    """Turn on power to all USB ports."""
+    try:
+        os.system("uhubctl -a on -p all")
+        print("USB power turned on.")
+    except Exception as e:
+        logging.error(f"Failed to turn on USB power: {e}")
+
+def turn_usb_power_off():
+    """Turn off power to all USB ports."""
+    try:
+        os.system("uhubctl -a off -p all")
+        print("USB power turned off.")
+    except Exception as e:
+        logging.error(f"Failed to turn off USB power: {e}")
 
 def load_scale_calibrations():
     # Load scale calibration values from the config file
@@ -339,6 +356,9 @@ def set_time_limit(app):
             break
 
 def main(data_queue, app):
+    # Turn on USB power at startup
+    turn_usb_power_on()
+
     # Load scale calibration values at startup
     load_scale_calibrations()
 
@@ -369,6 +389,8 @@ def main(data_queue, app):
     except KeyboardInterrupt:
         print("Exiting program.")
     finally:
+        # Turn off USB power at shutdown
+        turn_usb_power_off()
         GPIO.cleanup()  # Clean up GPIO on exit
 
 
