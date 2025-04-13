@@ -1,6 +1,5 @@
 from tkinter import Tk, Canvas, Frame, StringVar, Label
 from tkinter.ttk import Progressbar
-from PIL import Image, ImageTk
 
 class RelayControlApp:
     def __init__(self, master):
@@ -167,7 +166,6 @@ class RelayControlApp:
 
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
-
     root = Tk()  # Create the root Tkinter window.
     app = RelayControlApp(root)  # Create an instance of the RelayControlApp class.
 
