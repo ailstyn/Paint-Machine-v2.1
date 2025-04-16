@@ -165,6 +165,17 @@ class RelayControlApp:
 
         Label(self.master, textvariable=self.time_remaining_var, font=('Cascadia Code SemiBold', 16), bg="#2e3192", fg="white").pack(pady=5)
 
+    def display_e_stop(self):
+        """
+        Display a full-screen message indicating that the E-Stop is activated.
+        """
+        # Clear the GUI
+        for widget in self.master.winfo_children():
+            widget.destroy()
+
+        # Display the E-Stop message
+        Label(self.master, text="ESTOP ACTIVATED", font=('Cascadia Code SemiBold', 48), bg="black", fg="red").pack(expand=True, fill="both")
+
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
 

@@ -48,6 +48,12 @@ UP_BUTTON_PIN = 17      # GPIO pin for the "up" button
 DOWN_BUTTON_PIN = 27    # GPIO pin for the "down" button
 SELECT_BUTTON_PIN = 22  # GPIO pin for the "select" button
 
+# Add a global flag for E-Stop
+E_STOP = False
+
+# GPIO pin for the E-Stop button
+E_STOP_PIN = 23  # Use an unused GPIO pin
+
 
 def load_scale_calibrations():
     # Load scale calibration values from the config file
@@ -88,9 +94,13 @@ def arduino_communication(data_queue):
 
                         # Handle "request target weight" messages
                         if message_type == REQUEST_TARGET_WEIGHT:
-                            print(f"Arduino on {arduino.port} requested target weight.")
-                            arduino.write(REQUEST_TARGET_WEIGHT)  # Send the REQUEST_TARGET_WEIGHT message type
-                            arduino.write(f"{target_weight}\n".encode('utf-8'))  # Send the target weight as a string
+                            if E_STOP:
+                                print(f"Arduino on {arduino.port} requested target weight, but E-Stop is active.")
+                                arduino.write(b"RELAY DEACTIVATED\n")  # Send relay deactivated message
+                            else:
+                                print(f"Arduino on {arduino.port} requested target weight.")
+                                arduino.write(REQUEST_TARGET_WEIGHT)  # Send the REQUEST_TARGET_WEIGHT message type
+                                arduino.write(f"{target_weight}\n".encode('utf-8'))  # Send the target weight as a string
 
                         # Handle "request calibration" messages
                         elif message_type == REQUEST_CALIBRATION:
@@ -203,6 +213,7 @@ def setup_gpio():
     GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Up button with pull-up resistor
     GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Down button with pull-up resistor
     GPIO.setup(SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Select button with pull-up resistor
+    GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # E-Stop button with pull-up resistor
 
 
 def handle_button_presses(app):
@@ -228,9 +239,12 @@ def run_gui(data_queue):
 
     def update_gui():
         # Update the GUI with data from the queue
-        while not data_queue.empty():
-            arduino_id, new_data = data_queue.get()
-            app.update_data(arduino_id, new_data)
+        if E_STOP:
+            app.display_e_stop()  # Show the E-Stop message
+        else:
+            while not data_queue.empty():
+                arduino_id, new_data = data_queue.get()
+                app.update_data(arduino_id, new_data)
         root.after(100, update_gui)  # Schedule the next update
 
     update_gui()  # Start the update loop
@@ -281,8 +295,19 @@ def startup(app):
 def set_target_weight(app):
     """
     Allow the user to manually change the target weight using the UP, DOWN, and SELECT buttons.
+    If E_STOP is active, send RELAY_DEACTIVATED and exit.
     """
     global target_weight
+
+    if E_STOP:
+        print("E-Stop is active. Cannot set target weight.")
+        for i, arduino in enumerate(arduinos):
+            try:
+                arduino.write(b"RELAY DEACTIVATED\n")  # Send the relay deactivated message
+                print(f"Sent RELAY DEACTIVATED to Arduino {i} on port {arduino.port}")
+            except serial.SerialException as e:
+                logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
+        return
 
     print(f"Current target weight: {target_weight}g")
     app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
@@ -311,8 +336,19 @@ def set_target_weight(app):
 def set_time_limit(app):
     """
     Allow the user to manually change the time limit using the UP, DOWN, and SELECT buttons.
+    If E_STOP is active, send RELAY_DEACTIVATED and exit.
     """
     global time_limit
+
+    if E_STOP:
+        print("E-Stop is active. Cannot set time limit.")
+        for i, arduino in enumerate(arduinos):
+            try:
+                arduino.write(b"RELAY DEACTIVATED\n")  # Send the relay deactivated message
+                print(f"Sent RELAY DEACTIVATED to Arduino {i} on port {arduino.port}")
+            except serial.SerialException as e:
+                logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
+        return
 
     print(f"Current time limit: {time_limit}ms")
     app.display_message("SET TIME LIMIT", f"{time_limit}ms")
@@ -337,6 +373,26 @@ def set_time_limit(app):
             time.sleep(2)  # Display confirmation message for 2 seconds
             app.reload_main_screen()  # Return to the main screen
             break
+
+def monitor_e_stop():
+    """
+    Monitor the E-Stop button and set the E_STOP flag to True when pressed.
+    Notify all connected Arduinos about the E-Stop activation.
+    """
+    global E_STOP
+
+    if GPIO.input(E_STOP_PIN) == GPIO.LOW:  # E-Stop button pressed
+        if not E_STOP:  # Only send the message once when E-Stop is activated
+            print("E-Stop activated!")
+            E_STOP = True
+
+            # Notify all connected Arduinos
+            for i, arduino in enumerate(arduinos):
+                try:
+                    arduino.write(b"RELAY DEACTIVATED\n")  # Send the relay deactivated message
+                    print(f"Sent RELAY DEACTIVATED to Arduino {i} on port {arduino.port}")
+                except serial.SerialException as e:
+                    logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
 
 def main(data_queue, app):
     # Load scale calibration values at startup
@@ -363,8 +419,9 @@ def main(data_queue, app):
     try:
         # Start Arduino communication
         while True:
-            arduino_communication(data_queue)
+            arduino_communication(data_queue)  # Handle other Arduino communication
             handle_button_presses(app)  # Check for button presses
+            monitor_e_stop()  # Check the E-Stop button and notify Arduinos if needed
             time.sleep(0.1)  # Small delay to avoid high CPU usage
     except KeyboardInterrupt:
         print("Exiting program.")

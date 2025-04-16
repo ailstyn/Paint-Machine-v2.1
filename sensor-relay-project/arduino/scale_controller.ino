@@ -16,6 +16,7 @@
 #define PLACE_CALIBRATION_WEIGHT 0x06
 #define CALIBRATION_COMPLETE 0x07
 #define TARE_SCALE 0x09  // New byte for tare command
+#define RELAY_DEACTIVATED 0x0A // New byte for E-Stop command
 
 // Global variables
 HX711 scale;
@@ -101,6 +102,9 @@ void fill() {
                 receivedData = Serial.readStringUntil('\n'); // Read the target weight
                 targetWeight = receivedData.toFloat(); // Convert to float
                 break; // Exit the loop once the target weight is received
+            } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
+                Serial.println("E-Stop activated. Aborting fill process.");
+                return; // Abort the fill function
             }
         }
     }
@@ -118,6 +122,9 @@ void fill() {
                 receivedData = Serial.readStringUntil('\n'); // Read the time limit
                 timeLimit = receivedData.toInt(); // Convert to integer
                 break; // Exit the loop once the time limit is received
+            } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
+                Serial.println("E-Stop activated. Aborting fill process.");
+                return; // Abort the fill function
             }
         }
     }
@@ -154,6 +161,16 @@ void fill() {
             Serial.println("ERROR: TIME LIMIT EXCEEDED"); // Send error message to the Raspberry Pi
             digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
             return; // Exit the function
+        }
+
+        // Check for E-Stop during the filling process
+        if (Serial.available() > 0) {
+            byte messageType = Serial.read(); // Read the message type
+            if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
+                Serial.println("E-Stop activated during filling. Aborting process.");
+                digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+                return; // Abort the fill function
+            }
         }
 
         delay(50); // Small delay to allow the loop to run faster
