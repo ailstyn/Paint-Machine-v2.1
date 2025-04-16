@@ -12,6 +12,11 @@ This document tracks the tasks for the Paint Machine v2 project.
 - [ ] Finalize GUI design
 - [ ] Add error handling for edge cases
 - [ ] Add Spanish language labels
+- [ ] Implement USB power control:
+  - [ ] Enable USB power control by adding `dtoverlay=dwc2,dr_mode=host` to `/boot/config.txt`
+  - [X] Write a function to disable USB power on shutdown
+  - [X] Call the USB power-off function in the `finally` block of the main program
+  - [ ] Test USB power-off functionality
 
 ## Documentation
 - [x] Add Bill of Materials (BOM)

@@ -395,6 +395,22 @@ def monitor_e_stop():
                 except serial.SerialException as e:
                     logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
 
+def turn_usb_power_off():
+    """
+    Disable power to all USB ports.
+    Requires root privileges and proper Raspberry Pi configuration.
+    """
+    try:
+        with open("/sys/devices/platform/soc/3f980000.usb/buspower", "w") as usb_power_file:
+            usb_power_file.write("0")  # Write '0' to disable USB power
+        print("USB power disabled.")
+    except FileNotFoundError:
+        logging.error("USB power control file not found. Ensure the Raspberry Pi is configured correctly.")
+    except PermissionError:
+        logging.error("Permission denied. Run the program as root to control USB power.")
+    except Exception as e:
+        logging.error(f"Unexpected error while disabling USB power: {e}")
+
 def main(data_queue, app):
     # Turn on USB power at startup
     turn_usb_power_on()
