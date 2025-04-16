@@ -1,3 +1,4 @@
+import os
 import serial
 import time
 import logging
@@ -395,6 +396,9 @@ def monitor_e_stop():
                     logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
 
 def main(data_queue, app):
+    # Turn on USB power at startup
+    turn_usb_power_on()
+
     # Load scale calibration values at startup
     load_scale_calibrations()
 
@@ -426,6 +430,8 @@ def main(data_queue, app):
     except KeyboardInterrupt:
         print("Exiting program.")
     finally:
+        # Turn off USB power at shutdown
+        turn_usb_power_off()
         GPIO.cleanup()  # Clean up GPIO on exit
 
 

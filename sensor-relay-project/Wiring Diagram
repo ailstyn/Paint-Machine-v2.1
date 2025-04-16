@@ -1,0 +1,9 @@
+Control box:
+- Start Button
+    - Blue wire to 20 and White wire to box ground
+- Status LED
+    - Yellow and green wire to pin 21 and ground (interchangeable)
+
+Sensor:
+    - DAT to pin 3
+    - CLK to pin 2

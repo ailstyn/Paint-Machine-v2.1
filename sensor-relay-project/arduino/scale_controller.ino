@@ -4,7 +4,8 @@
 #define LOADCELL_DOUT_PIN 3
 #define LOADCELL_SCK_PIN 2
 #define RELAY_PIN 4
-#define BUTTON_PIN 5
+#define BUTTON_PIN 20
+#define LED_PIN 21
 
 // Byte-based protocol for communication
 #define REQUEST_TARGET_WEIGHT 0x01

@@ -6,11 +6,12 @@ This document tracks the tasks for the Paint Machine v2 project.
 - [x] Set up project folder structure
 - [x] Implement Arduino code for HX711 and relay control
 - [x] Implement Raspberry Pi communication with Arduinos
-- [ ] Create GUI using Tkinter
-- [ ] Test communication between Raspberry Pi and Arduinos
+- [X] Create GUI using Tkinter
+- [X] Test communication between Raspberry Pi and Arduinos
 - [ ] Calibrate load cells and update `config.txt`
 - [ ] Finalize GUI design
 - [ ] Add error handling for edge cases
+- [ ] Add Spanish language labels
 
 ## Documentation
 - [x] Add Bill of Materials (BOM)
