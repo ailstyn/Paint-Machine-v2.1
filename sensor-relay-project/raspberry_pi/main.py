@@ -420,7 +420,7 @@ def turn_usb_power_off():
 
 def main(data_queue, app):
     # Turn on USB power at startup
-    turn_usb_power_on()
+    #turn_usb_power_on()
 
     # Load scale calibration values at startup
     load_scale_calibrations()
