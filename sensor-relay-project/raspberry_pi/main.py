@@ -15,7 +15,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# List of serial ports for the Arduinos
+# List of potential serial ports for the Arduinos
 arduino_ports = [
     '/dev/ttyACM0',  # Adjust these ports as needed
     '/dev/ttyACM1',
@@ -23,12 +23,19 @@ arduino_ports = [
     '/dev/ttyACM3'
 ]
 
-# Create a list of serial connections
-try:
-    arduinos = [serial.Serial(port, 9600, timeout=1) for port in arduino_ports]
-except serial.SerialException as e:
-    logging.error(f"Failed to initialize serial connections: {e}")
-    raise
+# Create a list of active serial connections
+arduinos = []
+for port in arduino_ports:
+    try:
+        arduino = serial.Serial(port, 9600, timeout=1)
+        arduinos.append(arduino)
+        print(f"Connected to Arduino on {port}")
+    except serial.SerialException:
+        print(f"Port {port} not available. Skipping.")
+
+if not arduinos:
+    print("No Arduinos connected. Exiting program.")
+    exit(1)  # Exit if no Arduinos are connected
 
 # Shared variables
 target_weight = 500.0  # Example target weight in grams
