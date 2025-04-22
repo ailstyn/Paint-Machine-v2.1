@@ -425,9 +425,9 @@ def turn_usb_power_off():
     except Exception as e:
         logging.error(f"Unexpected error while disabling USB power: {e}")
 
-def main(data_queue, app):
+def main():
     # Turn on USB power at startup
-    #turn_usb_power_on()
+    # turn_usb_power_on()
 
     # Load scale calibration values at startup
     load_scale_calibrations()
@@ -438,35 +438,41 @@ def main(data_queue, app):
     # Create a thread-safe queue for communication between threads
     data_queue = Queue()
 
-    # Run the GUI in a separate thread
+    # Run the GUI in the main thread
     root = Tk()
     app = RelayControlApp(root)
 
     # Show the startup message
     startup(app)
 
-    # Start the GUI update loop
-    gui_thread = Thread(target=run_gui, args=(data_queue,))
-    gui_thread.daemon = True  # Ensure the thread exits when the main program exits
-    gui_thread.start()
+    # Start Arduino communication in a separate thread
+    arduino_thread = Thread(target=arduino_communication, args=(data_queue,))
+    arduino_thread.daemon = True  # Ensure the thread exits when the main program exits
+    arduino_thread.start()
 
-    try:
-        # Start Arduino communication
-        while True:
-            arduino_communication(data_queue)  # Handle other Arduino communication
-            handle_button_presses(app)  # Check for button presses
-            monitor_e_stop()  # Check the E-Stop button and notify Arduinos if needed
-            time.sleep(0.1)  # Small delay to avoid high CPU usage
-    except KeyboardInterrupt:
-        print("Exiting program.")
-    finally:
-        # Turn off USB power at shutdown
-        turn_usb_power_off()
-        GPIO.cleanup()  # Clean up GPIO on exit
+    # Start monitoring E-Stop in a separate thread
+    e_stop_thread = Thread(target=monitor_e_stop)
+    e_stop_thread.daemon = True
+    e_stop_thread.start()
+
+    # Start the GUI update loop
+    def update_gui():
+        # Update the GUI with data from the queue
+        if E_STOP:
+            app.display_e_stop()  # Show the E-Stop message
+        else:
+            while not data_queue.empty():
+                arduino_id, new_data = data_queue.get()
+                app.update_data(arduino_id, new_data)
+        root.after(100, update_gui)  # Schedule the next update
+
+    update_gui()  # Start the update loop
+    root.mainloop()  # Start the Tkinter event loop to display the GUI
+
+    # Turn off USB power at shutdown
+    turn_usb_power_off()
+    GPIO.cleanup()  # Clean up GPIO on exit
 
 
 if __name__ == "__main__":
-    data_queue = Queue()
-    root = Tk()
-    app = RelayControlApp(root)
-    main(data_queue, app)
+    main()
