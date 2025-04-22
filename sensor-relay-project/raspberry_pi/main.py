@@ -5,7 +5,7 @@ import logging
 from threading import Thread
 from queue import Queue
 from gui.machine_gui import RelayControlApp
-from tkinter import Tk, Label
+from tkinter import Tk, Label, StringVar
 import RPi.GPIO as GPIO
 
 # Configure logging
@@ -259,23 +259,30 @@ def run_gui(data_queue):
     root.mainloop()
 
 
-def display_message(self, main_message, sub_message):
-    """
-    Display a temporary message on the GUI.
+class RelayControlApp:
+    def __init__(self, master):
+        self.master = master
+        self.weight_fraction_var = StringVar()
+        self.time_remaining_var = StringVar()
+        # Initialize other GUI components here...
 
-    Args:
-        main_message: The main message to display (e.g., "CLEAR SCALES").
-        sub_message: The sub-message to display (e.g., "PRESS SELECT WHEN READY").
-    """
-    # Clear the GUI
-    for widget in self.master.winfo_children():
-        widget.destroy()
+    def display_message(self, main_message, sub_message):
+        """
+        Display a temporary message on the GUI.
 
-    # Display the main message
-    Label(self.master, text=main_message, font=('Cascadia Code SemiBold', 48), bg="black", fg="red").pack(pady=20)
+        Args:
+            main_message: The main message to display (e.g., "CLEAR SCALES").
+            sub_message: The sub-message to display (e.g., "PRESS SELECT WHEN READY").
+        """
+        # Clear the GUI
+        for widget in self.master.winfo_children():
+            widget.destroy()
 
-    # Display the sub-message
-    Label(self.master, text=sub_message, font=('Cascadia Code SemiBold', 24), bg="black", fg="white").pack(pady=10)
+        # Display the main message
+        Label(self.master, text=main_message, font=('Cascadia Code SemiBold', 48), bg="black", fg="red").pack(pady=20)
+
+        # Display the sub-message
+        Label(self.master, text=sub_message, font=('Cascadia Code SemiBold', 24), bg="black", fg="white").pack(pady=10)
 
 def startup(app):
     # Display the "CLEAR SCALES" message
