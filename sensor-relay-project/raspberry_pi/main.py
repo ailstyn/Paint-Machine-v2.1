@@ -441,13 +441,13 @@ def main():
 
     # Load scale calibration values at startup
     load_scale_calibrations()
-
+    print('scale calibration complete')
     # Set up GPIO
     setup_gpio()
-
+    print("gpio setup complete")
     # Create a thread-safe queue for communication between threads
     data_queue = Queue()
-
+    print("data queue created")
     # Run the GUI in the main thread
     root = Tk()
     app = RelayControlApp(root)
