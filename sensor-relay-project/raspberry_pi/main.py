@@ -449,11 +449,15 @@ def main():
     data_queue = Queue()
     print("data queue created")
     # Run the GUI in the main thread
+    print('open the gui')
     root = Tk()
+    print('gui opened. opening the app')
     app = RelayControlApp(root)
-
+    print('app opened')
+    print('displaying startup message')
     # Show the startup message
     startup(app)
+    print('startup message complete')
 
     # Start Arduino communication in a separate thread
     arduino_thread = Thread(target=arduino_communication, args=(data_queue,))
