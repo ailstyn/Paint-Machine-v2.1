@@ -52,9 +52,9 @@ RESET_CALIBRATION = b'\x05'
 TARE_SCALE = b'\x09'  # New byte for tare command
 
 # GPIO pin assignments for buttons
-UP_BUTTON_PIN = 17      # GPIO pin for the "up" button
-DOWN_BUTTON_PIN = 27    # GPIO pin for the "down" button
-SELECT_BUTTON_PIN = 22  # GPIO pin for the "select" button
+UP_BUTTON_PIN = 5      # GPIO pin for the "up" button
+DOWN_BUTTON_PIN = 6    # GPIO pin for the "down" button
+SELECT_BUTTON_PIN = 16  # GPIO pin for the "select" button
 
 # Add a global flag for E-Stop
 E_STOP = False
