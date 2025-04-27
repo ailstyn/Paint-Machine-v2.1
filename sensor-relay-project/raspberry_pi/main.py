@@ -66,16 +66,21 @@ E_STOP_PIN = 23  # Use an unused GPIO pin
 def load_scale_calibrations():
     # Load scale calibration values from the config file
     global scale_calibrations
+    print("Loading scale calibration values...")
+
+    # Get the full path to config.txt in the same directory as main.py
+    config_path = os.path.join(os.path.dirname(__file__), config_file)
+
     try:
-        with open(config_file, "r") as file:
+        with open(config_path, "r") as file:
             lines = file.readlines()
             scale_calibrations = [float(line.strip()) for line in lines]
         print(f"Loaded scale calibration values: {scale_calibrations}")
     except FileNotFoundError:
-        logging.error(f"{config_file} not found. Using default calibration values.")
+        logging.error(f"{config_path} not found. Using default calibration values.")
         scale_calibrations = [1.0, 1.0, 1.0, 1.0]  # Default calibration values
     except ValueError as e:
-        logging.error(f"Error reading {config_file}: {e}")
+        logging.error(f"Error reading {config_path}: {e}")
         scale_calibrations = [1.0, 1.0, 1.0, 1.0]  # Default calibration values
 
 
@@ -217,6 +222,7 @@ def tare_scale(arduino_id):
 
 def setup_gpio():
     # Set up GPIO mode
+    print('setting up GPIO')
     GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
     GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Up button with pull-up resistor
     GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Down button with pull-up resistor
