@@ -224,10 +224,14 @@ def setup_gpio():
     # Set up GPIO mode
     print('setting up GPIO')
     GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
+    print('set mode BCM')
     GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Up button with pull-up resistor
+    print('up button pin set')
     GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Down button with pull-up resistor
+    print('down button pin set')
     GPIO.setup(SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Select button with pull-up resistor
-    GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # E-Stop button with pull-up resistor
+    print('select button pin set')
+    #GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # E-Stop button with pull-up resistor
 
 
 def handle_button_presses(app):
