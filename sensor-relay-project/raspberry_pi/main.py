@@ -299,8 +299,11 @@ def startup(app):
     app.display_message("CLEAR SCALES", "PRESS SELECT WHEN READY")
 
     # Wait for the select button to be pressed
+    print("Waiting for SELECT button to be pressed...")
     while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:  # Wait until the button is pressed (LOW)
         time.sleep(0.1)
+
+    print("SELECT button pressed. Proceeding with startup.")
 
     # Send the TARE_SCALE command to every connected Arduino
     for i, arduino in enumerate(arduinos):

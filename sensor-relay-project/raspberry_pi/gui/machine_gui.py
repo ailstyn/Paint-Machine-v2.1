@@ -3,6 +3,12 @@ from tkinter.ttk import Progressbar
 
 class RelayControlApp:
     def __init__(self, master):
+        print("Initializing RelayControlApp...")
+        self.master = master
+        self.weight_fraction_var = StringVar()
+        self.time_remaining_var = StringVar()
+        # Initialize other GUI components here...
+        print("RelayControlApp initialized.")
         """
         Initialize the GUI application.
 
