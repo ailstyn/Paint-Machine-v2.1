@@ -4,9 +4,9 @@ import time
 import logging
 from threading import Thread
 from queue import Queue
-from gui.machine_gui import RelayControlApp
 from tkinter import Tk, Label, StringVar
 import RPi.GPIO as GPIO
+from gui import machine_gui
 
 # Configure logging
 logging.basicConfig(
@@ -249,31 +249,6 @@ def handle_button_presses(app):
         print("Select button pressed")
         set_target_weight(app)  # Call the set_target_weight function
 
-class RelayControlApp:
-    def __init__(self, master):
-        self.master = master
-        self.weight_fraction_var = StringVar()
-        self.time_remaining_var = StringVar()
-        # Initialize other GUI components here...
-
-    def display_message(self, main_message, sub_message):
-        """
-        Display a temporary message on the GUI.
-
-        Args:
-            main_message: The main message to display (e.g., "CLEAR SCALES").
-            sub_message: The sub-message to display (e.g., "PRESS SELECT WHEN READY").
-        """
-        # Clear the GUI
-        for widget in self.master.winfo_children():
-            widget.destroy()
-
-        # Display the main message
-        Label(self.master, text=main_message, font=('Cascadia Code SemiBold', 48), bg="black", fg="red").pack(pady=20)
-
-        # Display the sub-message
-        Label(self.master, text=sub_message, font=('Cascadia Code SemiBold', 24), bg="black", fg="white").pack(pady=10)
-
 def startup(app):
     # Display the "CLEAR SCALES" message
     app.display_message("CLEAR SCALES", "PRESS SELECT WHEN READY")
@@ -450,7 +425,7 @@ def main():
         print('open the gui')
         root = Tk()
         print('gui opened. opening the app')
-        app = RelayControlApp(root)
+        app = machine_gui.RelayControlApp(root)
         print('app opened')
         print('displaying startup message')
 
@@ -465,8 +440,8 @@ def main():
         e_stop_thread.start()
 
         # Start the GUI update loop
-        # update_gui(app, data_queue, root)  # Start the update loop
-        print('update loop skipped')
+        update_gui(app, data_queue, root)  # Start the update loop
+        print('update loop started')
         root.mainloop()  # Start the Tkinter event loop to display the GUI
         print('main loop started')
 
