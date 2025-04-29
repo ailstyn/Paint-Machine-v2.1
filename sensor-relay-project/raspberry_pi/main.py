@@ -465,8 +465,8 @@ def main():
         e_stop_thread.start()
 
         # Start the GUI update loop
-        update_gui(app, data_queue, root)  # Start the update loop
-        print('update loop started')
+        # update_gui(app, data_queue, root)  # Start the update loop
+        print('update loop skipped')
         root.mainloop()  # Start the Tkinter event loop to display the GUI
         print('main loop started')
 
