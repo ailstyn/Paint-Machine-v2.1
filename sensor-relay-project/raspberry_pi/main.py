@@ -450,47 +450,53 @@ def update_gui(app, data_queue, root):
     root.after(100, update_gui, app, data_queue, root)  # Schedule the next update
 
 def main():
-    # Turn on USB power at startup
-    # turn_usb_power_on()
+    try:
+        # Turn on USB power at startup
+        # turn_usb_power_on()
 
-    # Load scale calibration values at startup
-    load_scale_calibrations()
-    print('scale calibration complete')
-    # Set up GPIO
-    setup_gpio()
-    print("gpio setup complete")
-    # Create a thread-safe queue for communication between threads
-    data_queue = Queue()
-    print("data queue created")
-    # Run the GUI in the main thread
-    print('open the gui')
-    root = Tk()
-    print('gui opened. opening the app')
-    app = RelayControlApp(root)
-    print('app opened')
-    print('displaying startup message')
-    # Show the startup message
-    startup(app)
-    print('startup message complete')
+        # Load scale calibration values at startup
+        load_scale_calibrations()
+        print('scale calibration complete')
 
-    # Start Arduino communication in a separate thread
-    arduino_thread = Thread(target=arduino_communication, args=(data_queue,))
-    arduino_thread.daemon = True  # Ensure the thread exits when the main program exits
-    arduino_thread.start()
+        # Set up GPIO
+        setup_gpio()
+        print("gpio setup complete")
 
-    # Start monitoring E-Stop in a separate thread
-    e_stop_thread = Thread(target=monitor_e_stop)
-    e_stop_thread.daemon = True
-    e_stop_thread.start()
+        # Create a thread-safe queue for communication between threads
+        data_queue = Queue()
+        print("data queue created")
 
-    # Start the GUI update loop
-    update_gui(app, data_queue, root)  # Start the update loop
-    root.mainloop()  # Start the Tkinter event loop to display the GUI
+        # Run the GUI in the main thread
+        print('open the gui')
+        root = Tk()
+        print('gui opened. opening the app')
+        app = RelayControlApp(root)
+        print('app opened')
+        print('displaying startup message')
 
-    # Turn off USB power at shutdown
-    turn_usb_power_off()
-    GPIO.cleanup()  # Clean up GPIO on exit
+        # Start Arduino communication in a separate thread
+        arduino_thread = Thread(target=arduino_communication, args=(data_queue,))
+        arduino_thread.daemon = True  # Ensure the thread exits when the main program exits
+        arduino_thread.start()
 
+        # Start monitoring E-Stop in a separate thread
+        e_stop_thread = Thread(target=monitor_e_stop)
+        e_stop_thread.daemon = True
+        e_stop_thread.start()
+
+        # Start the GUI update loop
+        update_gui(app, data_queue, root)  # Start the update loop
+        root.mainloop()  # Start the Tkinter event loop to display the GUI
+
+    except KeyboardInterrupt:
+        print("Program interrupted by user.")
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+    finally:
+        # Cleanup tasks
+        print("Shutting down...")
+        turn_usb_power_off()
+        GPIO.cleanup()
 
 if __name__ == "__main__":
     main()
