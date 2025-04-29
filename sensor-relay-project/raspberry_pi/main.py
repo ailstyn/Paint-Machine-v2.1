@@ -249,26 +249,6 @@ def handle_button_presses(app):
         print("Select button pressed")
         set_target_weight(app)  # Call the set_target_weight function
 
-
-def run_gui(data_queue):
-    # Run the GUI
-    root = Tk()
-    app = RelayControlApp(root)
-
-    def update_gui():
-        # Update the GUI with data from the queue
-        if E_STOP:
-            app.display_e_stop()  # Show the E-Stop message
-        else:
-            while not data_queue.empty():
-                arduino_id, new_data = data_queue.get()
-                app.update_data(arduino_id, new_data)
-        root.after(100, update_gui)  # Schedule the next update
-
-    update_gui()  # Start the update loop
-    root.mainloop()
-
-
 class RelayControlApp:
     def __init__(self, master):
         self.master = master
@@ -486,7 +466,9 @@ def main():
 
         # Start the GUI update loop
         update_gui(app, data_queue, root)  # Start the update loop
+        print('update loop started')
         root.mainloop()  # Start the Tkinter event loop to display the GUI
+        print('main loop started')
 
     except KeyboardInterrupt:
         print("Program interrupted by user.")
