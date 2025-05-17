@@ -25,7 +25,7 @@ float scaleCalibration = 1.0; // Default calibration value
 float calibWeight = 50.0;     // Calibration weight in grams
 
 void setup() {
-    digitalWrite(RELAY_PIN, LOW);
+    digitalWrite(RELAY_PIN, HIGH);
     pinMode(RELAY_PIN, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP); // Use INPUT_PULLUP for a momentary button
     Serial.begin(9600); // Start serial communication
@@ -149,7 +149,7 @@ void fill() {
 
     // Start filling process
     unsigned long startTime = millis(); // Record the start time
-    digitalWrite(RELAY_PIN, HIGH);      // Turn relay ON
+    digitalWrite(RELAY_PIN, LOW);      // Turn relay ON
 
     while (scale.get_units(5) < targetWeight) { // Use 5 samples for faster response
         unsigned long currentTime = millis(); // Get the current time
@@ -160,7 +160,7 @@ void fill() {
         // Check if the time limit has been exceeded
         if (timeLimit <= 0) {
             Serial.println("ERROR: TIME LIMIT EXCEEDED"); // Send error message to the Raspberry Pi
-            digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+            digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
             return; // Exit the function
         }
 
@@ -169,7 +169,7 @@ void fill() {
             byte messageType = Serial.read(); // Read the message type
             if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated during filling. Aborting process.");
-                digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+                digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
                 return; // Abort the fill function
             }
         }
@@ -177,7 +177,7 @@ void fill() {
         delay(50); // Small delay to allow the loop to run faster
     }
 
-    digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+    digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
     Serial.println("Filling Complete");
 }
 
