@@ -19,9 +19,10 @@ void setup() {
 
 void loop() {
     // Read the current weight from the scale
-    long weight = scale.get_units(5); // Use 10 samples for averaging
-    Serial.print("Weight: ");
-    Serial.println(weight);
+    long weight = scale.get_units(5); // Use 5 samples for averaging
 
-    // delay(100); // Send weight data every second
+    Serial.write(0x04);        // Send the CURRENT_WEIGHT message type
+    Serial.println(weight);    // Send the weight as a string
+
+    // delay(100); // Send weight data every 100ms
 }
