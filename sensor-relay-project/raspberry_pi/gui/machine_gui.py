@@ -103,11 +103,12 @@ class RelayControlApp:
         padding = 3  # Add padding around the icon
         self.icon_canvas.coords(self.selection_box, x1 - padding, y1 - padding, x2 + padding, y2 + padding)
 
-    def update_data(self, data):
+    def update_data(self, arduino_id, data):
         """
         Update the displayed data for the Arduino.
 
         Args:
+            arduino_id: The ID of the Arduino sending the data.
             data: A dictionary containing the new data to display.
                   Expected keys: 'target_weight', 'current_weight', 'time_remaining'.
         """
