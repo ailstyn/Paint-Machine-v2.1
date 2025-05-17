@@ -446,6 +446,11 @@ def main():
         root.mainloop()  # Start the Tkinter event loop to display the GUI
         print('main loop started')
 
+        # Let the arduinos know the Raspberry Pi is ready:
+        print("Sending PI_READY to Arduinos...")
+        for arduino in arduinos:
+            arduino.write(b'P')
+
     except KeyboardInterrupt:
         print("Program interrupted by user.")
     except Exception as e:

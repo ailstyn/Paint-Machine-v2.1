@@ -27,17 +27,24 @@ float calibWeight = 50.0;     // Calibration weight in grams
 void setup() {
     digitalWrite(RELAY_PIN, HIGH);
     pinMode(RELAY_PIN, OUTPUT);
-    digitalWrite(RELAY_PIN, HIGH); // Set relay to OFF initially again...
-    pinMode(BUTTON_PIN, INPUT_PULLUP); // Use INPUT_PULLUP for a momentary button
-    Serial.begin(9600); // Start serial communication
+    digitalWrite(RELAY_PIN, HIGH);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
-    delay(5000); // Allow time for the scale to stabilize
+    // Wait for "PI READY" message
+    while (true) {
+        if (Serial.available() > 0) {
+            byte msg = Serial.read();
+            if (msg == 'P') { // Or check for a string if you use "PI_READY"
+                break;
+            }
+        }
+    }
 
-    // Request calibration value from Raspberry Pi
+    // Now Pi is ready, request calibration
     Serial.write(REQUEST_CALIBRATION);
 
-    // Wait for the calibration value from the Raspberry Pi
     while (true) {
         if (Serial.available() > 0) {
             byte messageType = Serial.read(); // Read the message type
