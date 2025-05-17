@@ -96,6 +96,7 @@ def write_scale_calibrations():
 
 def arduino_communication(data_queue):
     # Handle communication with Arduinos
+    print("Starting Arduino communication...")
     try:
         while True:
             for i, arduino in enumerate(arduinos):
