@@ -441,20 +441,6 @@ def main():
         e_stop_thread.daemon = True
         e_stop_thread.start()
 
-        print("Starting temporary serial test for 25 weight readings...")
-        count = 0
-        if arduinos:
-            arduino = arduinos[0]
-            while count < 25:
-                if arduino.in_waiting > 0:
-                    message_type = arduino.read(1)
-                    if message_type == CURRENT_WEIGHT:
-                        current_weight = arduino.readline().decode('utf-8').strip()
-                        print(f"Weight reading {count+1}: {current_weight}")
-                        count += 1
-                time.sleep(0.1)
-        print("Serial test complete.")
-
         # Start the GUI update loop
         update_gui(app, data_queue, root)  # Start the update loop
         print('update loop started')
