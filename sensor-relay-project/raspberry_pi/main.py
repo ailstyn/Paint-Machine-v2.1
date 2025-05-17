@@ -451,6 +451,20 @@ def main():
         print("Sending PI_READY to Arduinos...")
         for arduino in arduinos:
             arduino.write(b'P')
+        print("Starting temporary serial test for 25 weight readings...")
+        count = 0
+        if arduinos:
+            arduino = arduinos[0]
+            while count < 25:
+                if arduino.in_waiting > 0:
+                    message_type = arduino.read(1)
+                    if message_type == CURRENT_WEIGHT:
+                        current_weight = arduino.readline().decode('utf-8').strip()
+                        print(f"Weight reading {count+1}: {current_weight}")
+                        count += 1
+                time.sleep(0.1)
+        print("Serial test complete.")
+
 
     except KeyboardInterrupt:
         print("Program interrupted by user.")
