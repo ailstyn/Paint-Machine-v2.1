@@ -25,9 +25,9 @@ float scaleCalibration = 1.0; // Default calibration value
 float calibWeight = 50.0;     // Calibration weight in grams
 
 void setup() {
+    digitalWrite(RELAY_PIN, LOW);
     pinMode(RELAY_PIN, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP); // Use INPUT_PULLUP for a momentary button
-    digitalWrite(RELAY_PIN, LOW);     // Ensure relay is LOW on startup
     Serial.begin(9600); // Start serial communication
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
