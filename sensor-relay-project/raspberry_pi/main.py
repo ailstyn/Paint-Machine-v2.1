@@ -118,7 +118,8 @@ def arduino_communication(data_queue):
                         # Handle "request calibration" messages
                         elif message_type == REQUEST_CALIBRATION:
                             print(f"Arduino on {arduino.port} requested calibration value.")
-                            arduino.write(f"{scale_calibrations[i]}\n".encode('utf-8'))
+                            arduino.write(REQUEST_CALIBRATION)  # Send the 0x02 byte first
+                            arduino.write(f"{scale_calibrations[i]}\n".encode('utf-8'))  # Then send the value
 
                         # Handle "request time limit" messages
                         elif message_type == REQUEST_TIME_LIMIT:

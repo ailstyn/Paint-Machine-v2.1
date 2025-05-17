@@ -32,6 +32,8 @@ void setup() {
     Serial.begin(9600); // Start serial communication
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
+    delay(5000); // Allow time for the scale to stabilize
+
     // Request calibration value from Raspberry Pi
     Serial.write(REQUEST_CALIBRATION);
 
