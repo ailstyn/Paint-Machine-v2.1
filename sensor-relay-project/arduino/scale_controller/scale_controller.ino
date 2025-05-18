@@ -96,10 +96,9 @@ void loop() {
     }
 
     // Read and send current weight to Raspberry Pi
-    long weight = scale.get_units(10); // Apply calibration automatically
+    long weight = scale.get_units(5); // Apply calibration automatically
     Serial.write(CURRENT_WEIGHT); // Send the message type
     Serial.println(weight);       // Send the weight as a string
-    delay(100);
 }
 
 // Function to handle the fill process

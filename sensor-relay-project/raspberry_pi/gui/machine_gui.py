@@ -115,7 +115,9 @@ class RelayControlApp:
                   Expected keys: 'target_weight', 'current_weight', 'time_remaining'.
         """
         target_weight = data.get("target_weight", "N/A")
+        print(f"Target weight: {target_weight}")
         current_weight = data.get("current_weight", "N/A")
+        print(f"Current weight: {current_weight}")
 
         # Update the weight fraction
         if target_weight != "N/A" and current_weight != "N/A":
