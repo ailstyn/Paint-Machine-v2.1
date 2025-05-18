@@ -398,6 +398,12 @@ def main():
         root = Tk()
         app = machine_gui.RelayControlApp(root)
         print('app initialized, contacting arduinos')
+
+        # Clear serial buffers before starting communication
+        for arduino in arduinos:
+            arduino.reset_input_buffer()
+            arduino.reset_output_buffer()
+
         # Send 'P' (PI READY) to all connected Arduinos after GUI is ready
         for arduino in arduinos:
             try:
