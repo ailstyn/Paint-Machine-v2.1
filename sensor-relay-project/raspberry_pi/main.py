@@ -94,7 +94,7 @@ def write_scale_calibrations():
         logging.error(f"Error writing to {config_file}: {e}")
 
 
-def arduino_communication(data_queue):
+"""def arduino_communication(data_queue):
     # Handle communication with Arduinos
     print("Starting Arduino communication...")
     try:
@@ -155,7 +155,7 @@ def arduino_communication(data_queue):
                 arduino.close()
             except serial.SerialException as e:
                 logging.error(f"Error closing connection to Arduino on {arduino.port}: {e}")
-
+"""
 
 def calibrate_scale(arduino_id, data_queue):
     # Initiate the scale recalibration process for the specified Arduino.
@@ -204,12 +204,8 @@ def calibrate_scale(arduino_id, data_queue):
 
 
 def tare_scale(arduino_id):
-    """
-    Send a command to the specified Arduino to tare the scale.
+#     arduino_id: The ID of the Arduino to send the tare command to.
 
-    Args:
-        arduino_id: The ID of the Arduino to send the tare command to.
-    """
     if arduino_id < 0 or arduino_id >= len(arduinos):
         logging.error(f"Invalid Arduino ID: {arduino_id}")
         return
@@ -359,107 +355,65 @@ def set_time_limit(app):
             app.reload_main_screen()  # Return to the main screen
             break
 
-def monitor_e_stop():
-    """
-    Monitor the E-Stop button and set the E_STOP flag to True when pressed.
-    Notify all connected Arduinos about the E-Stop activation.
-    """
+def poll_hardware(app, root):
     global E_STOP
-
-    if GPIO.input(E_STOP_PIN) == GPIO.LOW:  # E-Stop button pressed
-        if not E_STOP:  # Only send the message once when E-Stop is activated
-            print("E-Stop activated!")
-            E_STOP = True
-
-            # Notify all connected Arduinos
-            for i, arduino in enumerate(arduinos):
-                try:
-                    arduino.write(b"RELAY DEACTIVATED\n")  # Send the relay deactivated message
-                    print(f"Sent RELAY DEACTIVATED to Arduino {i} on port {arduino.port}")
-                except serial.SerialException as e:
-                    logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
-
-def turn_usb_power_off():
-    """
-    Disable power to all USB ports.
-    Requires root privileges and proper Raspberry Pi configuration.
-    """
     try:
-        with open("/sys/devices/platform/soc/3f980000.usb/buspower", "w") as usb_power_file:
-            usb_power_file.write("0")  # Write '0' to disable USB power
-        print("USB power disabled.")
-    except FileNotFoundError:
-        logging.error("USB power control file not found. Ensure the Raspberry Pi is configured correctly.")
-    except PermissionError:
-        logging.error("Permission denied. Run the program as root to control USB power.")
-    except Exception as e:
-        logging.error(f"Unexpected error while disabling USB power: {e}")
+        arduino = arduinos[0]  # Only use the first Arduino for now
 
-# Start the GUI update loop
-def update_gui(app, data_queue, root):
-    # Update the GUI with data from the queue
-    if E_STOP:
-        app.display_e_stop()  # Show the E-Stop message
-    else:
-        while not data_queue.empty():
-            arduino_id, new_data = data_queue.get()
-            app.update_data(arduino_id, new_data)
-    root.after(100, update_gui, app, data_queue, root)  # Schedule the next update
+        # Check E-Stop status
+        if GPIO.input(E_STOP_PIN) == GPIO.LOW:
+            if not E_STOP:
+                E_STOP = True
+                app.display_e_stop()
+            # If E-Stop is active, respond to any message except CURRENT_WEIGHT
+            while arduino.in_waiting > 0:
+                message_type = arduino.read(1)
+                if message_type == CURRENT_WEIGHT:
+                    pass
+                    # current_weight = arduino.readline().decode('utf-8').strip()
+                    # app.update_data(0, {"current_weight": current_weight, "time_remaining": ""})
+                else:
+                    arduino.write(b"RELAY DEACTIVATED\n")
+        else:
+            if E_STOP:
+                # Optionally, handle E-Stop reset logic here
+                pass
+            # Normal operation
+            while arduino.in_waiting > 0:
+                message_type = arduino.read(1)
+                if message_type == REQUEST_TARGET_WEIGHT:
+                    arduino.write(REQUEST_TARGET_WEIGHT)
+                    arduino.write(f"{target_weight}\n".encode('utf-8'))
+                elif message_type == REQUEST_CALIBRATION:
+                    arduino.write(REQUEST_CALIBRATION)
+                    arduino.write(f"{scale_calibrations[0]}\n".encode('utf-8'))
+                elif message_type == REQUEST_TIME_LIMIT:
+                    arduino.write(f"{time_limit}\n".encode('utf-8'))
+                elif message_type == CURRENT_WEIGHT:
+                    current_weight = arduino.readline().decode('utf-8').strip()
+                    app.update_data(0, {"current_weight": current_weight, "time_remaining": ""})
+                else:
+                    logging.warning(f"Unhandled message type: {message_type}")
+    except Exception as e:
+        logging.error(f"Error in poll_hardware: {e}")
+
+    # Schedule next poll
+    root.after(100, poll_hardware, app, root)
 
 def main():
     try:
-        # Turn on USB power at startup
-        # turn_usb_power_on()
-
-        # Load scale calibration values at startup
         load_scale_calibrations()
-        print('scale calibration complete')
-
-        # Set up GPIO
         setup_gpio()
-        print("gpio setup complete")
-
-        # Create a thread-safe queue for communication between threads
-        data_queue = Queue()
-        print("data queue created")
-
-        # Run the GUI in the main thread
-        print('open the gui')
         root = Tk()
-        print('gui opened. opening the app')
         app = machine_gui.RelayControlApp(root)
-        print('app opened')
-        print('displaying startup message')
-
-        # Start Arduino communication in a separate thread
-        arduino_thread = Thread(target=arduino_communication, args=(data_queue,))
-        arduino_thread.daemon = True  # Ensure the thread exits when the main program exits
-        arduino_thread.start()
-
-        # Start monitoring E-Stop in a separate thread
-        e_stop_thread = Thread(target=monitor_e_stop)
-        e_stop_thread.daemon = True
-        e_stop_thread.start()
-
-        # Start the GUI update loop
-        update_gui(app, data_queue, root)  # Start the update loop
-        print('update loop started')
-        root.mainloop()  # Start the Tkinter event loop to display the GUI
-        print('main loop started')
-
-        # Let the arduinos know the Raspberry Pi is ready:
-        print("Sending PI_READY to Arduinos...")
-        for arduino in arduinos:
-            arduino.write(b'P')
-
+        poll_hardware(app, root)  # Start polling loop
+        root.mainloop()
     except KeyboardInterrupt:
         print("Program interrupted by user.")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
     finally:
-        # Cleanup tasks
         print("Shutting down...")
-        turn_usb_power_off()
         GPIO.cleanup()
 
 if __name__ == "__main__":
