@@ -367,13 +367,19 @@ def poll_hardware(app, root):
             while arduino.in_waiting > 0:
                 message_type = arduino.read(1)
                 if message_type == REQUEST_TARGET_WEIGHT:
+                    print("Arduino requested target weight.")
                     arduino.write(REQUEST_TARGET_WEIGHT)
                     arduino.write(f"{target_weight}\n".encode('utf-8'))
+                    print(f"Sent target weight to Arduino: {target_weight}")
                 elif message_type == REQUEST_CALIBRATION:
+                    print("Arduino requested calibration value.")
                     arduino.write(REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[0]}\n".encode('utf-8'))
+                    print(f"Sent calibration value to Arduino: {scale_calibrations[0]}")
                 elif message_type == REQUEST_TIME_LIMIT:
+                    print("Arduino requested time limit.")
                     arduino.write(f"{time_limit}\n".encode('utf-8'))
+                    print(f"Sent time limit to Arduino: {time_limit}")
                 elif message_type == CURRENT_WEIGHT:
                     current_weight = arduino.readline().decode('utf-8').strip()
                     app.update_data(0, {"current_weight": current_weight, "time_remaining": ""})
