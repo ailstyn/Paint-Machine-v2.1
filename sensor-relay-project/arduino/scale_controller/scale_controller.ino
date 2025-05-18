@@ -42,19 +42,24 @@ void setup() {
         }
     }
 
-    // Now Pi is ready, request calibration
-    Serial.write(REQUEST_CALIBRATION);
-
+    // Now Pi is ready, repeatedly request calibration until received
     while (true) {
-        if (Serial.available() > 0) {
-            byte messageType = Serial.read(); // Read the message type
-            if (messageType == REQUEST_CALIBRATION) {
-                String receivedData = Serial.readStringUntil('\n'); // Read the calibration value
-                scaleCalibration = receivedData.toFloat(); // Convert to float
-                scale.set_scale(scaleCalibration); // Apply the calibration value
-                break; // Exit the loop once the calibration value is received
+        Serial.write(REQUEST_CALIBRATION); // Request calibration
+        unsigned long start = millis();
+        bool received = false;
+        while (millis() - start < 500) { // Wait up to 500ms for a response
+            if (Serial.available() > 0) {
+                byte messageType = Serial.read(); // Read the message type
+                if (messageType == REQUEST_CALIBRATION) {
+                    String receivedData = Serial.readStringUntil('\n'); // Read the calibration value
+                    scaleCalibration = receivedData.toFloat(); // Convert to float
+                    scale.set_scale(scaleCalibration); // Apply the calibration value
+                    received = true;
+                    break; // Exit the inner wait loop
+                }
             }
         }
+        if (received) break; // Exit the outer request loop if calibration received
     }
 
     // Print the received calibration value for debugging
