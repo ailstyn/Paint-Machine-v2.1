@@ -397,7 +397,7 @@ def main():
         setup_gpio()
         root = Tk()
         app = machine_gui.RelayControlApp(root)
-
+        print('app initialized, contacting arduinos')
         # Send 'P' (PI READY) to all connected Arduinos after GUI is ready
         for arduino in arduinos:
             try:
