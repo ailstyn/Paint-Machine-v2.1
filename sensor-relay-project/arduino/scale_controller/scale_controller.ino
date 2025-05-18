@@ -36,7 +36,7 @@ void setup() {
     while (true) {
         if (Serial.available() > 0) {
             byte msg = Serial.read();
-            if (msg == 'P') { // Or check for a string if you use "PI_READY"
+            if (msg == 'P') {
                 break;
             }
         }

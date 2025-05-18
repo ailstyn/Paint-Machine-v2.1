@@ -391,6 +391,15 @@ def main():
         setup_gpio()
         root = Tk()
         app = machine_gui.RelayControlApp(root)
+
+        # Send 'P' (PI READY) to all connected Arduinos after GUI is ready
+        for arduino in arduinos:
+            try:
+                arduino.write(b'P')
+                print(f"Sent 'P' (PI READY) to Arduino on {arduino.port}")
+            except Exception as e:
+                logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
+
         poll_hardware(app, root)  # Start polling loop
         root.mainloop()
     except KeyboardInterrupt:
