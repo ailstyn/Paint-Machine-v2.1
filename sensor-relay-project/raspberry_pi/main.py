@@ -2,8 +2,6 @@ import os
 import serial
 import time
 import logging
-from threading import Thread
-from queue import Queue
 from tkinter import Tk, Label, StringVar
 import RPi.GPIO as GPIO
 from gui import machine_gui
@@ -323,16 +321,8 @@ def set_time_limit(app):
 
     if E_STOP:
         print("E-Stop is active. Cannot set time limit.")
-        for i, arduino in enumerate(arduinos):
-            try:
-                arduino.write(b"RELAY DEACTIVATED\n")  # Send the relay deactivated message
-                print(f"Sent RELAY DEACTIVATED to Arduino {i} on port {arduino.port}")
-            except serial.SerialException as e:
-                logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
+        logging.error('E-Stop is active. Cannot set time limit.')
         return
-
-    print(f"Current time limit: {time_limit}ms")
-    app.display_message("SET TIME LIMIT", f"{time_limit}ms")
 
     while True:
         # Check for button presses
@@ -370,15 +360,10 @@ def poll_hardware(app, root):
                 message_type = arduino.read(1)
                 if message_type == CURRENT_WEIGHT:
                     pass
-                    # current_weight = arduino.readline().decode('utf-8').strip()
-                    # app.update_data(0, {"current_weight": current_weight, "time_remaining": ""})
                 else:
                     arduino.write(b"RELAY DEACTIVATED\n")
         else:
-            if E_STOP:
-                # Optionally, handle E-Stop reset logic here
-                pass
-            # Normal operation
+            handle_button_presses(app)
             while arduino.in_waiting > 0:
                 message_type = arduino.read(1)
                 if message_type == REQUEST_TARGET_WEIGHT:

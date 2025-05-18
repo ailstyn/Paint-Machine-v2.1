@@ -84,6 +84,8 @@ class RelayControlApp:
         # Add a keybinding to exit fullscreen mode
         master.bind("<Escape>", self.exit_fullscreen)
 
+        self.refresh()  # Start the refresh loop
+
     def move_selection(self, direction):
         """
         Move the selection box up or down.
@@ -148,16 +150,11 @@ class RelayControlApp:
         self.progress_bar["value"] = value  # Update the progress bar value
 
     def exit_fullscreen(self, event=None):
-        """
-        Exit fullscreen mode when the Escape key is pressed.
-        """
+        # Exit fullscreen mode when the Escape key is pressed.
         self.master.attributes("-fullscreen", False)
 
     def reload_main_screen(self):
-        """
-        Reload the main GUI screen with the current weight, target weight, and other elements.
-        """
-        # Clear the GUI
+        #Reload the main GUI screen with the current weight, target weight, and other elements.
         for widget in self.master.winfo_children():
             widget.destroy()
 
@@ -181,6 +178,10 @@ class RelayControlApp:
 
         # Display the E-Stop message
         Label(self.master, text="ESTOP ACTIVATED", font=('Cascadia Code SemiBold', 48), bg="black", fg="red").pack(expand=True, fill="both")
+
+    def refresh(self):
+        # Update GUI elements here
+        self.master.after(33, self.refresh)  # Schedule next refresh (30 FPS)
 
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
