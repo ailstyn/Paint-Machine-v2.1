@@ -3,9 +3,9 @@
 // Pin definitions
 #define LOADCELL_DOUT_PIN 3
 #define LOADCELL_SCK_PIN 2
-#define RELAY_PIN 4
-#define BUTTON_PIN 20
-#define LED_PIN 21
+#define RELAY_PIN 21
+#define BUTTON_PIN 19
+#define LED_PIN 20
 
 // Byte-based protocol for communication
 #define REQUEST_TARGET_WEIGHT 0x01
@@ -16,8 +16,8 @@
 #define RESET_CALIBRATION 0x05
 #define PLACE_CALIBRATION_WEIGHT 0x06
 #define CALIBRATION_COMPLETE 0x07
-#define TARE_SCALE 0x09  // New byte for tare command
-#define RELAY_DEACTIVATED 0x0A // New byte for E-Stop command
+#define TARE_SCALE 0x09
+#define RELAY_DEACTIVATED 0x0A
 
 // Global variables
 HX711 scale;
@@ -25,12 +25,11 @@ float scaleCalibration = 1.0; // Default calibration value
 float calibWeight = 50.0;     // Calibration weight in grams
 
 void setup() {
-    digitalWrite(RELAY_PIN, HIGH);
     pinMode(RELAY_PIN, OUTPUT);
     digitalWrite(RELAY_PIN, HIGH);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
-    pinMode(LED_PIN, OUTPUT);      // Add this line
-    digitalWrite(LED_PIN, LOW);    // Ensure LED is off at startup
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
