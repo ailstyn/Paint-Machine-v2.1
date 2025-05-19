@@ -29,6 +29,8 @@ void setup() {
     pinMode(RELAY_PIN, OUTPUT);
     digitalWrite(RELAY_PIN, HIGH);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(LED_PIN, OUTPUT);      // Add this line
+    digitalWrite(LED_PIN, LOW);    // Ensure LED is off at startup
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
@@ -103,6 +105,8 @@ void loop() {
 
 // Function to handle the fill process
 void fill() {
+    digitalWrite(LED_PIN, HIGH); // Turn LED ON at start of fill
+
     // Request target weight from Raspberry Pi
     Serial.write(REQUEST_TARGET_WEIGHT);
 
@@ -119,6 +123,7 @@ void fill() {
                 break; // Exit the loop once the target weight is received
             } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated. Aborting fill process.");
+                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
         }
@@ -139,6 +144,7 @@ void fill() {
                 break; // Exit the loop once the time limit is received
             } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated. Aborting fill process.");
+                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
         }
@@ -158,6 +164,7 @@ void fill() {
     // If the current weight is greater than 20% of the target weight, abort the fill process
     if (currentWeight > 0.2 * targetWeight) {
         Serial.println("ERROR: CLEAR SCALE"); // Send error message to the Raspberry Pi
+        digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
         return; // Exit the function without starting the fill process
     }
 
@@ -175,6 +182,7 @@ void fill() {
         if (timeLimit <= 0) {
             Serial.println("ERROR: TIME LIMIT EXCEEDED"); // Send error message to the Raspberry Pi
             digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
+            digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
             return; // Exit the function
         }
 
@@ -184,6 +192,7 @@ void fill() {
             if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated during filling. Aborting process.");
                 digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
+                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
         }
@@ -193,6 +202,7 @@ void fill() {
 
     digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
     Serial.println("Filling Complete");
+    digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
 }
 
 // Function to handle recalibration
