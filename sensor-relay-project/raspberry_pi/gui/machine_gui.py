@@ -92,11 +92,6 @@ class RelayControlApp:
     def update_data(self, arduino_id, data):
         target_weight = data.get("target_weight", "N/A")
         current_weight = data.get("current_weight", "N/A")
-<<<<<<< HEAD
-=======
-        
-        # Update the weight fraction
->>>>>>> 1816290e3118932c0e1459231fce3211bb5df652
         if target_weight != "N/A" and current_weight != "N/A":
             self.weight_fraction_var.set(f"{current_weight} / {target_weight}")
             try:
