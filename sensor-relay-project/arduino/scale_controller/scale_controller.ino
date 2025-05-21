@@ -3,9 +3,9 @@
 // Pin definitions
 #define LOADCELL_DOUT_PIN 3
 #define LOADCELL_SCK_PIN 2
-#define RELAY_PIN 4
-#define BUTTON_PIN 20
-#define LED_PIN 21
+#define RELAY_PIN 21
+#define BUTTON_PIN 19
+#define LED_PIN 20
 
 // Byte-based protocol for communication
 #define REQUEST_TARGET_WEIGHT 0x01
@@ -16,8 +16,8 @@
 #define RESET_CALIBRATION 0x05
 #define PLACE_CALIBRATION_WEIGHT 0x06
 #define CALIBRATION_COMPLETE 0x07
-#define TARE_SCALE 0x09  // New byte for tare command
-#define RELAY_DEACTIVATED 0x0A // New byte for E-Stop command
+#define TARE_SCALE 0x09
+#define RELAY_DEACTIVATED 0x0A
 
 // Global variables
 HX711 scale;
@@ -25,10 +25,11 @@ float scaleCalibration = 1.0; // Default calibration value
 float calibWeight = 50.0;     // Calibration weight in grams
 
 void setup() {
-    digitalWrite(RELAY_PIN, HIGH);
     pinMode(RELAY_PIN, OUTPUT);
     digitalWrite(RELAY_PIN, HIGH);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, LOW);
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
 
@@ -36,25 +37,30 @@ void setup() {
     while (true) {
         if (Serial.available() > 0) {
             byte msg = Serial.read();
-            if (msg == 'P') { // Or check for a string if you use "PI_READY"
+            if (msg == 'P') {
                 break;
             }
         }
     }
 
-    // Now Pi is ready, request calibration
-    Serial.write(REQUEST_CALIBRATION);
-
+    // Now Pi is ready, repeatedly request calibration until received
     while (true) {
-        if (Serial.available() > 0) {
-            byte messageType = Serial.read(); // Read the message type
-            if (messageType == REQUEST_CALIBRATION) {
-                String receivedData = Serial.readStringUntil('\n'); // Read the calibration value
-                scaleCalibration = receivedData.toFloat(); // Convert to float
-                scale.set_scale(scaleCalibration); // Apply the calibration value
-                break; // Exit the loop once the calibration value is received
+        Serial.write(REQUEST_CALIBRATION); // Request calibration
+        unsigned long start = millis();
+        bool received = false;
+        while (millis() - start < 500) { // Wait up to 500ms for a response
+            if (Serial.available() > 0) {
+                byte messageType = Serial.read(); // Read the message type
+                if (messageType == REQUEST_CALIBRATION) {
+                    String receivedData = Serial.readStringUntil('\n'); // Read the calibration value
+                    scaleCalibration = receivedData.toFloat(); // Convert to float
+                    scale.set_scale(scaleCalibration); // Apply the calibration value
+                    received = true;
+                    break; // Exit the inner wait loop
+                }
             }
         }
+        if (received) break; // Exit the outer request loop if calibration received
     }
 
     // Print the received calibration value for debugging
@@ -91,14 +97,15 @@ void loop() {
     }
 
     // Read and send current weight to Raspberry Pi
-    long weight = scale.get_units(10); // Apply calibration automatically
+    long weight = scale.get_units(5); // Apply calibration automatically
     Serial.write(CURRENT_WEIGHT); // Send the message type
     Serial.println(weight);       // Send the weight as a string
-    delay(100);
 }
 
 // Function to handle the fill process
 void fill() {
+    digitalWrite(LED_PIN, HIGH); // Turn LED ON at start of fill
+
     // Request target weight from Raspberry Pi
     Serial.write(REQUEST_TARGET_WEIGHT);
 
@@ -115,6 +122,7 @@ void fill() {
                 break; // Exit the loop once the target weight is received
             } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated. Aborting fill process.");
+                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
         }
@@ -135,6 +143,7 @@ void fill() {
                 break; // Exit the loop once the time limit is received
             } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated. Aborting fill process.");
+                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
         }
@@ -154,6 +163,7 @@ void fill() {
     // If the current weight is greater than 20% of the target weight, abort the fill process
     if (currentWeight > 0.2 * targetWeight) {
         Serial.println("ERROR: CLEAR SCALE"); // Send error message to the Raspberry Pi
+        digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
         return; // Exit the function without starting the fill process
     }
 
@@ -171,6 +181,7 @@ void fill() {
         if (timeLimit <= 0) {
             Serial.println("ERROR: TIME LIMIT EXCEEDED"); // Send error message to the Raspberry Pi
             digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
+            digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
             return; // Exit the function
         }
 
@@ -180,6 +191,7 @@ void fill() {
             if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated during filling. Aborting process.");
                 digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
+                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
         }
@@ -189,6 +201,7 @@ void fill() {
 
     digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
     Serial.println("Filling Complete");
+    digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
 }
 
 // Function to handle recalibration
