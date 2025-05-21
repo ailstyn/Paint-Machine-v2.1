@@ -50,16 +50,13 @@ RESET_CALIBRATION = b'\x05'
 TARE_SCALE = b'\x09'  # New byte for tare command
 
 # GPIO pin assignments for buttons
-UP_BUTTON_PIN = 5      # GPIO pin for the "up" button
-DOWN_BUTTON_PIN = 6    # GPIO pin for the "down" button
-SELECT_BUTTON_PIN = 16  # GPIO pin for the "select" button
+UP_BUTTON_PIN = 5
+DOWN_BUTTON_PIN = 6
+SELECT_BUTTON_PIN = 16
+E_STOP_PIN = 23
 
 # Add a global flag for E-Stop
 E_STOP = False
-
-# GPIO pin for the E-Stop button
-E_STOP_PIN = 23  # Use an unused GPIO pin
-
 
 def load_scale_calibrations():
     # Load scale calibration values from the config file
