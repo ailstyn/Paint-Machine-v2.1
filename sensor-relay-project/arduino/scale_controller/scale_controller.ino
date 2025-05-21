@@ -97,7 +97,7 @@ void loop() {
     }
 
     // Read and send current weight to Raspberry Pi
-    long weight = scale.get_units(5); // Apply calibration automatically
+    long weight = scale.get_units(3); // Apply calibration automatically
     Serial.write(CURRENT_WEIGHT); // Send the message type
     Serial.println(weight);       // Send the weight as a string
 }
@@ -172,7 +172,7 @@ void fill() {
     unsigned long startTime = millis(); // Record the start time
     digitalWrite(RELAY_PIN, LOW);      // Turn relay ON
 
-    while (scale.get_units(5) < targetWeight) { // Use 5 samples for faster response
+    while (scale.get_units(3) < targetWeight) { // Use 5 samples for faster response
         unsigned long currentTime = millis(); // Get the current time
         unsigned long elapsedTime = currentTime - startTime; // Calculate elapsed time
         timeLimit -= elapsedTime; // Subtract elapsed time from the time limit
@@ -211,7 +211,7 @@ void recalibrate() {
 
     // Continuously send current scale readings to the Raspberry Pi
     while (true) {
-        long weight = scale.get_units(10);
+        long weight = scale.get_units(3);
         Serial.print("Current Weight: ");
         Serial.println(weight);
 
@@ -228,13 +228,13 @@ void recalibrate() {
 
     // Wait for the second button press to finalize calibration
     while (true) {
-        long weight = scale.get_units(10);
+        long weight = scale.get_units(3);
         Serial.print("Current Weight: ");
         Serial.println(weight);
 
         if (digitalRead(BUTTON_PIN) == LOW) {
             delay(200); // Debounce delay
-            float rawUnits = scale.get_units(10); // Get the raw units
+            float rawUnits = scale.get_units(3); // Get the raw units
             scaleCalibration = rawUnits / calibWeight; // Calculate the new calibration factor
             scale.set_scale(scaleCalibration); // Apply the new calibration factor
             Serial.print("New calibration factor applied: ");
