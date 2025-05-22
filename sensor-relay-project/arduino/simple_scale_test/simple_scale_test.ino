@@ -40,20 +40,18 @@ void loop() {
     Serial.print(n);
     Serial.println(") with 25 samples...");
 
-    float minVal = 1e9, maxVal = -1e9, sum = 0, sumError = 0;
-    unsigned long sampleTimes[25];
+    float sum = 0, sumError = 0;
+    float sampleTimes[25];
     float samples[25];
 
     unsigned long cycleStart = millis();
     for (int i = 0; i < 25; i++) {
-      unsigned long t0 = micros();
+      unsigned long t0 = millis();
       float val = scale.get_units(n);
-      unsigned long t1 = micros();
+      unsigned long t1 = millis();
       samples[i] = val;
-      sampleTimes[i] = t1 - t0;
+      sampleTimes[i] = (float)(t1 - t0);
 
-      if (val < minVal) minVal = val;
-      if (val > maxVal) maxVal = val;
       sum += val;
       sumError += abs(val - correctWeight);
     }
@@ -63,21 +61,17 @@ void loop() {
     Serial.print(cycleEnd - cycleStart);
     Serial.println(" ms");
 
-    Serial.println("Individual sample times (us):");
-    unsigned long totalSampleTime = 0;
+    Serial.println("Individual sample times (ms):");
+    float totalSampleTime = 0;
     for (int i = 0; i < 25; i++) {
-      Serial.print(sampleTimes[i]);
+      Serial.print(sampleTimes[i], 3);
       Serial.print(i < 24 ? ", " : "\n");
       totalSampleTime += sampleTimes[i];
     }
     float avgSampleTime = totalSampleTime / 25.0;
     Serial.print("Average sample time: ");
-    Serial.print(avgSampleTime, 1);
-    Serial.println(" us");
-
-    Serial.print("Min value: "); Serial.println(minVal, 3);
-    Serial.print("Max value: "); Serial.println(maxVal, 3);
-    Serial.print("Range: "); Serial.println(maxVal - minVal, 3);
+    Serial.print(avgSampleTime, 3);
+    Serial.println(" ms");
 
     Serial.print("Average error from 61g: ");
     Serial.println(sumError / 25.0, 3);
