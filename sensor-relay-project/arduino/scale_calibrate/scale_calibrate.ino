@@ -29,25 +29,27 @@ void setup() {
 
   Serial.println("Remove all weight from scale.");
   Serial.println("Taring...");
-  scale.set_scale(); // Step 1: No parameter
-  scale.tare();      // Step 2: Tare
+  scale.set_scale();
+  scale.tare();
 
-  Serial.println("Place a known weight on the scale, then type any character and press enter.");
-  while (!Serial.available()); // Wait for user input
-  Serial.read(); // Clear input
-
-  Serial.println("Reading...");
-  long reading = scale.get_units(10); // Step 3: Take 10 readings
-  Serial.print("Raw reading: ");
+  Serial.println("Taking 10 readings from empty scale...");
+  long reading = scale.get_units(10);
+  Serial.print("Empty scale reading: ");
   Serial.println(reading);
 
-  Serial.println("Enter the known weight in grams (e.g., 500):");
+  Serial.println("Place a known weight on the scale.");
+  Serial.println("Enter the weight in grams (e.g., 500), then press Enter:");
   while (!Serial.available());
   String input = Serial.readStringUntil('\n');
   float known_weight = input.toFloat();
 
+  Serial.println("Taking 10 readings with known weight...");
+  long known_reading = scale.get_units(10);
+  Serial.print("Known weight reading: ");
+  Serial.println(known_reading);
+
   if (known_weight > 0) {
-    float calibration_factor = reading / known_weight; // Step 4: Calculate calibration factor
+    float calibration_factor = (float)(known_reading - reading) / known_weight;
     Serial.print("Suggested calibration factor: ");
     Serial.println(calibration_factor, 6);
     Serial.println("Use scale.set_scale(calibration_factor); in your code.");
