@@ -133,24 +133,30 @@ void fill() {
     }
 
     // Request time limit from Raspberry Pi
-    Serial.write(REQUEST_TIME_LIMIT);
-
     unsigned long timeLimit = 0;
+    bool timeLimitReceived = false;
 
-    // Wait to receive the time limit from the Raspberry Pi
-    while (true) {
-        if (Serial.available() > 0) {
-            byte messageType = Serial.read(); // Read the message type
-            if (messageType == REQUEST_TIME_LIMIT) {
-                receivedData = Serial.readStringUntil('\n'); // Read the time limit
-                timeLimit = receivedData.toInt(); // Convert to integer
-                break; // Exit the loop once the time limit is received
-            } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
-                Serial.println("E-Stop activated. Aborting fill process.");
-                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
-                return; // Abort the fill function
+    while (!timeLimitReceived) {
+        Serial.write(REQUEST_TIME_LIMIT); // Send request
+        unsigned long start = millis();
+        while (millis() - start < 500) { // Wait up to 500ms for a response
+            if (Serial.available() > 0) {
+                byte messageType = Serial.read();
+                if (messageType == REQUEST_TIME_LIMIT) {
+                    String receivedData = Serial.readStringUntil('\n');
+                    timeLimit = receivedData.toInt();
+                    Serial.print("Received time limit: ");
+                    Serial.println(timeLimit);
+                    timeLimitReceived = true;
+                    break;
+                } else if (messageType == RELAY_DEACTIVATED) {
+                    Serial.println("E-Stop activated. Aborting fill process.");
+                    digitalWrite(LED_PIN, LOW);
+                    return;
+                }
             }
         }
+        // If not received, loop and send request again
     }
 
     // Start the validation process
