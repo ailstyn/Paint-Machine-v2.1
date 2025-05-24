@@ -129,6 +129,7 @@ void fill() {
 
     // Request time limit from Raspberry Pi
     Serial.write(REQUEST_TIME_LIMIT); // Send request
+    delay(200);
 
     unsigned long timeLimit = 0;
     if (Serial.available() > 0) {
