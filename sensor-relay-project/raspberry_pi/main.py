@@ -49,6 +49,7 @@ CURRENT_WEIGHT = b'\x04'
 RESET_CALIBRATION = b'\x05'
 TARE_SCALE = b'\x09'  # New byte for tare command
 RELAY_DEACTIVATED = b'\xFA'
+TARGET_WEIGHT = b'\x08'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -302,7 +303,7 @@ def poll_hardware(app, root):
                 message_type = arduino.read(1)
                 if message_type == REQUEST_TARGET_WEIGHT:
                     print("Arduino requested target weight.")
-                    arduino.write(REQUEST_TARGET_WEIGHT)
+                    arduino.write(TARGET_WEIGHT)
                     arduino.write(f"{target_weight}\n".encode('utf-8'))
                     print(f"Sent target weight to Arduino: {target_weight}")
                 elif message_type == REQUEST_CALIBRATION:
