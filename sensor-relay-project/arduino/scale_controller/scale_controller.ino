@@ -32,6 +32,9 @@ void setup() {
     digitalWrite(LED_PIN, LOW);
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+    delay(1000);
+    scale.set_scale(scaleCalibration); // Set the initial calibration value
+    scale.tare(); // Tare the scale
 
     // Wait for "PI READY" message
     while (true) {
@@ -75,26 +78,26 @@ void loop() {
     }
 
     // Check for incoming serial messages
-    if (Serial.available() > 0) {
-        byte messageType = Serial.read(); // Read the message type
+    // if (Serial.available() > 0) {
+    //    byte messageType = Serial.read(); // Read the message type
 
         // Handle tare command
-        if (messageType == TARE_SCALE) {
-            Serial.println("Taring scale...");
-            scale.tare();  // Tare the scale
-            Serial.println("Scale tared.");
-        }
+        // if (messageType == TARE_SCALE) {
+        //    Serial.println("Taring scale...");
+        //    scale.tare();  // Tare the scale
+        //    Serial.println("Scale tared.");
+        //}
 
         // Handle recalibration request
-        else if (messageType == RESET_CALIBRATION) {
-            recalibrate(); // Trigger recalibration
-        }
+        // else if (messageType == RESET_CALIBRATION) {
+        //    recalibrate(); // Trigger recalibration
+        //}
 
         // Handle connection test
-        else if (messageType == 0x08) { // Example: Use 0x08 for CONNECTION_TEST
-            Serial.println("ARDUINO_ONLINE"); // Respond to connection test
-        }
-    }
+        // else if (messageType == 0x08) { // Example: Use 0x08 for CONNECTION_TEST
+        //    Serial.println("ARDUINO_ONLINE"); // Respond to connection test
+        // }
+    
 
     // Read and send current weight to Raspberry Pi
     long weight = scale.get_units(3); // Apply calibration automatically

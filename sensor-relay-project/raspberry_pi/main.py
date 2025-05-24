@@ -88,70 +88,6 @@ def write_scale_calibrations():
     except Exception as e:
         logging.error(f"Error writing to {config_file}: {e}")
 
-
-"""def arduino_communication(data_queue):
-    # Handle communication with Arduinos
-    print("Starting Arduino communication...")
-    try:
-        while True:
-            for i, arduino in enumerate(arduinos):
-                try:
-                    # Check if the Arduino has data to read
-                    while arduino.in_waiting > 0:
-                        # Read the message type (1 byte)
-                        message_type = arduino.read(1)
-
-                        # Handle "request target weight" messages
-                        if message_type == REQUEST_TARGET_WEIGHT:
-                            if E_STOP:
-                                print(f"Arduino on {arduino.port} requested target weight, but E-Stop is active.")
-                                arduino.write(b"RELAY DEACTIVATED\n")  # Send relay deactivated message
-                            else:
-                                print(f"Arduino on {arduino.port} requested target weight.")
-                                arduino.write(REQUEST_TARGET_WEIGHT)  # Send the REQUEST_TARGET_WEIGHT message type
-                                arduino.write(f"{target_weight}\n".encode('utf-8'))  # Send the target weight as a string
-
-                        # Handle "request calibration" messages
-                        elif message_type == REQUEST_CALIBRATION:
-                            print(f"Arduino on {arduino.port} requested calibration value.")
-                            arduino.write(REQUEST_CALIBRATION)  # Send the 0x02 byte first
-                            arduino.write(f"{scale_calibrations[i]}\n".encode('utf-8'))  # Then send the value
-
-                        # Handle "request time limit" messages
-                        elif message_type == REQUEST_TIME_LIMIT:
-                            print(f"Arduino on {arduino.port} requested time limit.")
-                            arduino.write(f"{time_limit}\n".encode('utf-8'))
-
-                        # Handle "current weight" messages
-                        elif message_type == CURRENT_WEIGHT:
-                            current_weight = arduino.readline().decode('utf-8').strip()
-                            data_queue.put((i, {"current_weight": current_weight, "time_remaining": ""}))
-
-                        else:
-                            # Log unexpected or unhandled messages
-                            logging.warning(f"Unhandled message type from Arduino on {arduino.port}: {message_type}")
-
-                except serial.SerialException:
-                    # If the Arduino is disconnected, send "SCALE DISCONNECTED"
-                    data_queue.put((i, {"current_weight": "SCALE DISCONNECTED",
-                                        "time_remaining": "SCALE DISCONNECTED"}))
-                except Exception as e:
-                    logging.error(f"Unexpected error with Arduino on {arduino.port}: {e}")
-
-            time.sleep(0.1)  # Small delay to avoid overwhelming the CPU
-
-    except KeyboardInterrupt:
-        print("Exiting program.")
-    except Exception as e:
-        logging.error(f"Unexpected error in main loop: {e}")
-    finally:
-        for arduino in arduinos:
-            try:
-                arduino.close()
-            except serial.SerialException as e:
-                logging.error(f"Error closing connection to Arduino on {arduino.port}: {e}")
-"""
-
 def calibrate_scale(arduino_id, data_queue):
     # Initiate the scale recalibration process for the specified Arduino.
 
@@ -379,7 +315,6 @@ def poll_hardware(app, root):
                     print(f"Sent time limit to Arduino: {time_limit}")
                 elif message_type == CURRENT_WEIGHT:
                     current_weight = arduino.readline().decode('utf-8').strip()
-                    print(f"Raw weight from Arduino: '{current_weight}'")  # Debug print
                     app.update_data(0, {
                         "current_weight": current_weight,
                         "target_weight": target_weight,
