@@ -13,14 +13,34 @@ void setup() {
   Serial.begin(9600);
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
   scale.set_scale(scaleCalibration);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   delay(3000); // Allow time for the scale to stabilize
 
   Serial.println("Taring scale...");
   scale.tare();
-  Serial.println("waiting for button");
+  Serial.println("Place weight on scale and press button to verify scale calibration");
 
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
+  // Wait for button press (active LOW)
+  while (digitalRead(BUTTON_PIN) != LOW) {
+    delay(10);
+  }
+  // Debounce: wait for button release
+  while (digitalRead(BUTTON_PIN) == LOW) {
+    delay(10);
+  }
+
+  // Run calibration test
+  Serial.println("Testing calibration value...");
+  for (int i = 0; i < 10; i++) {
+    float reading = scale.get_units(3);
+    Serial.print(reading, 3);
+    Serial.print(i + 1);
+    Serial.print(": ");
+  }
+
+  Serial.println("Test complete. Press button to begin benchmark.")
+
   // Wait for button press (active LOW)
   while (digitalRead(BUTTON_PIN) != LOW) {
     delay(10);
