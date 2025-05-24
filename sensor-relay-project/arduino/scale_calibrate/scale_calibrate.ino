@@ -32,31 +32,21 @@ void setup() {
   scale.set_scale();
   scale.tare();
 
-  Serial.println("Taking 10 readings from empty scale...");
-  long reading = scale.get_units(10);
-  Serial.print("Empty scale reading: ");
-  Serial.println(reading);
-
   Serial.println("Place a known weight on the scale.");
   Serial.println("Enter the weight in grams (e.g., 500), then press Enter:");
   while (!Serial.available());
   String input = Serial.readStringUntil('\n');
-  float known_weight = input.toFloat();
+  float weight = input.toFloat();
 
   Serial.println("Taking 10 readings with known weight...");
-  long known_reading = scale.get_units(10);
+  long reading = scale.get_units(10);
   Serial.print("Known weight reading: ");
-  Serial.println(known_reading);
+  Serial.println(reading);
 
-  if (known_weight > 0) {
-    float calibration_factor = (float)(known_reading - reading) / known_weight;
-    Serial.print("Suggested calibration factor: ");
-    Serial.println(calibration_factor, 6);
-    Serial.println("Use scale.set_scale(calibration_factor); in your code.");
-  } else {
-    Serial.println("Invalid weight entered.");
-  }
-}
+  float calibration_factor = (float)reading / weight;
+  Serial.print("Suggested calibration factor: ");
+  Serial.println(calibration_factor, 6);
+  Serial.println("Use scale.set_scale(calibration_factor); in your code.");
 
 void loop() {
   // Nothing to do here
