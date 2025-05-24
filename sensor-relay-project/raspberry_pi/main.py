@@ -379,9 +379,10 @@ def poll_hardware(app, root):
                     print(f"Sent time limit to Arduino: {time_limit}")
                 elif message_type == CURRENT_WEIGHT:
                     current_weight = arduino.readline().decode('utf-8').strip()
+                    print(f"Raw weight from Arduino: '{current_weight}'")  # Debug print
                     app.update_data(0, {
                         "current_weight": current_weight,
-                        "target_weight": target_weight,  # <-- Add this line
+                        "target_weight": target_weight,
                         "time_remaining": ""
                     })
                 else:
