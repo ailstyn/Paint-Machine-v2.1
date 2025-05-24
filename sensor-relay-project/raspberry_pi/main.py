@@ -312,6 +312,7 @@ def poll_hardware(app, root):
                     print(f"Sent calibration value to Arduino: {scale_calibrations[0]}")
                 elif message_type == REQUEST_TIME_LIMIT:
                     print("Arduino requested time limit.")
+                    arduino.write(REQUEST_TIME_LIMIT)
                     arduino.write(f"{time_limit}\n".encode('utf-8'))
                     print(f"Sent time limit to Arduino: {time_limit}")
                 elif message_type == CURRENT_WEIGHT:

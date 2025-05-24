@@ -78,26 +78,21 @@ void loop() {
     }
 
     // Check for incoming serial messages
-    // if (Serial.available() > 0) {
-    //    byte messageType = Serial.read(); // Read the message type
+    if (Serial.available() > 0) {
+        byte messageType = Serial.read(); // Read the message type
 
         // Handle tare command
-        // if (messageType == TARE_SCALE) {
-        //    Serial.println("Taring scale...");
-        //    scale.tare();  // Tare the scale
-        //    Serial.println("Scale tared.");
-        //}
+        if (messageType == TARE_SCALE) {
+            Serial.println("Taring scale...");
+            scale.tare();  // Tare the scale
+            Serial.println("Scale tared.");
+        }
 
         // Handle recalibration request
-        // else if (messageType == RESET_CALIBRATION) {
-        //    recalibrate(); // Trigger recalibration
-        //}
-
-        // Handle connection test
-        // else if (messageType == 0x08) { // Example: Use 0x08 for CONNECTION_TEST
-        //    Serial.println("ARDUINO_ONLINE"); // Respond to connection test
-        // }
-    
+        else if (messageType == RESET_CALIBRATION) {
+            recalibrate(); // Trigger recalibration
+        }
+    }
 
     // Read and send current weight to Raspberry Pi
     long weight = scale.get_units(3); // Apply calibration automatically
@@ -133,36 +128,27 @@ void fill() {
     }
 
     // Request time limit from Raspberry Pi
+    delay(500); // Wait for a moment before requesting time limit
+    Serial.write(REQUEST_TIME_LIMIT); // Send request
+    delay(500); // Wait for response
+
     unsigned long timeLimit = 0;
-    bool timeLimitReceived = false;
-
-    while (!timeLimitReceived) {
-        Serial.write(REQUEST_TIME_LIMIT); // Send request
-        unsigned long start = millis();
-        while (millis() - start < 500) { // Wait up to 500ms for a response
-            // Blink LED while waiting
-            digitalWrite(LED_PIN, !digitalRead(LED_PIN));
-            delay(100);
-
-            if (Serial.available() > 0) {
-                byte messageType = Serial.read();
-                if (messageType == REQUEST_TIME_LIMIT) {
-                    String receivedData = Serial.readStringUntil('\n');
-                    timeLimit = receivedData.toInt();
-                    Serial.print("Received time limit: ");
-                    Serial.println(timeLimit);
-                    timeLimitReceived = true;
-                    digitalWrite(LED_PIN, HIGH); // LED ON for next phase
-                    break;
-                } else if (messageType == RELAY_DEACTIVATED) {
-                    Serial.println("E-Stop activated. Aborting fill process.");
-                    digitalWrite(LED_PIN, LOW);
-                    return;
-                }
-            }
+    if (Serial.available() > 0) {
+        byte messageType = Serial.read();
+        if (messageType == REQUEST_TIME_LIMIT) {
+            String receivedData = Serial.readStringUntil('\n');
+            timeLimit = receivedData.toInt();
+            Serial.print("Received time limit: ");
+            Serial.println(timeLimit);
+        } else if (messageType == RELAY_DEACTIVATED) {
+            Serial.println("E-Stop activated. Aborting fill process.");
+            digitalWrite(LED_PIN, LOW);
+            return;
         }
-        // If not received, loop and send request again
-        digitalWrite(LED_PIN, LOW); // LED OFF between retries
+    } else {
+        Serial.println("No time limit received from Pi.");
+        digitalWrite(LED_PIN, LOW);
+        return;
     }
 
     // Start the validation process
