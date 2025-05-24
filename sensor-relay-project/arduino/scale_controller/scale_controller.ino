@@ -18,6 +18,7 @@
 #define CALIBRATION_COMPLETE 0x07
 #define TARE_SCALE 0x09
 #define RELAY_DEACTIVATED 0xFA
+#define VERBOSE_DEBUG 0xFE
 
 // Global variables
 HX711 scale;
@@ -67,6 +68,7 @@ void setup() {
     }
 
     // Print the received calibration value for debugging
+    Serial.write(VERBOSE_DEBUG);
     Serial.print("Calibration value received and applied: ");
     Serial.println(scaleCalibration);
 }
@@ -83,8 +85,10 @@ void loop() {
 
         // Handle tare command
         if (messageType == TARE_SCALE) {
+            Serial.write(VERBOSE_DEBUG);
             Serial.println("Taring scale...");
             scale.tare();  // Tare the scale
+            Serial.write(VERBOSE_DEBUG);
             Serial.println("Scale tared.");
         }
 
@@ -137,24 +141,27 @@ void fill() {
         if (messageType == REQUEST_TIME_LIMIT) {
             String receivedData = Serial.readStringUntil('\n');
             timeLimit = receivedData.toInt();
+            Serial.write(VERBOSE_DEBUG);
             Serial.print("Received time limit: ");
             Serial.println(timeLimit);
         } else if (messageType == RELAY_DEACTIVATED) {
+            Serial.write(VERBOSE_DEBUG);
             Serial.println("E-Stop activated. Aborting fill process.");
             digitalWrite(LED_PIN, LOW);
             return;
         }
     } else {
+        Serial.write(VERBOSE_DEBUG);
         Serial.println("No time limit received from Pi.");
         digitalWrite(LED_PIN, LOW);
         return;
     }
 
     // Start the validation process
-    Serial.print("Target Weight Received: ");
-    Serial.println(targetWeight);
-    Serial.print("Time Limit Received: ");
-    Serial.println(timeLimit);
+    Serial.write(VERBOSE_DEBUG);
+    Serial.println("Target Weight Received: " + String(targetWeight));
+    Serial.write(VERBOSE_DEBUG);
+    Serial.println("Time Limit Received: " + String(timeLimit));
 
     // Check the current weight on the scale
     long currentWeight = scale.get_units(3); // Get the current weight
@@ -172,30 +179,18 @@ void fill() {
     unsigned long startTime = millis(); // Record the start time
     digitalWrite(RELAY_PIN, LOW);      // Turn relay ON
 
+    unsigned long fillStartTime = millis();
+    unsigned long fillEndTime = fillStartTime + timeLimit;
+
     while (scale.get_units(3) < targetWeight) { // Use 5 samples for faster response
-        unsigned long currentTime = millis(); // Get the current time
-        unsigned long elapsedTime = currentTime - startTime; // Calculate elapsed time
-        timeLimit -= elapsedTime; // Subtract elapsed time from the time limit
-        startTime = currentTime;  // Update the start time for the next iteration
-
-        // Check if the time limit has been exceeded
-        if (timeLimit <= 0) {
-            Serial.println("ERROR: TIME LIMIT EXCEEDED"); // Send error message to the Raspberry Pi
+        unsigned long now = millis();
+        if (now >= fillEndTime) {
+            Serial.write(VERBOSE_DEBUG);
+            Serial.println("TIME LIMIT REACHED");
             digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
-            digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
-            return; // Exit the function
+            digitalWrite(LED_PIN, LOW);    // Turn LED OFF at end of fill
+            return;
         }
-
-        // Check for E-Stop during the filling process
-/*        if (Serial.available() > 0) {
-            byte messageType = Serial.read(); // Read the message type
-            if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
-                Serial.println("E-Stop activated during filling. Aborting process.");
-                digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
-                digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
-                return; // Abort the fill function
-            }
-                */
 
         // Read and send current weight to Raspberry Pi
         long currentWeight = scale.get_units(3);

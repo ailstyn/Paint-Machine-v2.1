@@ -50,6 +50,7 @@ RESET_CALIBRATION = b'\x05'
 TARE_SCALE = b'\x09'  # New byte for tare command
 RELAY_DEACTIVATED = b'\xFA'
 TARGET_WEIGHT = b'\x08'
+VERBOSE_DEBUG = b'\xFE'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -323,6 +324,9 @@ def poll_hardware(app, root):
                         "target_weight": target_weight,
                         "time_remaining": ""
                     })
+                elif message_type == VERBOSE_DEBUG:
+                    debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
+                    print(f"Arduino (debug): {debug_line}")
                 else:
                     # Read and print any unexpected lines from Arduino
                     possible_line = arduino.readline().decode('utf-8', errors='replace').strip()
