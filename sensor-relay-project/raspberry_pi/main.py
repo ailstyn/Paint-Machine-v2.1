@@ -324,7 +324,12 @@ def poll_hardware(app, root):
                         "time_remaining": ""
                     })
                 else:
-                    logging.warning(f"Unhandled message type: {message_type}")
+                    # Read and print any debug/error lines from Arduino
+                    possible_line = arduino.readline().decode('utf-8').strip()
+                    if "No time limit received from Pi." in possible_line:
+                        print(f"Arduino: {possible_line}")
+                    else:
+                        logging.warning(f"Unhandled message type: {message_type}, line: {possible_line}")
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
 
