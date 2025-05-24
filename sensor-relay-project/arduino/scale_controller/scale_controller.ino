@@ -140,6 +140,10 @@ void fill() {
         Serial.write(REQUEST_TIME_LIMIT); // Send request
         unsigned long start = millis();
         while (millis() - start < 500) { // Wait up to 500ms for a response
+            // Blink LED while waiting
+            digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+            delay(100);
+
             if (Serial.available() > 0) {
                 byte messageType = Serial.read();
                 if (messageType == REQUEST_TIME_LIMIT) {
@@ -148,6 +152,7 @@ void fill() {
                     Serial.print("Received time limit: ");
                     Serial.println(timeLimit);
                     timeLimitReceived = true;
+                    digitalWrite(LED_PIN, HIGH); // LED ON for next phase
                     break;
                 } else if (messageType == RELAY_DEACTIVATED) {
                     Serial.println("E-Stop activated. Aborting fill process.");
@@ -157,6 +162,7 @@ void fill() {
             }
         }
         // If not received, loop and send request again
+        digitalWrite(LED_PIN, LOW); // LED OFF between retries
     }
 
     // Start the validation process
