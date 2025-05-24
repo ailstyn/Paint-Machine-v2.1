@@ -48,6 +48,7 @@ REQUEST_TIME_LIMIT = b'\x03'
 CURRENT_WEIGHT = b'\x04'
 RESET_CALIBRATION = b'\x05'
 TARE_SCALE = b'\x09'  # New byte for tare command
+RELAY_DEACTIVATED = b'\xFA'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5

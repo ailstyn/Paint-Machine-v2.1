@@ -17,7 +17,7 @@
 #define PLACE_CALIBRATION_WEIGHT 0x06
 #define CALIBRATION_COMPLETE 0x07
 #define TARE_SCALE 0x09
-#define RELAY_DEACTIVATED 0x0A
+#define RELAY_DEACTIVATED 0xFA
 
 // Global variables
 HX711 scale;
