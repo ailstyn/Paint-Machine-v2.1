@@ -6,7 +6,7 @@
 #define BUTTON_PIN 10
 
 HX711 scale;
-float scaleCalibration = 26049.0; // Set your calibration value here
+float scaleCalibration = 427.530059; // Set your calibration value here
 const float correctWeight = 61.0; // Known correct weight in grams
 
 void setup() {
@@ -39,7 +39,7 @@ void setup() {
     Serial.print(": ");
   }
 
-  Serial.println("Test complete. Press button to begin benchmark.")
+  Serial.println("Test complete. Press button to begin benchmark.");
 
   // Wait for button press (active LOW)
   while (digitalRead(BUTTON_PIN) != LOW) {

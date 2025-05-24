@@ -21,7 +21,7 @@
 
 // Global variables
 HX711 scale;
-float scaleCalibration = 26049.0; // Default calibration value
+float scaleCalibration = 427.530059; // Default calibration value
 float calibWeight = 61.0;     // Calibration weight in grams
 
 void setup() {

@@ -16,37 +16,65 @@ void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
+  delay(3000);
 
-  Serial.println("Press the button to begin calibration...");
-  // Wait for button press (active LOW)
-  while (digitalRead(BUTTON_PIN) != LOW) {
-    delay(10);
+  float calibration_factors[3];
+
+  for (int trial = 0; trial < 3; trial++) {
+    Serial.print("\n--- Calibration Run ");
+    Serial.print(trial + 1);
+    Serial.println(" of 3 ---");
+
+    Serial.println("Press the button to begin calibration...");
+    while (digitalRead(BUTTON_PIN) != LOW) { delay(10); }
+    while (digitalRead(BUTTON_PIN) == LOW) { delay(10); }
+
+    Serial.println("Remove all weight from scale and press the button...");
+    while (digitalRead(BUTTON_PIN) != LOW) { delay(10); }
+    while (digitalRead(BUTTON_PIN) == LOW) { delay(10); }
+    Serial.println("Taking empty reading...");
+    scale.set_scale(); // Reset scale to default
+    scale.tare(); // Tare the scale
+    long reading_empty = scale.get_units(10);
+    Serial.print("Empty reading: ");
+    Serial.println(reading_empty);
+
+    Serial.println("Place known weight on scale and press the button...");
+    while (digitalRead(BUTTON_PIN) != LOW) { delay(10); }
+    while (digitalRead(BUTTON_PIN) == LOW) { delay(10); }
+    Serial.println("Enter the weight in grams (e.g., 61), then press Enter:");
+    while (!Serial.available());
+    String input = Serial.readStringUntil('\n');
+    float known_weight = input.toFloat();
+
+    Serial.println("Taking reading with known weight...");
+    long reading_with_weight = scale.get_units(10);
+    Serial.print("Reading with weight: ");
+    Serial.println(reading_with_weight);
+
+    float calibration_factor = (float)(reading_with_weight - reading_empty) / known_weight;
+    calibration_factors[trial] = calibration_factor;
+    Serial.print("Suggested calibration factor for run ");
+    Serial.print(trial + 1);
+    Serial.print(": ");
+    Serial.println(calibration_factor, 6);
+    Serial.println("Use scale.set_scale(calibration_factor); in your code.");
   }
-  // Debounce: wait for button release
-  while (digitalRead(BUTTON_PIN) == LOW) {
-    delay(10);
+
+  // Print all three calibration factors and their average
+  Serial.println("\n--- Calibration Results ---");
+  float sum = 0;
+  for (int i = 0; i < 3; i++) {
+    Serial.print("Calibration factor ");
+    Serial.print(i + 1);
+    Serial.print(": ");
+    Serial.println(calibration_factors[i], 6);
+    sum += calibration_factors[i];
   }
-
-  Serial.println("Remove all weight from scale.");
-  Serial.println("Taring...");
-  scale.set_scale();
-  scale.tare();
-
-  Serial.println("Place a known weight on the scale.");
-  Serial.println("Enter the weight in grams (e.g., 500), then press Enter:");
-  while (!Serial.available());
-  String input = Serial.readStringUntil('\n');
-  float weight = input.toFloat();
-
-  Serial.println("Taking 10 readings with known weight...");
-  long reading = scale.get_units(10);
-  Serial.print("Known weight reading: ");
-  Serial.println(reading);
-
-  float calibration_factor = (float)reading / weight;
-  Serial.print("Suggested calibration factor: ");
-  Serial.println(calibration_factor, 6);
-  Serial.println("Use scale.set_scale(calibration_factor); in your code.");
+  float avg = sum / 3.0;
+  Serial.print("Average calibration factor: ");
+  Serial.println(avg, 6);
+}
 
 void loop() {
   // Nothing to do here
