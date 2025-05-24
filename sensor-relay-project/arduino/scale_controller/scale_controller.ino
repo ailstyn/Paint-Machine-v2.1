@@ -128,9 +128,7 @@ void fill() {
     }
 
     // Request time limit from Raspberry Pi
-    delay(500); // Wait for a moment before requesting time limit
     Serial.write(REQUEST_TIME_LIMIT); // Send request
-    delay(500); // Wait for response
 
     unsigned long timeLimit = 0;
     if (Serial.available() > 0) {
@@ -188,7 +186,7 @@ void fill() {
         }
 
         // Check for E-Stop during the filling process
-        if (Serial.available() > 0) {
+/*        if (Serial.available() > 0) {
             byte messageType = Serial.read(); // Read the message type
             if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
                 Serial.println("E-Stop activated during filling. Aborting process.");
@@ -196,9 +194,12 @@ void fill() {
                 digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
             }
-        }
+                */
 
-        delay(50); // Small delay to allow the loop to run faster
+        // Read and send current weight to Raspberry Pi
+        long currentWeight = scale.get_units(3);
+        Serial.write(CURRENT_WEIGHT);
+        Serial.println(currentWeight);
     }
 
     digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
