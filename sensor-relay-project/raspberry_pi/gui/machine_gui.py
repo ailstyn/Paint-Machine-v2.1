@@ -1,11 +1,13 @@
 from tkinter import Tk, Canvas, Frame, StringVar, Label, Button
 from tkinter.ttk import Progressbar
+from PIL import Image, ImageTk
+import os
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "white", "splash": "red"},
-    {"name": "Dark Mode", "bg": "#222", "fg": "#eee", "splash": "#ff9800"},
-    {"name": "Light Mode", "bg": "#fafafa", "fg": "#222", "splash": "#1976d2"},
-    {"name": "Green Alert", "bg": "#1b5e20", "fg": "#fff", "splash": "#ffeb3b"},
+    {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61"},
+    {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020"},
+    {"name": "Green Alert", "bg": "#1B9E3A", "fg": "#FFFFFF", "splash": "#FF6F61"},
 ]
 
 class RelayControlApp:
@@ -20,6 +22,24 @@ class RelayControlApp:
         master.title("Relay Control")
         master.attributes("-fullscreen", True)
         master.configure(bg=self.bg)
+
+        # Load dumbbell image
+        dumbbell_img_path = os.path.join(os.path.dirname(__file__), "dumbell.png")
+        self.dumbbell_img = Image.open(dumbbell_img_path)
+        self.dumbbell_img = self.dumbbell_img.resize((40, 40), Image.Resampling.LANCZOS)
+        self.dumbbell_photo = ImageTk.PhotoImage(self.dumbbell_img)
+
+        # Load stopwatch image
+        stopwatch_img_path = os.path.join(os.path.dirname(__file__), "stopwatch.png")
+        self.stopwatch_img = Image.open(stopwatch_img_path)
+        self.stopwatch_img = self.stopwatch_img.resize((40, 40), Image.Resampling.LANCZOS)
+        self.stopwatch_photo = ImageTk.PhotoImage(self.stopwatch_img)
+
+        # Load color scheme image
+        color_img_path = os.path.join(os.path.dirname(__file__), "color.png")
+        self.color_img = Image.open(color_img_path)
+        self.color_img = self.color_img.resize((40, 40), Image.Resampling.LANCZOS)
+        self.color_photo = ImageTk.PhotoImage(self.color_img)
 
         # Create a container frame for horizontal layout
         self.container = Frame(master, bg=self.bg)
@@ -46,37 +66,43 @@ class RelayControlApp:
         self.time_label.pack(pady=5)
 
         # Add a column of icons on the right side
-        self.icon_canvas = Canvas(self.container, width=75, height=225, bg=self.bg, highlightthickness=0)
+        self.icon_canvas = Canvas(self.container, width=90, height=225, bg=self.bg, highlightthickness=0)
         self.icon_canvas.pack(side="left", padx=20, pady=20)
 
-        # Draw icons (small circles and a dumbbell)
         self.icons = []
-        self.icons.append(self.icon_canvas.create_oval(22.5, 22.5, 52.5, 52.5, fill=self.fg))  # First icon (circle)
+        icon_x = 52.5  # horizontal center, moved right to allow more space for the dot
+        icon_centers = [60, 120, 180]  # 3 icons, spaced 60px apart
 
-        # Dumbbell icon
-        self.dumbbell_bar = self.icon_canvas.create_rectangle(33.75, 108.75, 41.25, 116.25, fill="black")
-        self.left_inner_weight = self.icon_canvas.create_rectangle(22.5, 105, 33.75, 120, fill="gray", outline="black")
-        self.left_outer_weight = self.icon_canvas.create_rectangle(18.75, 108.75, 22.5, 116.25, fill="gray", outline="black")
-        self.right_inner_weight = self.icon_canvas.create_rectangle(41.25, 105, 52.5, 120, fill="gray", outline="black")
-        self.right_outer_weight = self.icon_canvas.create_rectangle(52.5, 108.75, 56.25, 116.25, fill="gray", outline="black")
-        self.icons.append(self.dumbbell_bar)
+        # Dumbell icons created by Vitaly Gorbachev - Flaticon https://www.flaticon.com/free-icons/dumbell
+        self.dumbbell_icon = self.icon_canvas.create_image(icon_x, icon_centers[0], image=self.dumbbell_photo)
+        self.icons.append(self.dumbbell_icon)
 
-        # Clock icon
-        self.clock_icon = self.icon_canvas.create_oval(22.5, 142.5, 52.5, 172.5, fill=self.fg)
-        self.icon_canvas.create_line(37.5, 157.5, 37.5, 146.25, width=1.5, fill="black")
-        self.icon_canvas.create_line(37.5, 157.5, 45, 157.5, width=0.75, fill="black")
+        # Clock icons created by Freepik - Flaticon https://www.flaticon.com/free-icons/clock
+        self.clock_icon = self.icon_canvas.create_image(icon_x, icon_centers[1], image=self.stopwatch_photo)
         self.icons.append(self.clock_icon)
 
-        # Add a selection box (rectangle)
-        self.selection_box = self.icon_canvas.create_rectangle(18.75, 18.75, 56.25, 56.25, outline="yellow", width=3)
-        self.selected_index = 0
+        # Color wheel icons created by Hasymi - Flaticon https://www.flaticon.com/free-icons/color-wheel
+        self.color_icon = self.icon_canvas.create_image(icon_x, icon_centers[2], image=self.color_photo)
+        self.icons.append(self.color_icon)
+
+        # Add a solid dot to the left of the selected icon
+        self.selected_index = getattr(self, "selected_index", 0)
+        dot_radius = 10  # Half the size of the icons (20px diameter)
+        dot_x = icon_x - 35  # 35px to the left of the icon center, more space for the wider canvas
+        dot_y = icon_centers[self.selected_index]
+        self.selection_dot = self.icon_canvas.create_oval(
+            dot_x - dot_radius, dot_y - dot_radius,
+            dot_x + dot_radius, dot_y + dot_radius,
+            fill=self.fg, outline=""
+        )
+
+        # Selection box (rectangle) around the selected icon
+        selected = getattr(self, "selected_index", 0)
+        self.selection_box = self.icon_canvas.create_rectangle(
+            icon_x-20, icon_centers[selected]-20, icon_x+20, icon_centers[selected]+20, outline="yellow", width=3)
 
         # Add a keybinding to exit fullscreen mode
         master.bind("<Escape>", self.exit_fullscreen)
-
-        # Add color scheme button
-        self.color_button = Button(master, text="Change Color Scheme", command=self.cycle_color_scheme, bg=self.bg, fg=self.fg)
-        self.color_button.place(relx=1.0, rely=0.0, anchor="ne")
 
         self.refresh()  # Start the refresh loop
 
@@ -85,9 +111,18 @@ class RelayControlApp:
             self.selected_index -= 1
         elif direction == "down" and self.selected_index < len(self.icons) - 1:
             self.selected_index += 1
-        x1, y1, x2, y2 = self.icon_canvas.coords(self.icons[self.selected_index])
-        padding = 3
-        self.icon_canvas.coords(self.selection_box, x1 - padding, y1 - padding, x2 + padding, y2 + padding)
+        # Move the selection dot
+        dot_radius = 5
+        icon_x = 52.5
+        dot_x = icon_x - 55
+        icon_centers = [60, 120, 180]
+        dot_y = icon_centers[self.selected_index]
+        self.icon_canvas.coords(
+            self.selection_dot,
+            dot_x - dot_radius, dot_y - dot_radius,
+            dot_x + dot_radius, dot_y + dot_radius
+        )
+        self.icon_canvas.itemconfig(self.selection_dot, fill=self.fg, outline="")
 
     def update_data(self, arduino_id, data):
         target_weight = data.get("target_weight", "N/A")
@@ -132,18 +167,44 @@ class RelayControlApp:
         self.weight_label.pack(pady=5)
         self.time_label = Label(self.scale_frame, textvariable=self.time_remaining_var, font=('Cascadia Code SemiBold', 16), bg=self.bg, fg=self.fg)
         self.time_label.pack(pady=5)
-        self.icon_canvas = Canvas(self.container, width=75, height=225, bg=self.bg, highlightthickness=0)
+        self.icon_canvas = Canvas(self.container, width=90, height=225, bg=self.bg, highlightthickness=0)
         self.icon_canvas.pack(side="left", padx=20, pady=20)
-        # Redraw icons as before (omitted for brevity)
-        self.color_button = Button(self.master, text="Change Color Scheme", command=self.cycle_color_scheme, bg=self.bg, fg=self.fg)
-        self.color_button.place(relx=1.0, rely=0.0, anchor="ne")
+
+        self.icons = []
+        icon_x = 52.5  # horizontal center, moved right to allow more space for the dot
+        icon_centers = [60, 120, 180]  # 3 icons, spaced 60px apart
+
+        # Dumbbell icon
+        self.dumbbell_icon = self.icon_canvas.create_image(icon_x, icon_centers[0], image=self.dumbbell_photo)
+        self.icons.append(self.dumbbell_icon)
+
+        # Clock icon
+        self.clock_icon = self.icon_canvas.create_image(icon_x, icon_centers[1], image=self.stopwatch_photo)
+        self.icons.append(self.clock_icon)
+
+        # Color wheel icon
+        self.color_icon = self.icon_canvas.create_image(icon_x, icon_centers[2], image=self.color_photo)
+        self.icons.append(self.color_icon)
+
+        # Add a small dot to the left of the selected icon
+        self.selected_index = getattr(self, "selected_index", 0)
+        dot_radius = 5
+        dot_x = icon_x - 45
+        dot_y = icon_centers[self.selected_index]
+        self.selection_dot = self.icon_canvas.create_oval(
+            dot_x - dot_radius, dot_y - dot_radius,
+            dot_x + dot_radius, dot_y + dot_radius,
+            fill=self.fg, outline=""
+        )
 
     def display_e_stop(self):
+        if getattr(self, "e_stop_active", False):
+            # Already displaying E-Stop, do nothing
+            return
+        self.e_stop_active = True
         for widget in self.master.winfo_children():
             widget.destroy()
         Label(self.master, text="ESTOP ACTIVATED", font=('Cascadia Code SemiBold', 48), bg=self.bg, fg=self.splash).pack(expand=True, fill="both")
-        self.color_button = Button(self.master, text="Change Color Scheme", command=self.cycle_color_scheme, bg=self.bg, fg=self.fg)
-        self.color_button.place(relx=1.0, rely=0.0, anchor="ne")
 
     def refresh(self):
         # If you want to update widget colors dynamically, do it here
@@ -185,11 +246,17 @@ if __name__ == "__main__":
             # Schedule the next update
             root.after(33, simulate_progress)  # Update every 33ms (30 frames per second)
 
+    # Function to cycle color schemes every 3 seconds
+    def auto_cycle_color_scheme():
+        app.cycle_color_scheme()
+        root.after(3000, auto_cycle_color_scheme)
+
     # Initialize simulation variables
     app.progress = 0
     app.time_remaining = 100
     app.current_weight = 0
 
     simulate_progress()
+    auto_cycle_color_scheme()
 
     root.mainloop()  # Start the Tkinter event loop to display the GUI.

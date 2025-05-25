@@ -74,34 +74,36 @@ void setup() {
 }
 
 void loop() {
-    // Check for button press
-    if (digitalRead(BUTTON_PIN) == LOW) { // Button pressed (LOW due to pull-up)
+    
+    if Serial.available
+
+    if (digitalRead(BUTTON_PIN) == LOW) {
         fill();
     }
 
     // Check for incoming serial messages
     if (Serial.available() > 0) {
-        byte messageType = Serial.read(); // Read the message type
+        byte messageType = Serial.read();
 
         // Handle tare command
         if (messageType == TARE_SCALE) {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Taring scale...");
-            scale.tare();  // Tare the scale
+            scale.tare();
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Scale tared.");
         }
 
         // Handle recalibration request
         else if (messageType == RESET_CALIBRATION) {
-            recalibrate(); // Trigger recalibration
+            recalibrate();
         }
     }
 
     // Read and send current weight to Raspberry Pi
-    long weight = scale.get_units(3); // Apply calibration automatically
-    Serial.write(CURRENT_WEIGHT); // Send the message type
-    Serial.println(weight);       // Send the weight as a string
+    long weight = scale.get_units(3);
+    Serial.write(CURRENT_WEIGHT);
+    Serial.println(weight);
 }
 
 // Function to handle the fill process

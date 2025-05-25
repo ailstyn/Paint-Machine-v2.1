@@ -167,19 +167,20 @@ def setup_gpio():
 
 
 def handle_button_presses(app):
-    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:  # UP button pressed
-        print("Up button pressed")
-        app.move_selection("up")  # Move the selection up
-        time.sleep(0.2)  # Debounce delay
-
-    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:  # DOWN button pressed
-        print("Down button pressed")
-        app.move_selection("down")  # Move the selection down
-        time.sleep(0.2)  # Debounce delay
-
-    if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:  # SELECT button pressed
-        print("Select button pressed")
-        set_target_weight(app)  # Call the set_target_weight function
+    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+        app.move_selection("up")
+        time.sleep(0.2)
+    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+        app.move_selection("down")
+        time.sleep(0.2)
+    if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+        if app.selected_index == 0:
+            set_target_weight(app)
+        elif app.selected_index == 1:
+            set_time_limit(app)
+        elif app.selected_index == 2:
+            app.cycle_color_scheme()
+        time.sleep(0.2)
 
 def startup(app):
     # Display the "CLEAR SCALES" message
@@ -297,7 +298,7 @@ def poll_hardware(app, root):
                 if message_type == CURRENT_WEIGHT:
                     pass
                 else:
-                    arduino.write(b"RELAY DEACTIVATED\n")
+                    arduino.write(RELAY_DEACTIVATED)
         else:
             handle_button_presses(app)
             while arduino.in_waiting > 0:
