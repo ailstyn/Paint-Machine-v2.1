@@ -211,19 +211,13 @@ def startup(app):
 def set_target_weight(app):
     """
     Allow the user to manually change the target weight using the UP, DOWN, and SELECT buttons.
-    If E_STOP is active, send RELAY_DEACTIVATED and exit.
+    If E_STOP is active, exit and return a status.
     """
     global target_weight
 
     if E_STOP:
         print("E-Stop is active. Cannot set target weight.")
-        for i, arduino in enumerate(arduinos):
-            try:
-                arduino.write(b"RELAY DEACTIVATED\n")  # Send the relay deactivated message
-                print(f"Sent RELAY DEACTIVATED to Arduino {i} on port {arduino.port}")
-            except serial.SerialException as e:
-                logging.error(f"Error sending RELAY DEACTIVATED to Arduino {i} on port {arduino.port}: {e}")
-        return
+        return "relay_deactivated"
 
     print(f"Current target weight: {target_weight}g")
     app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
@@ -231,13 +225,13 @@ def set_target_weight(app):
     while True:
         # Check for button presses
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:  # UP button pressed
-            target_weight += 10  # Increase target weight by 10g
+            target_weight += 1  # Increase target weight by 10g
             print(f"Target weight increased to: {target_weight}g")
             app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
             time.sleep(0.2)  # Debounce delay
 
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:  # DOWN button pressed
-            target_weight = max(0, target_weight - 10)  # Decrease target weight by 10g, minimum 0g
+            target_weight = max(0, target_weight - 1)  # Decrease target weight by 10g, minimum 0g
             print(f"Target weight decreased to: {target_weight}g")
             app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
             time.sleep(0.2)  # Debounce delay
@@ -266,18 +260,18 @@ def set_time_limit(app):
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:  # UP button pressed
             time_limit += 100  # Increase time limit by 100ms
             print(f"Time limit increased to: {time_limit}ms")
-            app.display_message("SET TIME LIMIT", f"{time_limit}ms")
+            app.display_message("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
             time.sleep(0.2)  # Debounce delay
 
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:  # DOWN button pressed
             time_limit = max(0, time_limit - 100)  # Decrease time limit by 100ms, minimum 0ms
             print(f"Time limit decreased to: {time_limit}ms")
-            app.display_message("SET TIME LIMIT", f"{time_limit}ms")
+            app.display_message("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
             time.sleep(0.2)  # Debounce delay
 
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:  # SELECT button pressed
             print(f"Time limit set to: {time_limit}ms")
-            app.display_message("TIME LIMIT SET", f"{time_limit}ms")
+            app.display_message("TIME LIMIT SET", f"{time_limit/1000:.2f}s")
             time.sleep(2)  # Display confirmation message for 2 seconds
             app.reload_main_screen()  # Return to the main screen
             break

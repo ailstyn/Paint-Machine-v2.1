@@ -1,4 +1,4 @@
-from tkinter import Tk, Canvas, Frame, StringVar, Label, Button
+from tkinter import Tk, Canvas, Frame, StringVar, Label, Button, Toplevel
 from tkinter.ttk import Progressbar
 from PIL import Image, ImageTk
 import os
@@ -140,7 +140,12 @@ class RelayControlApp:
             self.weight_fraction_var.set("N/A / N/A")
             self.set_progress(0)
         if "time_remaining" in data:
-            self.time_remaining_var.set(f"{data['time_remaining']}")
+            # If time_remaining is in ms, display as seconds with two decimals
+            try:
+                ms = float(data["time_remaining"])
+                self.time_remaining_var.set(f"{ms/1000:.2f}s")
+            except (ValueError, TypeError):
+                self.time_remaining_var.set(data["time_remaining"])
         else:
             self.time_remaining_var.set("N/A")
 
@@ -221,6 +226,64 @@ class RelayControlApp:
         self.splash = scheme["splash"]
         self.master.configure(bg=self.bg)
 
+    def show_overlay(self, main_message, sub_message=""):
+        # Destroy any existing overlay
+        if hasattr(self, "overlay") and self.overlay.winfo_exists():
+            self.overlay.destroy()
+
+        self.master.update_idletasks()  # Ensure geometry info is up to date
+
+        self.overlay = Toplevel(self.master)
+        self.overlay.transient(self.master)
+        self.overlay.grab_set()  # Optional: make overlay modal
+        self.overlay.attributes("-topmost", True)
+        self.overlay.overrideredirect(True)  # Remove window decorations
+
+        # Choose background color
+        if main_message.strip().upper() == "ESTOP ACTIVATED":
+            bg_color = self.splash
+        else:
+            bg_color = self.bg
+
+        # Center overlay over the main window
+        w = 400
+        h = 200
+        x = self.master.winfo_x() + (self.master.winfo_width() // 2) - (w // 2)
+        y = self.master.winfo_y() + (self.master.winfo_height() // 2) - (h // 2)
+        self.overlay.geometry(f"{w}x{h}+{x}+{y}")
+        self.overlay.lift()  # Bring overlay to the front
+
+        # Add a frame for border effect
+        border_frame = Frame(
+            self.overlay,
+            bg=bg_color,
+            highlightbackground=self.fg,
+            highlightcolor=self.fg,
+            highlightthickness=4,
+            bd=0
+        )
+        border_frame.pack(expand=True, fill="both")
+
+        Label(
+            border_frame,
+            text=main_message,
+            font=('Cascadia Code SemiBold', 32),
+            bg=bg_color,
+            fg=self.fg
+        ).pack(expand=True, fill="both")
+        if sub_message:
+            Label(
+                border_frame,
+                text=sub_message,
+                font=('Cascadia Code SemiBold', 20),
+                bg=bg_color,
+                fg=self.fg
+            ).pack(expand=True, fill="both")
+
+    def close_overlay(self):
+        if hasattr(self, "overlay") and self.overlay.winfo_exists():
+            self.overlay.destroy()
+
 # This block runs the GUI application if the script is executed directly.
 if __name__ == "__main__":
     root = Tk()  # Create the root Tkinter window.
@@ -242,6 +305,11 @@ if __name__ == "__main__":
             # Calculate and update progress bar
             progress = (current_weight / target_weight) * 100 if target_weight > 0 else 0
             app.set_progress(progress)
+
+            # Show E-Stop overlay at 50% progress for demo
+            if progress >= 50 and not hasattr(app, "_e_stop_overlay_shown"):
+                app.show_overlay("ESTOP ACTIVATED")
+                app._e_stop_overlay_shown = True
 
             # Schedule the next update
             root.after(33, simulate_progress)  # Update every 33ms (30 frames per second)
