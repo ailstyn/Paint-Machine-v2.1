@@ -244,10 +244,6 @@ def set_target_weight(app):
             break
 
 def set_time_limit(app):
-    """
-    Allow the user to manually change the time limit using the UP, DOWN, and SELECT buttons.
-    If E_STOP is active, send RELAY_DEACTIVATED and exit.
-    """
     global time_limit
 
     if E_STOP:
