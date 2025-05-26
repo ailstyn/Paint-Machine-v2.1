@@ -41,6 +41,13 @@ class RelayControlApp:
         self.color_img = self.color_img.resize((40, 40), Image.Resampling.LANCZOS)
         self.color_photo = ImageTk.PhotoImage(self.color_img)
 
+        # Keep references to loaded images
+        self.loaded_images = {
+            "dumbbell": self.dumbbell_photo,
+            "stopwatch": self.stopwatch_photo,
+            "color": self.color_photo,
+        }
+
         # Create a container frame for horizontal layout
         self.container = Frame(master, bg=self.bg)
         self.container.pack(fill="both", expand=True, padx=10, pady=10)
@@ -180,15 +187,15 @@ class RelayControlApp:
         icon_centers = [60, 120, 180]  # 3 icons, spaced 60px apart
 
         # Dumbbell icon
-        self.dumbbell_icon = self.icon_canvas.create_image(icon_x, icon_centers[0], image=self.dumbbell_photo)
+        self.dumbbell_icon = self.icon_canvas.create_image(icon_x, icon_centers[0], image=self.loaded_images["dumbbell"])
         self.icons.append(self.dumbbell_icon)
 
         # Clock icon
-        self.clock_icon = self.icon_canvas.create_image(icon_x, icon_centers[1], image=self.stopwatch_photo)
+        self.clock_icon = self.icon_canvas.create_image(icon_x, icon_centers[1], image=self.loaded_images["stopwatch"])
         self.icons.append(self.clock_icon)
 
         # Color wheel icon
-        self.color_icon = self.icon_canvas.create_image(icon_x, icon_centers[2], image=self.color_photo)
+        self.color_icon = self.icon_canvas.create_image(icon_x, icon_centers[2], image=self.loaded_images["color"])
         self.icons.append(self.color_icon)
 
         # Add a small dot to the left of the selected icon
@@ -201,6 +208,9 @@ class RelayControlApp:
             dot_x + dot_radius, dot_y + dot_radius,
             fill=self.fg, outline=""
         )
+
+        # Add a keybinding to exit fullscreen mode
+        self.master.bind("<Escape>", self.exit_fullscreen)
 
     def display_e_stop(self):
         if getattr(self, "e_stop_active", False):

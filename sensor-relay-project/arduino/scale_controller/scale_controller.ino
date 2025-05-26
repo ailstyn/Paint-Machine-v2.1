@@ -74,10 +74,7 @@ void setup() {
 }
 
 void loop() {
-    
-    if Serial.available
-
-    if (digitalRead(BUTTON_PIN) == LOW) {
+        if (digitalRead(BUTTON_PIN) == LOW) {
         fill();
     }
 
