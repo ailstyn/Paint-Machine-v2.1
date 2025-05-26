@@ -223,18 +223,25 @@ def set_target_weight(app):
             target_weight += 1
             print(f"Target weight increased to: {target_weight}g")
             app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
-            time.sleep(0.2)
+            # Wait for button release
+            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.05)
 
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
             target_weight = max(0, target_weight - 1)
             print(f"Target weight decreased to: {target_weight}g")
             app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
-            time.sleep(0.2)
+            # Wait for button release
+            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.05)
 
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             print(f"Target weight set to: {target_weight}g")
             app.show_overlay("TARGET WEIGHT SET", f"{target_weight}g")
-            time.sleep(2)
+            # Wait for button release
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.05)
+            time.sleep(0.2)  # Extra debounce
             app.close_overlay()
             app.reload_main_screen()
             break
@@ -247,25 +254,35 @@ def set_time_limit(app):
         logging.error('E-Stop is active. Cannot set time limit.')
         return
 
+    print(f"Current time limit: {time_limit}ms")
+    app.show_overlay("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
+
     while True:
-        # Check for button presses
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:  # UP button pressed
             time_limit += 100  # Increase time limit by 100ms
             print(f"Time limit increased to: {time_limit}ms")
-            app.display_message("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
-            time.sleep(0.2)  # Debounce delay
+            app.show_overlay("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
+            # Wait for button release
+            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.05)
 
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:  # DOWN button pressed
             time_limit = max(0, time_limit - 100)  # Decrease time limit by 100ms, minimum 0ms
             print(f"Time limit decreased to: {time_limit}ms")
-            app.display_message("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
-            time.sleep(0.2)  # Debounce delay
+            app.show_overlay("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
+            # Wait for button release
+            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.05)
 
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:  # SELECT button pressed
             print(f"Time limit set to: {time_limit}ms")
-            app.display_message("TIME LIMIT SET", f"{time_limit/1000:.2f}s")
-            time.sleep(2)  # Display confirmation message for 2 seconds
-            app.reload_main_screen()  # Return to the main screen
+            app.show_overlay("TIME LIMIT SET", f"{time_limit/1000:.2f}s")
+            # Wait for button release
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.05)
+            time.sleep(0.2)  # Extra debounce
+            app.close_overlay()
+            app.reload_main_screen()
             break
 
 def poll_hardware(app, root):
