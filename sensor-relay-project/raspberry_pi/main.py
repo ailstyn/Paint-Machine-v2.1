@@ -372,7 +372,7 @@ def main():
         poll_timer.timeout.connect(lambda: poll_hardware(app))
         poll_timer.start(100)
 
-        sys.exit(app.exec())
+        sys.exit(app_qt.exec())
     except KeyboardInterrupt:
         print("Program interrupted by user.")
     except Exception as e:
