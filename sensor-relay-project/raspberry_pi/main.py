@@ -288,7 +288,7 @@ def set_time_limit(app):
             app.reload_main_screen()
             break
 
-def poll_hardware(app, root):
+def poll_hardware(app):
     global E_STOP
     try:
         arduino = arduinos[0]  # Only use the first Arduino for now
