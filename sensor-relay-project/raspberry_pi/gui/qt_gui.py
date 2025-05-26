@@ -90,7 +90,11 @@ class RelayControlApp(QWidget):
             icon_path = os.path.join(os.path.dirname(__file__), filename)
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
-                pixmap = pixmap.scaled(40, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                pixmap = pixmap.scaled(
+                    40, 40,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
                 icon_label = QLabel()
                 icon_label.setPixmap(pixmap)
             else:
