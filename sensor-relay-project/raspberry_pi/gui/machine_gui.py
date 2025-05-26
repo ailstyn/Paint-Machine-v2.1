@@ -17,7 +17,10 @@ class RelayControlApp:
         self.weight_fraction_var = StringVar()
         self.time_remaining_var = StringVar()
         self.color_scheme_index = 0
-        self.set_color_scheme(COLOR_SCHEMES[self.color_scheme_index])
+        scheme = COLOR_SCHEMES[self.color_scheme_index]
+        self.bg = scheme["bg"]
+        self.fg = scheme["fg"]
+        self.splash = scheme["splash"]
 
         master.title("Relay Control")
         master.attributes("-fullscreen", True)
@@ -206,6 +209,8 @@ class RelayControlApp:
 
         # Add a keybinding to exit fullscreen mode
         self.master.bind("<Escape>", self.exit_fullscreen)
+
+        self.apply_color_scheme
 
     def display_e_stop(self):
         if getattr(self, "e_stop_active", False):
