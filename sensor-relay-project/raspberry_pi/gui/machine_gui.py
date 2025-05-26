@@ -94,19 +94,14 @@ class RelayControlApp:
 
         # Add a solid dot to the left of the selected icon
         self.selected_index = getattr(self, "selected_index", 0)
-        dot_radius = 10  # Half the size of the icons (20px diameter)
-        dot_x = icon_x - 35  # 35px to the left of the icon center, more space for the wider canvas
+        dot_radius = 10
+        dot_x = icon_x - 35
         dot_y = icon_centers[self.selected_index]
         self.selection_dot = self.icon_canvas.create_oval(
             dot_x - dot_radius, dot_y - dot_radius,
             dot_x + dot_radius, dot_y + dot_radius,
             fill=self.fg, outline=""
         )
-
-        # Selection box (rectangle) around the selected icon
-        selected = getattr(self, "selected_index", 0)
-        self.selection_box = self.icon_canvas.create_rectangle(
-            icon_x-20, icon_centers[selected]-20, icon_x+20, icon_centers[selected]+20, outline="yellow", width=3)
 
         # Add a keybinding to exit fullscreen mode
         master.bind("<Escape>", self.exit_fullscreen)
@@ -119,9 +114,9 @@ class RelayControlApp:
         elif direction == "down" and self.selected_index < len(self.icons) - 1:
             self.selected_index += 1
         # Move the selection dot
-        dot_radius = 5
+        dot_radius = 10
         icon_x = 52.5
-        dot_x = icon_x - 55
+        dot_x = icon_x - 35
         icon_centers = [60, 120, 180]
         dot_y = icon_centers[self.selected_index]
         self.icon_canvas.coords(
@@ -200,8 +195,8 @@ class RelayControlApp:
 
         # Add a small dot to the left of the selected icon
         self.selected_index = getattr(self, "selected_index", 0)
-        dot_radius = 5
-        dot_x = icon_x - 45
+        dot_radius = 10
+        dot_x = icon_x - 35
         dot_y = icon_centers[self.selected_index]
         self.selection_dot = self.icon_canvas.create_oval(
             dot_x - dot_radius, dot_y - dot_radius,
@@ -230,11 +225,38 @@ class RelayControlApp:
         self.set_color_scheme(COLOR_SCHEMES[self.color_scheme_index])
         self.reload_main_screen()
 
+    def apply_color_scheme(self):
+        # Update main window and container backgrounds
+        self.master.configure(bg=self.bg)
+        self.container.configure(bg=self.bg)
+        self.scale_frame.configure(bg=self.bg)
+        self.icon_canvas.configure(bg=self.bg)
+
+        # Update label foreground/background colors
+        self.scale_label.configure(bg=self.bg, fg=self.fg)
+        self.weight_label.configure(bg=self.bg, fg=self.fg)
+        self.time_label.configure(bg=self.bg, fg=self.fg)
+
+        # Update progress bar style if needed (requires ttk.Style)
+        # from tkinter.ttk import Style
+        # style = Style()
+        # style.configure("TProgressbar", background=self.splash)
+
+        # Update selection dot and box
+        icon_x = 52.5
+        icon_centers = [60, 120, 180]
+        dot_radius = 10
+        dot_x = icon_x - 35
+        dot_y = icon_centers[self.selected_index]
+        self.icon_canvas.itemconfig(self.selection_dot, fill=self.fg)
+
+        # If you have other widgets that need color updates, add them here
+
     def set_color_scheme(self, scheme):
         self.bg = scheme["bg"]
         self.fg = scheme["fg"]
         self.splash = scheme["splash"]
-        self.master.configure(bg=self.bg)
+        self.apply_color_scheme()  # Apply the new colors
 
     def show_overlay(self, main_message, sub_message=""):
         # Destroy any existing overlay
