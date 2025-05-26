@@ -1,9 +1,9 @@
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QProgressBar, QFrame, QDialog, QStackedLayout, QGraphicsDropShadowEffect, QSizePolicy
 )
-from PyQt5.QtGui import QPixmap, QFont, QColor
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
+from PyQt6.QtGui import QPixmap, QFont, QColor
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 import os
 import random
 
@@ -40,7 +40,7 @@ class RelayControlApp(QWidget):
 
         # Top label
         self.scale_label = QLabel("SCALE 1")
-        self.scale_label.setAlignment(Qt.AlignCenter)
+        self.scale_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.scale_label.setFont(QFont("Cascadia Code SemiBold", 32))
         self.scale_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
         self.main_layout.addWidget(self.scale_label)
@@ -106,7 +106,7 @@ class RelayControlApp(QWidget):
         self.progress_bar_column = QVBoxLayout()
         self.progress_bar_column.addStretch(1)
         self.progress_bar = QProgressBar()
-        self.progress_bar.setOrientation(Qt.Vertical)
+        self.progress_bar.setOrientation(Qt.Orientation.Vertical)
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(50)
@@ -179,13 +179,13 @@ class RelayControlApp(QWidget):
     # self.handle_select()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Up:
+        if event.key() == Qt.Key.Key_Up:
             if self.selected_index > 0:
                 self.update_selection_dot(self.selected_index - 1)
-        elif event.key() == Qt.Key_Down:
+        elif event.key() == Qt.Key.Key_Down:
             if self.selected_index < len(self.dot_widgets) - 1:
                 self.update_selection_dot(self.selected_index + 1)
-        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.handle_select()
         else:
             super().keyPressEvent(event)
@@ -215,9 +215,9 @@ class RelayControlApp(QWidget):
 class OverlayDialog(QDialog):
     def __init__(self, main_message, sub_message, color_scheme, parent=None):
         super().__init__(parent)
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setStyleSheet("background: transparent;")
 
         # Outer border (double border effect)

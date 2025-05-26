@@ -5,7 +5,8 @@ import logging
 from tkinter import Tk, Label, StringVar
 import RPi.GPIO as GPIO
 from gui.qt_gui import RelayControlApp
-from PyQt5.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QTimer
 import sys
 
 # Configure logging
@@ -367,12 +368,11 @@ def main():
                 logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
         # Start polling loop using QTimer instead of root.after
-        from PyQt5.QtCore import QTimer
         poll_timer = QTimer()
         poll_timer.timeout.connect(lambda: poll_hardware(app))
         poll_timer.start(100)
 
-        sys.exit(app_qt.exec_())
+        sys.exit(app.exec())
     except KeyboardInterrupt:
         print("Program interrupted by user.")
     except Exception as e:
