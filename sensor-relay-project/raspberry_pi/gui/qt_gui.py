@@ -116,7 +116,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setValue(50)
         self.progress_bar.setFixedHeight(300)
         self.progress_bar.setStyleSheet(f"QProgressBar {{background: {self.bg};}}")
-        self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignHCenter)
+        self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.progress_bar_column.addStretch(1)
 
         # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
