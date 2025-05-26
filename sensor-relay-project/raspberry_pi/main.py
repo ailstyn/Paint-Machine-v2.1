@@ -170,19 +170,14 @@ def setup_gpio():
 
 
 def handle_button_presses(app):
-    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-        app.move_selection("up")
+    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW and app.selected_index > 0:
+        app.update_selection_dot(app.selected_index - 1)
         time.sleep(0.2)
-    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-        app.move_selection("down")
+    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW and app.selected_index < len(app.dot_widgets) - 1:
+        app.update_selection_dot(app.selected_index + 1)
         time.sleep(0.2)
     if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-        if app.selected_index == 0:
-            set_target_weight(app)
-        elif app.selected_index == 1:
-            set_time_limit(app)
-        elif app.selected_index == 2:
-            app.cycle_color_scheme()
+        app.handle_select()
         time.sleep(0.2)
 
 def startup(app):

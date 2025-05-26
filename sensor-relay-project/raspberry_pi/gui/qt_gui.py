@@ -108,16 +108,15 @@ class RelayControlApp(QWidget):
 
         # --- Progress Bar Column (leftmost) ---
         self.progress_bar_column = QVBoxLayout()
-        self.progress_bar_column.addStretch(1)
+        self.progress_bar_column.addStretch(1)  # Top stretch
         self.progress_bar = QProgressBar()
         self.progress_bar.setOrientation(Qt.Orientation.Vertical)
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(50)
-        self.progress_bar.setFixedHeight(300)
         self.progress_bar.setStyleSheet(f"QProgressBar {{background: {self.bg};}}")
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.progress_bar_column.addStretch(1)
+        self.progress_bar_column.addStretch(1)  # Bottom stretch
 
         # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
         self.center_frame = QFrame()
@@ -191,14 +190,14 @@ class RelayControlApp(QWidget):
                 self.update_selection_dot(self.selected_index + 1)
         elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.handle_select()
+        elif event.key() == Qt.Key.Key_Escape:
+            self.showNormal()  # Exit fullscreen and go to windowed mode
         else:
             super().keyPressEvent(event)
 
     def resizeEvent(self, event):
-        # Only set height if progress_bar exists
         if hasattr(self, "progress_bar"):
-            new_height = int(self.height() * 0.75)
-            self.progress_bar.setFixedHeight(new_height)
+            self.adjust_progress_bar_height()
         super().resizeEvent(event)
 
     def show_overlay(self, main_message, sub_message=""):
@@ -322,4 +321,4 @@ if __name__ == "__main__":
     overlay_timer.timeout.connect(show_estop_overlay)
     overlay_timer.start(5000)
 
-    sys.exit(app.exec())  # <-- Use app.exec(), not window.exec()
+    sys.exit(app.exec())
