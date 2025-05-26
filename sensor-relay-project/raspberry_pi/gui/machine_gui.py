@@ -97,8 +97,8 @@ class RelayControlApp:
 
         # Add a solid dot to the left of the selected icon
         self.selected_index = getattr(self, "selected_index", 0)
-        dot_radius = 10
-        dot_x = icon_x - 35
+        dot_radius = 5
+        dot_x = icon_x - 45
         dot_y = icon_centers[self.selected_index]
         self.selection_dot = self.icon_canvas.create_oval(
             dot_x - dot_radius, dot_y - dot_radius,
@@ -117,9 +117,9 @@ class RelayControlApp:
         elif direction == "down" and self.selected_index < len(self.icons) - 1:
             self.selected_index += 1
         # Move the selection dot
-        dot_radius = 10
+        dot_radius = 5
         icon_x = 52.5
-        dot_x = icon_x - 35
+        dot_x = icon_x - 45
         icon_centers = [60, 120, 180]
         dot_y = icon_centers[self.selected_index]
         self.icon_canvas.coords(
@@ -198,8 +198,8 @@ class RelayControlApp:
 
         # Add a small dot to the left of the selected icon
         self.selected_index = getattr(self, "selected_index", 0)
-        dot_radius = 10
-        dot_x = icon_x - 35
+        dot_radius = 5
+        dot_x = icon_x - 45
         dot_y = icon_centers[self.selected_index]
         self.selection_dot = self.icon_canvas.create_oval(
             dot_x - dot_radius, dot_y - dot_radius,
@@ -228,7 +228,7 @@ class RelayControlApp:
     def cycle_color_scheme(self):
         self.color_scheme_index = (self.color_scheme_index + 1) % len(COLOR_SCHEMES)
         self.set_color_scheme(COLOR_SCHEMES[self.color_scheme_index])
-        self.reload_main_screen()
+        # self.reload_main_screen()
 
     def apply_color_scheme(self):
         # Update main window and container backgrounds
@@ -250,8 +250,8 @@ class RelayControlApp:
         # Update selection dot and box
         icon_x = 52.5
         icon_centers = [60, 120, 180]
-        dot_radius = 10
-        dot_x = icon_x - 35
+        dot_radius = 5
+        dot_x = icon_x - 45
         dot_y = icon_centers[self.selected_index]
         self.icon_canvas.itemconfig(self.selection_dot, fill=self.fg)
 
@@ -268,58 +268,26 @@ class RelayControlApp:
         if hasattr(self, "overlay") and self.overlay.winfo_exists():
             self.overlay.destroy()
 
-        self.master.update_idletasks()  # Ensure geometry info is up to date
-
         self.overlay = Toplevel(self.master)
         self.overlay.transient(self.master)
-        self.overlay.grab_set()  # Optional: make overlay modal
+        self.overlay.grab_set()
         self.overlay.attributes("-topmost", True)
-        self.overlay.overrideredirect(True)  # Remove window decorations
+        self.overlay.overrideredirect(True)
 
-        # Choose background color
-        if main_message.strip().upper() == "ESTOP ACTIVATED":
-            bg_color = self.splash
-        else:
-            bg_color = self.bg
-
-        # Set window size based on message
-        if main_message.strip().upper() == "SET TARGET WEIGHT":
-            w, h = 520, 200  # Wider for this message
-        else:
-            w, h = 400, 200
-
-        # Center overlay over the main window
+        w, h = 400, 200
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - (w // 2)
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - (h // 2)
         self.overlay.geometry(f"{w}x{h}+{x}+{y}")
-        self.overlay.lift()  # Bring overlay to the front
+        self.overlay.lift()
 
-        # Add a frame for border effect
-        border_frame = Frame(
-            self.overlay,
-            bg=bg_color,
-            highlightbackground=self.fg,
-            highlightcolor=self.fg,
-            highlightthickness=4,
-            bd=0
-        )
-        border_frame.pack(expand=True, fill="both")
+        frame = Frame(self.overlay, bg=self.bg)
+        frame.pack(expand=True, fill="both")
 
-        Label(
-            border_frame,
-            text=main_message,
-            font=('Cascadia Code SemiBold', 32),
-            bg=bg_color,
-            fg=self.fg
-        ).pack(expand=True, fill="both")
-        if sub_message:
-            Label(
-                border_frame,
-                text=sub_message,
-                font=('Cascadia Code SemiBold', 20),
-                bg=bg_color,
-                fg=self.fg
-            ).pack(expand=True, fill="both")
+        label = Label(frame, text=main_message, font=('Cascadia Code SemiBold', 28), bg=self.bg, fg=self.fg)
+        label.pack(pady=10)
+
+        sublabel = Label(frame, text=sub_message, font=('Cascadia Code SemiBold', 24), bg=self.bg, fg=self.fg)
+        sublabel.pack(pady=10)
 
     def close_overlay(self):
         if hasattr(self, "overlay") and self.overlay.winfo_exists():

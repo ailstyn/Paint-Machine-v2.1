@@ -209,10 +209,6 @@ def startup(app):
     app.reload_main_screen()
 
 def set_target_weight(app):
-    """
-    Allow the user to manually change the target weight using the UP, DOWN, and SELECT buttons.
-    If E_STOP is active, exit and return a status.
-    """
     global target_weight
 
     if E_STOP:
@@ -220,27 +216,27 @@ def set_target_weight(app):
         return "relay_deactivated"
 
     print(f"Current target weight: {target_weight}g")
-    app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
+    app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
 
     while True:
-        # Check for button presses
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:  # UP button pressed
-            target_weight += 1  # Increase target weight by 10g
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            target_weight += 1
             print(f"Target weight increased to: {target_weight}g")
-            app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
-            time.sleep(0.2)  # Debounce delay
+            app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
+            time.sleep(0.2)
 
-        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:  # DOWN button pressed
-            target_weight = max(0, target_weight - 1)  # Decrease target weight by 10g, minimum 0g
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            target_weight = max(0, target_weight - 1)
             print(f"Target weight decreased to: {target_weight}g")
-            app.display_message("SET TARGET WEIGHT", f"{target_weight}g")
-            time.sleep(0.2)  # Debounce delay
+            app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
+            time.sleep(0.2)
 
-        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:  # SELECT button pressed
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             print(f"Target weight set to: {target_weight}g")
-            app.display_message("TARGET WEIGHT SET", f"{target_weight}g")
-            time.sleep(2)  # Display confirmation message for 2 seconds
-            app.reload_main_screen()  # Return to the main screen
+            app.show_overlay("TARGET WEIGHT SET", f"{target_weight}g")
+            time.sleep(2)
+            app.close_overlay()
+            app.reload_main_screen()
             break
 
 def set_time_limit(app):
