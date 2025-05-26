@@ -245,9 +245,13 @@ class RelayControlApp:
         else:
             bg_color = self.bg
 
+        # Set window size based on message
+        if main_message.strip().upper() == "SET TARGET WEIGHT":
+            w, h = 520, 200  # Wider for this message
+        else:
+            w, h = 400, 200
+
         # Center overlay over the main window
-        w = 400
-        h = 200
         x = self.master.winfo_x() + (self.master.winfo_width() // 2) - (w // 2)
         y = self.master.winfo_y() + (self.master.winfo_height() // 2) - (h // 2)
         self.overlay.geometry(f"{w}x{h}+{x}+{y}")
@@ -289,42 +293,44 @@ if __name__ == "__main__":
     root = Tk()  # Create the root Tkinter window.
     app = RelayControlApp(root)  # Create an instance of the RelayControlApp class.
 
-    # Simulate progress
+    # Demo messages to cycle through
+    demo_messages = [
+        ("SET TARGET WEIGHT", "500g"),
+        ("SET TIME LIMIT", "3.00s"),
+        ("ESTOP ACTIVATED", ""),
+    ]
+    demo_index = [0]  # Use a list for mutability in nested function
+
+    def auto_cycle_demo():
+        # Cycle color scheme
+        app.color_scheme_index = (app.color_scheme_index + 1) % len(COLOR_SCHEMES)
+        app.set_color_scheme(COLOR_SCHEMES[app.color_scheme_index])
+        app.reload_main_screen()
+
+        # Cycle message
+        msg, submsg = demo_messages[demo_index[0]]
+        app.show_overlay(msg, submsg)
+        demo_index[0] = (demo_index[0] + 1) % len(demo_messages)
+
+        root.after(3000, auto_cycle_demo)
+
+    # Simulate progress as before (optional, or you can comment it out if not needed)
     def simulate_progress():
-        current_weight = getattr(app, "current_weight", 0)  # Start with 0 weight
-        target_weight = 300  # Set a target weight for simulation
-
+        current_weight = getattr(app, "current_weight", 0)
+        target_weight = 300
         if current_weight < target_weight:
-            # Increment current weight smoothly
-            app.current_weight = current_weight + 1.5  # Increment weight
+            app.current_weight = current_weight + 1.5
             current_weight = app.current_weight
-
-            # Update weight fraction display
             app.weight_fraction_var.set(f"{current_weight:.1f} / {target_weight}")
-
-            # Calculate and update progress bar
             progress = (current_weight / target_weight) * 100 if target_weight > 0 else 0
             app.set_progress(progress)
+            root.after(33, simulate_progress)
 
-            # Show E-Stop overlay at 50% progress for demo
-            if progress >= 50 and not hasattr(app, "_e_stop_overlay_shown"):
-                app.show_overlay("ESTOP ACTIVATED")
-                app._e_stop_overlay_shown = True
-
-            # Schedule the next update
-            root.after(33, simulate_progress)  # Update every 33ms (30 frames per second)
-
-    # Function to cycle color schemes every 3 seconds
-    def auto_cycle_color_scheme():
-        app.cycle_color_scheme()
-        root.after(3000, auto_cycle_color_scheme)
-
-    # Initialize simulation variables
     app.progress = 0
     app.time_remaining = 100
     app.current_weight = 0
 
-    simulate_progress()
-    auto_cycle_color_scheme()
+    auto_cycle_demo()
+    # simulate_progress()  # Uncomment if you want to see the progress bar as well
 
     root.mainloop()  # Start the Tkinter event loop to display the GUI.
