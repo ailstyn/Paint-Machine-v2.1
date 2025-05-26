@@ -4,7 +4,9 @@ import time
 import logging
 from tkinter import Tk, Label, StringVar
 import RPi.GPIO as GPIO
-from gui import machine_gui
+from gui.qt_gui import RelayControlApp
+from PyQt5.QtWidgets import QApplication
+import sys
 
 # Configure logging
 logging.basicConfig(
@@ -294,7 +296,7 @@ def poll_hardware(app, root):
         if GPIO.input(E_STOP_PIN) == GPIO.LOW:
             if not E_STOP:
                 E_STOP = True
-                app.display_e_stop()
+                app.show_overlay("E-STOP ACTIVATED", "")
             # If E-Stop is active, respond to any message except CURRENT_WEIGHT
             while arduino.in_waiting > 0:
                 message_type = arduino.read(1)
@@ -336,18 +338,19 @@ def poll_hardware(app, root):
                     possible_line = arduino.readline().decode('utf-8', errors='replace').strip()
                     print(f"Arduino (unhandled): {possible_line}")
                     logging.warning(f"Unhandled message type: {message_type} | Line: {possible_line}")
+        # At the end, update the GUI:
+        app.refresh_ui()  # Or just update the widgets here
+        
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
-
-    # Schedule next poll
-    root.after(100, poll_hardware, app, root)
 
 def main():
     try:
         load_scale_calibrations()
         setup_gpio()
-        root = Tk()
-        app = machine_gui.RelayControlApp(root)
+        app_qt = QApplication(sys.argv)
+        app = RelayControlApp()
+        app.show()
         print('app initialized, contacting arduinos')
 
         # Clear serial buffers before starting communication
@@ -363,8 +366,13 @@ def main():
             except Exception as e:
                 logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
-        poll_hardware(app, root)  # Start polling loop
-        root.mainloop()
+        # Start polling loop using QTimer instead of root.after
+        from PyQt5.QtCore import QTimer
+        poll_timer = QTimer()
+        poll_timer.timeout.connect(lambda: poll_hardware(app))
+        poll_timer.start(100)
+
+        sys.exit(app_qt.exec_())
     except KeyboardInterrupt:
         print("Program interrupted by user.")
     except Exception as e:
