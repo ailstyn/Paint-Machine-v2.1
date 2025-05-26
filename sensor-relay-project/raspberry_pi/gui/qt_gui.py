@@ -50,7 +50,7 @@ class RelayControlApp(QWidget):
         self.target_weight = 100.0  # Default, update as needed
 
         self.weight_label = QLabel("0.0 g")
-        self.weight_label.setAlignment(Qt.AlignCenter)
+        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setFont(QFont("Cascadia Code SemiBold", 28))
         self.weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.main_layout.insertWidget(1, self.weight_label)  # Below scale_label
@@ -68,7 +68,7 @@ class RelayControlApp(QWidget):
         for i in range(len(icon_files)):
             dot_label = QLabel()
             dot_label.setFixedSize(16, 40)  # 16px wide, 40px tall to match icon spacing
-            dot_label.setAlignment(Qt.AlignCenter)
+            dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dot_label.setStyleSheet(
                 "background: transparent;"
                 "border-radius: 8px;"
@@ -97,7 +97,7 @@ class RelayControlApp(QWidget):
                 icon_label = QLabel(alt)
                 icon_label.setFont(QFont("Arial", 32))
                 icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-            icon_label.setAlignment(Qt.AlignCenter)
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.icon_column.addWidget(icon_label)
             self.icon_labels.append(icon_label)
         self.icon_column.addStretch(1)
@@ -247,14 +247,14 @@ class OverlayDialog(QDialog):
 
         # Main message
         main_label = QLabel(main_message)
-        main_label.setAlignment(Qt.AlignCenter)
+        main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         main_label.setFont(QFont("Cascadia Code SemiBold", 28))
         main_label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
         inner_layout.addWidget(main_label)
 
         # Sub message
         sub_label = QLabel(sub_message)
-        sub_label.setAlignment(Qt.AlignCenter)
+        sub_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         sub_label.setFont(QFont("Cascadia Code SemiBold", 22))
         sub_label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
         inner_layout.addWidget(sub_label)
@@ -262,7 +262,7 @@ class OverlayDialog(QDialog):
         outer_layout.addWidget(inner)
         layout = QVBoxLayout(self)
         layout.addWidget(outer)
-        layout.setAlignment(Qt.AlignCenter)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.adjustSize()
