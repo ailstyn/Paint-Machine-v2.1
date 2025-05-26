@@ -322,4 +322,4 @@ if __name__ == "__main__":
     overlay_timer.timeout.connect(show_estop_overlay)
     overlay_timer.start(5000)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())  # <-- Use app.exec(), not window.exec()
