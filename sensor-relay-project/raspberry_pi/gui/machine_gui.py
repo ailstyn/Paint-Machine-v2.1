@@ -280,8 +280,12 @@ class RelayControlApp:
         self.overlay.geometry(f"{w}x{h}+{x}+{y}")
         self.overlay.lift()
 
-        frame = Frame(self.overlay, bg=self.bg)
-        frame.pack(expand=True, fill="both")
+        # Add outline using fg color
+        outline_frame = Frame(self.overlay, bg=self.fg, bd=0)
+        outline_frame.pack(expand=True, fill="both", padx=6, pady=6)
+
+        frame = Frame(outline_frame, bg=self.bg)
+        frame.pack(expand=True, fill="both", padx=2, pady=2)
 
         label = Label(frame, text=main_message, font=('Cascadia Code SemiBold', 28), bg=self.bg, fg=self.fg)
         label.pack(pady=10)
