@@ -321,11 +321,9 @@ def poll_hardware(app):
                     print(f"Sent time limit to Arduino: {time_limit}")
                 elif message_type == CURRENT_WEIGHT:
                     current_weight = arduino.readline().decode('utf-8').strip()
-                    app.update_data(0, {
-                        "current_weight": current_weight,
-                        "target_weight": target_weight,
-                        "time_remaining": ""
-                    })
+                    app.current_weight = float(current_weight)
+                    app.target_weight = float(target_weight)
+                    app.refresh_ui()
                 elif message_type == VERBOSE_DEBUG:
                     debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
                     print(f"Arduino (debug): {debug_line}")
@@ -345,7 +343,10 @@ def main():
         load_scale_calibrations()
         setup_gpio()
         app_qt = QApplication(sys.argv)
-        app = RelayControlApp()
+        app = RelayControlApp(
+            set_target_weight_callback=set_target_weight,
+            set_time_limit_callback=set_time_limit
+        )
         app.show()
         print('app initialized, contacting arduinos')
 

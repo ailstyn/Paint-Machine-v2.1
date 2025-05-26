@@ -15,7 +15,7 @@ COLOR_SCHEMES = [
 ]
 
 class RelayControlApp(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, set_target_weight_callback=None, set_time_limit_callback=None):
         super().__init__(parent)
         print("Initializing RelayControlApp (PyQt)...")
         self.color_scheme_index = 0
@@ -173,10 +173,13 @@ class RelayControlApp(QWidget):
             dot_label.setStyleSheet(f"background: transparent; border-radius: 8px; color: {self.fg};")
 
     def handle_select(self):
-        # If the color icon (last icon) is selected, cycle color scheme
-        if self.selected_index == 2:  # index of color.png
+        # 0 = dumbell, 1 = stopwatch, 2 = color
+        if self.selected_index == 0 and self.set_target_weight_callback:
+            self.set_target_weight_callback(self)
+        elif self.selected_index == 1 and self.set_time_limit_callback:
+            self.set_time_limit_callback(self)
+        elif self.selected_index == 2:
             self.cycle_color_scheme()
-        # Add other actions for other icons as needed
 
     # Example: call this method when the select button is pressed
     # self.handle_select()
