@@ -33,9 +33,6 @@ class RelayControlApp(QWidget):
                 ("color.png", "Color"),
                 ]
 
-        self.set_target_weight_callback = set_target_weight_callback
-        self.set_time_limit_callback = set_time_limit_callback
-
         # Main vertical layout
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
@@ -147,7 +144,8 @@ class RelayControlApp(QWidget):
 
         self.update_selection_dot = update_selection_dot  # Expose for external use
 
-        # You can continue building out the UI here, mirroring your Tkinter structure.
+        self.set_target_weight_callback = set_target_weight_callback
+        self.set_time_limit_callback = set_time_limit_callback
 
         # At the end of __init__:
         QTimer.singleShot(0, self.adjust_progress_bar_height)
