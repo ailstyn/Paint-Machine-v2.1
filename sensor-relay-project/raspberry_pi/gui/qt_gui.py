@@ -6,6 +6,7 @@ from PyQt6.QtGui import QPixmap, QFont, QColor
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 import os
 import random
+import logging
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "white", "splash": "red"},
@@ -152,21 +153,29 @@ class RelayControlApp(QWidget):
         # Move this to the end:
         self.showFullScreen()
 
+        self.overlay_widget = OverlayWidget(self)
+        self.overlay_widget.resize(self.size())
+        self.overlay_widget.raise_()
+        self.overlay_widget.hide()
+
     def adjust_progress_bar_height(self):
         new_height = int(self.height() * 0.75)
         self.progress_bar.setFixedHeight(new_height)
 
     def refresh_ui(self):
-        # Update weight label
-        self.weight_label.setText(f"{self.current_weight:.1f} g")
-        # Update progress bar
-        self.progress_bar.setMaximum(int(self.target_weight))
-        self.progress_bar.setValue(int(self.current_weight))
-        # Update percentage label
-        percent = 0
-        if self.target_weight > 0:
-            percent = int((self.current_weight / self.target_weight) * 100)
-        self.progress_percent_label.setText(f"{percent}%")
+        try:
+            # Update weight label
+            self.weight_label.setText(f"{self.current_weight:.1f} g")
+            # Update progress bar
+            self.progress_bar.setMaximum(int(self.target_weight))
+            self.progress_bar.setValue(int(self.current_weight))
+            # Update percentage label
+            percent = 0
+            if self.target_weight > 0:
+                percent = int((self.current_weight / self.target_weight) * 100)
+            self.progress_percent_label.setText(f"{percent}%")
+        except Exception as e:
+            logging.error(f"Error in refresh_ui: {e}")
 
     def cycle_color_scheme(self):
         # Move to the next color scheme
@@ -214,38 +223,32 @@ class RelayControlApp(QWidget):
     # self.handle_select()
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Up:
-            if self.selected_index > 0:
-                self.update_selection_dot(self.selected_index - 1)
-        elif event.key() == Qt.Key.Key_Down:
-            if self.selected_index < len(self.dot_widgets) - 1:
-                self.update_selection_dot(self.selected_index + 1)
-        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.handle_select()
-        elif event.key() == Qt.Key.Key_Escape:
-            self.showNormal()  # Exit fullscreen and go to windowed mode
-        else:
-            super().keyPressEvent(event)
+        try:
+            if event.key() == Qt.Key.Key_Up:
+                if self.selected_index > 0:
+                    self.update_selection_dot(self.selected_index - 1)
+            elif event.key() == Qt.Key.Key_Down:
+                if self.selected_index < len(self.dot_widgets) - 1:
+                    self.update_selection_dot(self.selected_index + 1)
+            elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self.handle_select()
+            elif event.key() == Qt.Key.Key_Escape:
+                self.showNormal()
+            else:
+                super().keyPressEvent(event)
+        except Exception as e:
+            logging.error(f"Error in keyPressEvent: {e}")
 
     def resizeEvent(self, event):
-        if hasattr(self, "progress_bar"):
-            self.adjust_progress_bar_height()
-        super().resizeEvent(event)
+        try:
+            if hasattr(self, "progress_bar"):
+                self.adjust_progress_bar_height()
+            if hasattr(self, "overlay_widget"):
+                self.overlay_widget.resize(self.size())
+            super().resizeEvent(event)
+        except Exception as e:
+            logging.error(f"Error in resizeEvent: {e}")
 
-    def show_overlay(self, main_message, sub_message=""):
-        # Close any existing overlay
-        if hasattr(self, "overlay") and self.overlay is not None:
-            self.overlay.close()
-        self.overlay = OverlayDialog(main_message, sub_message, COLOR_SCHEMES[self.color_scheme_index], parent=self)
-        self.overlay.show()
-
-    def close_overlay(self):
-        if hasattr(self, "overlay") and self.overlay is not None:
-            self.overlay.close()
-            self.overlay = None
-
-    def reload_main_screen(self):
-        pass  # No longer needed in PyQt version. Once this gui is finished the calls can be removed from main.py
 
     def create_value_input_dialog(self, title, initial_value, unit):
         dialog = ValueInputDialog(
@@ -257,70 +260,6 @@ class RelayControlApp(QWidget):
         )
         dialog.show()
         return dialog
-
-class OverlayDialog(QDialog):
-    def __init__(self, main_message, sub_message, color_scheme, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.setModal(True)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setStyleSheet("background: transparent;")
-
-        # Outer border (double border effect)
-        outer = QFrame(self)
-        outer.setStyleSheet(f"""
-            QFrame {{
-                background: {color_scheme['fg']};
-                border-radius: 18px;
-                border: 4px solid {color_scheme['fg']};
-            }}
-        """)
-        outer_layout = QVBoxLayout(outer)
-        outer_layout.setContentsMargins(6, 6, 6, 6)
-
-        # Inner border
-        inner = QFrame(outer)
-        inner.setStyleSheet(f"""
-            QFrame {{
-                background: {color_scheme['splash']};
-                border-radius: 12px;
-                border: 4px solid {color_scheme['fg']};
-            }}
-        """)
-        inner_layout = QVBoxLayout(inner)
-        inner_layout.setContentsMargins(24, 24, 24, 24)
-        inner_layout.setSpacing(12)
-
-        # Main message
-        main_label = QLabel(main_message)
-        main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_label.setFont(QFont("Cascadia Code SemiBold", 28))
-        main_label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
-        inner_layout.addWidget(main_label)
-
-        # Sub message
-        sub_label = QLabel(sub_message)
-        sub_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        sub_label.setFont(QFont("Cascadia Code SemiBold", 22))
-        sub_label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
-        inner_layout.addWidget(sub_label)
-
-        outer_layout.addWidget(inner)
-        layout = QVBoxLayout(self)
-        layout.addWidget(outer)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setLayout(layout)
-        self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.adjustSize()
-        self.center_on_parent()
-
-    def center_on_parent(self):
-        if self.parent():
-            parent_rect = self.parent().geometry()
-            self.move(
-                parent_rect.x() + (parent_rect.width() - self.width()) // 2,
-                parent_rect.y() + (parent_rect.height() - self.height()) // 2
-            )
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
@@ -345,24 +284,38 @@ class ValueInputDialog(QDialog):
         self.setFixedSize(350, 200)
 
     def update_value(self, value):
-        self.value = value
-        self.label.setText(f"{self.value} {self.unit}")
+        try:
+            self.value = value
+            self.label.setText(f"{self.value} {self.unit}")
+        except Exception as e:
+            logging.error(f"Error in ValueInputDialog.update_value: {e}")
 
-# Add these methods to RelayControlApp:
+class OverlayWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setStyleSheet("background: rgba(0,0,0,0%);")
+        self.label = QLabel("", self)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setStyleSheet("color: white; font-size: 32px; background: transparent;")
+        self.hide()
 
-def show_overlay(self, main_message, sub_message=""):
-    # Close any existing overlay
-    if hasattr(self, "overlay") and self.overlay is not None:
-        self.overlay.close()
-    self.overlay = OverlayDialog(main_message, sub_message, COLOR_SCHEMES[self.color_scheme_index], parent=self)
-    self.overlay.show()
+    def show_overlay(self, message, color="#800020", fg="#fff"):
+        self.setStyleSheet(f"background: rgba(0,0,0,128);")
+        self.label.setText(message)
+        self.label.setStyleSheet(f"color: {fg}; font-size: 32px; background: {color}; border-radius: 18px; padding: 24px;")
+        self.label.resize(self.width() * 0.7, 120)
+        self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
+        self.show()
 
-def close_overlay(self):
-    if hasattr(self, "overlay") and self.overlay is not None:
-        self.overlay.close()
-        self.overlay = None
+    def resizeEvent(self, event):
+        # Keep label centered on resize
+        self.label.resize(self.width() * 0.7, 120)
+        self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
+        super().resizeEvent(event)
 
-# Add these methods to your RelayControlApp class.
+    def hide_overlay(self):
+        self.hide()
 
 if __name__ == "__main__":
     import sys
@@ -381,9 +334,8 @@ if __name__ == "__main__":
 
     # Simulate overlay opening and closing
     def show_estop_overlay():
-        window.show_overlay("E-STOP ACTIVATED", "")
-        # Close overlay after 2 seconds
-        QTimer.singleShot(2000, window.close_overlay)
+        window.overlay_widget.show_overlay("E-STOP ACTIVATED", "")
+        QTimer.singleShot(2000, window.overlay_widget.hide_overlay)
 
     # Show overlay every 5 seconds
     overlay_timer = QTimer()
