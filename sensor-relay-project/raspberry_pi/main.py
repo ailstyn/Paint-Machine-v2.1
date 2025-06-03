@@ -214,41 +214,30 @@ def startup(app):
 
 def set_target_weight(app):
     global target_weight
-
-    if E_STOP:
-        print("E-Stop is active. Cannot set target weight.")
-        return "relay_deactivated"
-
-    print(f"Current target weight: {target_weight}g")
-    app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
-
+    dialog = app.create_value_input_dialog(
+        title="SET TARGET WEIGHT",
+        initial_value=target_weight,
+        unit="g"
+    )
+    # Show dialog and handle GPIO in a loop
     while True:
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
             target_weight += 1
-            print(f"Target weight increased to: {target_weight}g")
-            app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
-            # Wait for button release
+            dialog.update_value(target_weight)
             while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.05)
-
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
             target_weight = max(0, target_weight - 1)
-            print(f"Target weight decreased to: {target_weight}g")
-            app.show_overlay("SET TARGET WEIGHT", f"{target_weight}g")
-            # Wait for button release
+            dialog.update_value(target_weight)
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.05)
-
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            print(f"Target weight set to: {target_weight}g")
-            app.show_overlay("TARGET WEIGHT SET", f"{target_weight}g")
-            # Wait for button release
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.05)
-            time.sleep(0.2)  # Extra debounce
-            app.close_overlay()
-            app.reload_main_screen()
+            dialog.accept()
             break
+        QApplication.processEvents()  # Keep the dialog responsive
+    dialog.close()
 
 def set_time_limit(app):
     global time_limit
@@ -258,36 +247,30 @@ def set_time_limit(app):
         logging.error('E-Stop is active. Cannot set time limit.')
         return
 
-    print(f"Current time limit: {time_limit}ms")
-    app.show_overlay("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
+    dialog = app.create_value_input_dialog(
+        title="SET TIME LIMIT",
+        initial_value=time_limit,
+        unit="ms"
+    )
 
     while True:
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:  # UP button pressed
-            time_limit += 100  # Increase time limit by 100ms
-            print(f"Time limit increased to: {time_limit}ms")
-            app.show_overlay("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
-            # Wait for button release
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            time_limit += 100
+            dialog.update_value(time_limit)
             while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.05)
-
-        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:  # DOWN button pressed
-            time_limit = max(0, time_limit - 100)  # Decrease time limit by 100ms, minimum 0ms
-            print(f"Time limit decreased to: {time_limit}ms")
-            app.show_overlay("SET TIME LIMIT", f"{time_limit/1000:.2f}s")
-            # Wait for button release
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            time_limit = max(0, time_limit - 100)
+            dialog.update_value(time_limit)
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.05)
-
-        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:  # SELECT button pressed
-            print(f"Time limit set to: {time_limit}ms")
-            app.show_overlay("TIME LIMIT SET", f"{time_limit/1000:.2f}s")
-            # Wait for button release
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.05)
-            time.sleep(0.2)  # Extra debounce
-            app.close_overlay()
-            app.reload_main_screen()
+            dialog.accept()
             break
+        QApplication.processEvents()  # Keep the dialog responsive
+    dialog.close()
 
 def poll_hardware(app):
     global E_STOP
@@ -358,7 +341,7 @@ def main():
             set_target_weight_callback=set_target_weight,
             set_time_limit_callback=set_time_limit
         )
-        app.show()
+        # app.show()
         print('app initialized, contacting arduinos')
 
         # Clear serial buffers before starting communication

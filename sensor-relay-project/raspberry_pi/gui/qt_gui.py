@@ -248,6 +248,17 @@ class RelayControlApp(QWidget):
     def reload_main_screen(self):
         pass  # No longer needed in PyQt version. Once this gui is finished the calls can be removed from main.py
 
+    def create_value_input_dialog(self, title, initial_value, unit):
+        dialog = ValueInputDialog(
+            title=title,
+            initial_value=initial_value,
+            unit=unit,
+            color_scheme=COLOR_SCHEMES[self.color_scheme_index],
+            parent=self
+        )
+        dialog.show()
+        return dialog
+
 class OverlayDialog(QDialog):
     def __init__(self, main_message, sub_message, color_scheme, parent=None):
         super().__init__(parent)
@@ -311,6 +322,32 @@ class OverlayDialog(QDialog):
                 parent_rect.x() + (parent_rect.width() - self.width()) // 2,
                 parent_rect.y() + (parent_rect.height() - self.height()) // 2
             )
+
+class ValueInputDialog(QDialog):
+    def __init__(self, title, initial_value, unit, color_scheme, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.value = initial_value
+        self.unit = unit
+        self.color_scheme = color_scheme
+
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setStyleSheet(f"background: {color_scheme['splash']}; border-radius: 18px;")
+
+        self.label = QLabel(f"{self.value} {self.unit}")
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setFont(QFont("Cascadia Code SemiBold", 32))
+        self.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
+        layout.addWidget(self.label)
+
+        self.setFixedSize(350, 200)
+
+    def update_value(self, value):
+        self.value = value
+        self.label.setText(f"{self.value} {self.unit}")
 
 # Add these methods to RelayControlApp:
 
