@@ -60,6 +60,7 @@ UP_BUTTON_PIN = 5
 DOWN_BUTTON_PIN = 6
 SELECT_BUTTON_PIN = 16
 E_STOP_PIN = 23
+BUZZER_PIN = 26  # Add this near your other pin definitions
 
 # Add a global flag for E-Stop
 E_STOP = False
@@ -167,16 +168,21 @@ def setup_gpio():
     GPIO.setup(SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Select button with pull-up resistor
     print('select button pin set')
     GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # E-Stop button with pull-up resistor
+    GPIO.setup(BUZZER_PIN, GPIO.OUT)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 
 def handle_button_presses(app):
     if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW and app.selected_index > 0:
+        ping_buzzer()
         app.update_selection_dot(app.selected_index - 1)
         time.sleep(0.2)
     if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW and app.selected_index < len(app.dot_widgets) - 1:
+        ping_buzzer()
         app.update_selection_dot(app.selected_index + 1)
         time.sleep(0.2)
     if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+        ping_buzzer()
         app.handle_select()
         time.sleep(0.2)
 
@@ -337,6 +343,11 @@ def poll_hardware(app):
         
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
+
+def ping_buzzer(duration=0.05):
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 def main():
     try:

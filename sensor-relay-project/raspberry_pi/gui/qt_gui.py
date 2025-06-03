@@ -165,12 +165,26 @@ class RelayControlApp(QWidget):
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
         self.scale_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+        self.weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.center_frame.setStyleSheet(f"background-color: {self.bg};")
-        self.progress_bar.setStyleSheet(f"QProgressBar {{background: {self.bg};}}")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
         for dot_label in self.dot_widgets:
             dot_label.setStyleSheet(f"background: transparent; border-radius: 8px; color: {self.fg};")
+        # Update progress bar color
+        self.progress_bar.setStyleSheet(
+            f"""
+            QProgressBar {{
+                background: {self.bg};
+                border: 2px solid {self.fg};
+                border-radius: 5px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {self.fg};
+                border-radius: 5px;
+            }}
+            """
+        )
 
     def handle_select(self):
         # 0 = dumbell, 1 = stopwatch, 2 = color
