@@ -281,7 +281,7 @@ class ValueInputDialog(QDialog):
         self.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
         layout.addWidget(self.label)
 
-        self.setFixedSize(350, 200)
+        # self.setFixedSize(350, 200)
 
     def update_value(self, value):
         try:
