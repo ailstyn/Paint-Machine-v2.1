@@ -300,10 +300,17 @@ class OverlayWidget(QWidget):
         self.label.setStyleSheet("color: white; font-size: 32px; background: transparent;")
         self.hide()
 
-    def show_overlay(self, message, color="#800020", fg="#fff"):
+    def show_overlay(self, message, color=None, fg="#fff"):
+        # Use splash color if color is not provided
+        if color is None and hasattr(self.parent(), "splash"):
+            color = self.parent().splash
+        elif color is None:
+            color = "#800020"
         self.setStyleSheet(f"background: rgba(0,0,0,128);")
         self.label.setText(message)
-        self.label.setStyleSheet(f"color: {fg}; font-size: 32px; background: {color}; border-radius: 18px; padding: 24px;")
+        self.label.setStyleSheet(
+            f"color: {fg}; font-size: 32px; background: {color}; border-radius: 18px; padding: 24px;"
+        )
         self.label.resize(self.width() * 0.7, 120)
         self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
         self.show()
