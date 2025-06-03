@@ -17,6 +17,8 @@ COLOR_SCHEMES = [
 class RelayControlApp(QWidget):
     def __init__(self, parent=None, set_target_weight_callback=None, set_time_limit_callback=None):
         super().__init__(parent)
+        self.set_target_weight_callback = set_target_weight_callback
+        self.set_time_limit_callback = set_time_limit_callback
         print("Initializing RelayControlApp (PyQt)...")
         self.color_scheme_index = 0
         scheme = COLOR_SCHEMES[self.color_scheme_index]
@@ -143,9 +145,6 @@ class RelayControlApp(QWidget):
             self.selected_index = new_index
 
         self.update_selection_dot = update_selection_dot  # Expose for external use
-
-        self.set_target_weight_callback = set_target_weight_callback
-        self.set_time_limit_callback = set_time_limit_callback
 
         # At the end of __init__:
         QTimer.singleShot(0, self.adjust_progress_bar_height)
