@@ -328,7 +328,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     window = RelayControlApp()
-    window.show()
+    # window.show()
 
     # Simulate progress bar going up and down
     def simulate_progress():
