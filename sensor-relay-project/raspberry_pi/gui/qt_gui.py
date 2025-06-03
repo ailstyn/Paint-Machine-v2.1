@@ -34,6 +34,9 @@ class RelayControlApp(QWidget):
                 ("color.png", "Color"),
                 ]
 
+        self.set_target_weight_callback = set_target_weight_callback
+        self.set_time_limit_callback = set_time_limit_callback
+
         # Main vertical layout
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
@@ -115,8 +118,15 @@ class RelayControlApp(QWidget):
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(50)
         self.progress_bar.setStyleSheet(f"QProgressBar {{background: {self.bg};}}")
+        self.progress_bar.setTextVisible(False)
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.progress_bar_column.addStretch(1)  # Bottom stretch
+
+        # Add percentage label below the progress bar
+        self.progress_percent_label = QLabel("0%")
+        self.progress_percent_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.progress_percent_label.setFont(QFont("Cascadia Code SemiBold", 16, QFont.Weight.Bold))
+        self.progress_percent_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.progress_bar_column.addWidget(self.progress_percent_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
         self.center_frame = QFrame()
@@ -153,6 +163,11 @@ class RelayControlApp(QWidget):
         # Update progress bar
         self.progress_bar.setMaximum(int(self.target_weight))
         self.progress_bar.setValue(int(self.current_weight))
+        # Update percentage label
+        percent = 0
+        if self.target_weight > 0:
+            percent = int((self.current_weight / self.target_weight) * 100)
+        self.progress_percent_label.setText(f"{percent}%")
 
     def cycle_color_scheme(self):
         # Move to the next color scheme
@@ -172,6 +187,7 @@ class RelayControlApp(QWidget):
         for dot_label in self.dot_widgets:
             dot_label.setStyleSheet(f"background: transparent; border-radius: 8px; color: {self.fg};")
         # Update progress bar color
+        self.progress_percent_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
