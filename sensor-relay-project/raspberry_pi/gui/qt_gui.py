@@ -26,7 +26,6 @@ class RelayControlApp(QWidget):
 
         self.setWindowTitle("Relay Control")
         self.setStyleSheet(f"background-color: {self.bg};")
-        self.showFullScreen()
 
         icon_files = [
                 ("dumbell.png", "Dumbbell"),
@@ -152,6 +151,9 @@ class RelayControlApp(QWidget):
 
         # At the end of __init__:
         QTimer.singleShot(0, self.adjust_progress_bar_height)
+
+        # Move this to the end:
+        self.showFullScreen()
 
     def adjust_progress_bar_height(self):
         new_height = int(self.height() * 0.75)
