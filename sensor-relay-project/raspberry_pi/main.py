@@ -214,7 +214,7 @@ def startup(app):
 
 def set_target_weight(app):
     global target_weight
-    DEBOUNCE = 0.15  # seconds
+    DEBOUNCE = 0.5  # seconds
 
     print("Opening target weight dialog...")
     dialog = app.create_value_input_dialog(
@@ -239,6 +239,8 @@ def set_target_weight(app):
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer(0.05)
+            time.sleep(DEBOUNCE)
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
             dialog.accept()
@@ -249,7 +251,7 @@ def set_target_weight(app):
 
 def set_time_limit(app):
     global time_limit
-    DEBOUNCE = 0.15  # seconds
+    DEBOUNCE = 0.5  # seconds
 
     if E_STOP:
         print("E-Stop is active. Cannot set time limit.")
@@ -279,6 +281,8 @@ def set_time_limit(app):
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer(0.05)
+            time.sleep(DEBOUNCE)
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
             dialog.accept()
