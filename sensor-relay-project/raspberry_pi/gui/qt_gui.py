@@ -40,22 +40,18 @@ class RelayControlApp(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
 
-        # Top label
-        self.scale_label = QLabel("SCALE 1")
-        self.scale_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.scale_label.setFont(QFont("Cascadia Code SemiBold", 32))
-        self.scale_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-        self.main_layout.addWidget(self.scale_label)
+        # --- Main display labels in the center ---
+        self.main_label = QLabel("CURRENT WEIGHT")
+        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.main_label.setFont(QFont("Cascadia Code SemiBold", 40))
+        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.main_layout.addWidget(self.main_label)
 
-        # --- Weight Label ---
-        self.current_weight = 0.0
-        self.target_weight = 100.0  # Default, update as needed
-
-        self.weight_label = QLabel("0.0 g")
-        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.weight_label.setFont(QFont("Cascadia Code SemiBold", 28))
-        self.weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.main_layout.insertWidget(1, self.weight_label)  # Below scale_label
+        self.value_label = QLabel("0.0 g")
+        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.value_label.setFont(QFont("Cascadia Code SemiBold", 28))
+        self.value_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.main_layout.addWidget(self.value_label)
 
         # Horizontal layout for main content (progress bar, center, icons)
         self.content_layout = QHBoxLayout()
@@ -151,6 +147,8 @@ class RelayControlApp(QWidget):
         QTimer.singleShot(0, self.adjust_progress_bar_height)
 
         # Move this to the end:
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
+        self.show()
         self.showFullScreen()
 
         self.overlay_widget = OverlayWidget(self)
@@ -164,8 +162,7 @@ class RelayControlApp(QWidget):
 
     def refresh_ui(self):
         try:
-            # Update weight label
-            self.weight_label.setText(f"{self.current_weight:.1f} g")
+            self.value_label.setText(f"{self.current_weight:.1f} g")
             # Update progress bar
             self.progress_bar.setMaximum(int(self.target_weight))
             self.progress_bar.setValue(int(self.current_weight))
@@ -187,8 +184,8 @@ class RelayControlApp(QWidget):
 
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
-        self.scale_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-        self.weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.value_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.center_frame.setStyleSheet(f"background-color: {self.bg};")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
@@ -261,6 +258,14 @@ class RelayControlApp(QWidget):
         dialog.show()
         return dialog
 
+    def set_current_weight_mode(self, weight):
+        self.main_label.setText("CURRENT WEIGHT")
+        self.value_label.setText(f"{weight:.1f} g")
+
+    def set_target_weight_mode(self, target_weight):
+        self.main_label.setText("SET TARGET WEIGHT")
+        self.value_label.setText(f"{target_weight:.1f} g")
+
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
         super().__init__(parent)
@@ -311,13 +316,13 @@ class OverlayWidget(QWidget):
         self.label.setStyleSheet(
             f"color: {fg}; font-size: 32px; background: {color}; border-radius: 18px; padding: 24px;"
         )
-        self.label.resize(self.width() * 0.7, 120)
+        self.label.resize(int(self.width() * 0.7), 120)
         self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
         self.show()
 
     def resizeEvent(self, event):
         # Keep label centered on resize
-        self.label.resize(self.width() * 0.7, 120)
+        self.label.resize(int(self.width() * 0.7), 120)
         self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
         super().resizeEvent(event)
 
@@ -341,7 +346,7 @@ if __name__ == "__main__":
 
     # Simulate overlay opening and closing
     def show_estop_overlay():
-        window.overlay_widget.show_overlay("E-STOP ACTIVATED", "")
+        window.overlay_widget.show_overlay("E-STOP ACTIVATED", color=window.splash)
         QTimer.singleShot(2000, window.overlay_widget.hide_overlay)
 
     # Show overlay every 5 seconds
