@@ -210,7 +210,7 @@ class RelayControlApp(QWidget):
 
     def refresh_ui(self):
         try:
-            self.value_label.setText(f"{self.current_weight:.1f} g")
+            self.current_weight_label.setText(f"{self.current_weight:.1f} g")
             # Update progress bar
             self.progress_bar.setMaximum(int(self.target_weight))
             self.progress_bar.setValue(int(self.current_weight))
