@@ -299,6 +299,10 @@ class RelayControlApp(QWidget):
         self.main_label.setText("SET TARGET WEIGHT")
         self.value_label.setText(f"{target_weight:.1f} g")
 
+    def set_fill_mode(self, current_weight, target_weight):
+        self.main_label.setText("FILLING")
+        self.value_label.setText(f"{current_weight:.1f} g / {target_weight:.1f} g")
+
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
         super().__init__(parent)
