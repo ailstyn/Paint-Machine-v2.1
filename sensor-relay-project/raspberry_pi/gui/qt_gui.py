@@ -238,6 +238,7 @@ class RelayControlApp(QWidget):
                 border-radius: 5px;
             }}
             """
+        )
 
     def handle_select(self):
         # 0 = dumbell, 1 = stopwatch, 2 = color
@@ -297,13 +298,6 @@ class RelayControlApp(QWidget):
     def set_target_weight_mode(self, target_weight):
         self.main_label.setText("SET TARGET WEIGHT")
         self.value_label.setText(f"{target_weight:.1f} g")
-
-    def set_fill_mode(self, current_weight, target_weight):
-        """
-        Update the GUI to show the fill mode: current weight / target weight.
-        """
-        self.main_label.setText("FILLING")
-        self.value_label.setText(f"{current_weight:.1f} g / {target_weight:.1f} g")
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
