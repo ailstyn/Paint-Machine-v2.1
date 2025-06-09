@@ -71,7 +71,7 @@ class RelayControlApp(QWidget):
         self.dot_column.addStretch(1)  # Top stretch for vertical centering
         for i in range(len(icon_files)):
             dot_label = QLabel()
-            dot_label.setFixedSize(16, 40)  # 16px wide, 40px tall to match icon spacing
+            dot_label.setFixedSize(16, 80)  # 16px wide, 80px tall to match icon size
             dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dot_label.setStyleSheet(
                 "background: transparent;"
