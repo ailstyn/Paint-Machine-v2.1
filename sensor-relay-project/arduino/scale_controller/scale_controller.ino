@@ -195,6 +195,9 @@ void fill() {
 
     while (scale.get_units(3) < targetWeight) { // Use 5 samples for faster response
         unsigned long now = millis();
+        long currentWeight = scale.get_units(3);
+        Serial.write(CURRENT_WEIGHT);
+        Serial.println(currentWeight);
         if (now >= fillEndTime) {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("TIME LIMIT REACHED");
