@@ -8,7 +8,7 @@ echo "Updating repository..."
 sudo git pull
 
 # 2. Compile the Arduino sketch
-SKETCH_PATH="arduino/scalecontroller/scalecontroller.ino"
+SKETCH_PATH="arduino/scale_controller/scale_controller.ino"
 FQBN="arduino:avr:leonardo"  # Change this if you use a different board type
 
 echo "Compiling $SKETCH_PATH ..."
