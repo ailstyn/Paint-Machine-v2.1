@@ -211,14 +211,16 @@ class RelayControlApp(QWidget):
     def refresh_ui(self):
         try:
             self.current_weight_label.setText(f"{self.current_weight:.1f} g")
+            # Only show slash and target if in fill mode
+            if self.main_label.text() == "FILLING":
+                self.slash_label.setText("/")
+                self.target_weight_label.setText(f"{self.target_weight:.1f} g")
+            else:
+                self.slash_label.setText("")
+                self.target_weight_label.setText("")
             # Update progress bar
             self.progress_bar.setMaximum(int(self.target_weight))
             self.progress_bar.setValue(int(self.current_weight))
-            # Update percentage label
-            percent = 0
-            if self.target_weight > 0:
-                percent = int((self.current_weight / self.target_weight) * 100)
-            # self.progress_percent_label.setText(f"{percent}%")  # Removed per request
         except Exception as e:
             logging.error(f"Error in refresh_ui: {e}")
 
