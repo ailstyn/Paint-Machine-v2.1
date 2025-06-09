@@ -157,6 +157,7 @@ class RelayControlApp(QWidget):
         self.content_layout.addWidget(self.center_frame, stretch=1)
         self.content_layout.addLayout(self.dot_column)
         self.content_layout.addLayout(self.icon_column)
+        self.content_layout.addSpacing(25)  # Add 25px buffer to the right of the icons
 
         # Add right buffer after the icons
         self.right_buffer = QVBoxLayout()
