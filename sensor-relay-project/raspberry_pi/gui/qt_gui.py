@@ -126,7 +126,7 @@ class RelayControlApp(QWidget):
         # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
         self.center_frame = QFrame()
         self.center_frame.setStyleSheet(f"background-color: {self.bg};")
-        self.center_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.center_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.content_layout.addLayout(self.progress_bar_column)
         self.content_layout.addWidget(self.center_frame, stretch=1)
         self.content_layout.addLayout(self.dot_column)
