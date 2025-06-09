@@ -295,6 +295,17 @@ class ValueInputDialog(QDialog):
         )
         layout.addWidget(self.label)
 
+        # Dynamically size dialog to 60% width, 40% height of the screen, max 500x300
+        screen = QApplication.primaryScreen().availableGeometry()
+        w = min(500, int(screen.width() * 0.6))
+        h = min(300, int(screen.height() * 0.4))
+        self.resize(w, h)
+        # Center the dialog
+        self.move(
+            screen.left() + (screen.width() - w) // 2,
+            screen.top() + (screen.height() - h) // 2
+        )
+
         self.setFixedSize(500, 300)  # Larger dialog size
 
     def update_value(self, value):
