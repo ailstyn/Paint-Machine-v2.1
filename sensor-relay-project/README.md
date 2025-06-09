@@ -59,3 +59,13 @@ python raspberry_pi/gui/app.py
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
+
+## Requirements
+
+lightdm
+openbox
+python3-RPI.GPIO
+HX711.h
+pyQt6
+git
+arduino-cli

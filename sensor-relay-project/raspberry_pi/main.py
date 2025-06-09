@@ -2,7 +2,6 @@ import os
 import serial
 import time
 import logging
-from tkinter import Tk, Label, StringVar
 import RPi.GPIO as GPIO
 from gui.qt_gui import RelayControlApp
 from PyQt6.QtWidgets import QApplication
