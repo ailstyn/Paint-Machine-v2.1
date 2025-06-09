@@ -148,10 +148,20 @@ class RelayControlApp(QWidget):
         self.center_frame = QFrame()
         self.center_frame.setStyleSheet(f"background-color: {self.bg};")
         self.center_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        # Add left buffer before the progress bar
+        self.left_buffer = QVBoxLayout()
+        self.left_buffer.addSpacing(25)
+        self.content_layout.addLayout(self.left_buffer)
+
         self.content_layout.addLayout(self.progress_bar_column)
         self.content_layout.addWidget(self.center_frame, stretch=1)
         self.content_layout.addLayout(self.dot_column)
         self.content_layout.addLayout(self.icon_column)
+
+        # Add right buffer after the icons
+        self.right_buffer = QVBoxLayout()
+        self.right_buffer.addSpacing(25)
+        self.content_layout.addLayout(self.right_buffer)
 
         # --- To move the selection dot in code ---
         # Call this function when you want to update the selected icon
