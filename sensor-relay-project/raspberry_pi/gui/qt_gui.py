@@ -39,6 +39,8 @@ class RelayControlApp(QWidget):
         # Main vertical layout
         self.main_layout = QVBoxLayout(self)
         self.setLayout(self.main_layout)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout.setSpacing(0)
 
         # --- Main display labels in the center ---
         self.main_label = QLabel("CURRENT WEIGHT")
@@ -56,9 +58,13 @@ class RelayControlApp(QWidget):
         # Horizontal layout for main content (progress bar, center, icons)
         self.content_layout = QHBoxLayout()
         self.main_layout.addLayout(self.content_layout)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(0)
 
         # --- Selection Dot Column (left of icons) ---
         self.dot_column = QVBoxLayout()
+        self.dot_column.setContentsMargins(0, 0, 0, 0)
+        self.dot_column.setSpacing(0)
         self.dot_widgets = []
         self.selected_index = 0  # Start with the first icon selected
 
@@ -82,6 +88,8 @@ class RelayControlApp(QWidget):
 
         # --- Icon Column (rightmost) ---
         self.icon_column = QVBoxLayout()
+        self.icon_column.setContentsMargins(0, 0, 0, 0)
+        self.icon_column.setSpacing(0)
         self.icon_labels = []
         self.icon_column.addStretch(1)
         for filename, alt in icon_files:
@@ -106,6 +114,8 @@ class RelayControlApp(QWidget):
 
         # --- Progress Bar Column (leftmost) ---
         self.progress_bar_column = QVBoxLayout()
+        self.progress_bar_column.setContentsMargins(0, 0, 0, 0)
+        self.progress_bar_column.setSpacing(0)
         self.progress_bar_column.addStretch(1)  # Top stretch
         self.progress_bar = QProgressBar()
         self.progress_bar.setOrientation(Qt.Orientation.Vertical)
@@ -122,6 +132,7 @@ class RelayControlApp(QWidget):
         self.progress_percent_label.setFont(QFont("Cascadia Code SemiBold", 16, QFont.Weight.Bold))
         self.progress_percent_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.progress_bar_column.addWidget(self.progress_percent_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.progress_bar_column.addStretch(1)  # Bottom stretch
 
         # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
         self.center_frame = QFrame()
@@ -157,7 +168,9 @@ class RelayControlApp(QWidget):
         self.overlay_widget.hide()
 
     def adjust_progress_bar_height(self):
-        new_height = int(self.height() * 0.75)
+        # Use the available height in the progress bar column, minus some margin for the percent label
+        parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
+        new_height = int(parent_height * 0.6)
         self.progress_bar.setFixedHeight(new_height)
 
     def refresh_ui(self):
