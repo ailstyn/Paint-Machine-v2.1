@@ -172,14 +172,35 @@ def setup_gpio():
     GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 
+def ping_buzzer(duration=0.05):
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
+    time.sleep(duration)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
+
+def ping_buzzer_invalid():
+    # Simulate a lower pitch by making a longer beep or double beep
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
+    time.sleep(0.15)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
+    time.sleep(0.05)
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
+    time.sleep(0.15)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
+
 def handle_button_presses(app):
-    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW and app.selected_index > 0:
-        ping_buzzer()
-        app.update_selection_dot(app.selected_index - 1)
+    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+        if app.selected_index > 0:
+            ping_buzzer()
+            app.update_selection_dot(app.selected_index - 1)
+        else:
+            ping_buzzer_invalid()
         time.sleep(0.2)
-    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW and app.selected_index < len(app.dot_widgets) - 1:
-        ping_buzzer()
-        app.update_selection_dot(app.selected_index + 1)
+    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+        if app.selected_index < len(app.dot_widgets) - 1:
+            ping_buzzer()
+            app.update_selection_dot(app.selected_index + 1)
+        else:
+            ping_buzzer_invalid()
         time.sleep(0.2)
     if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
         ping_buzzer()
@@ -232,9 +253,12 @@ def set_target_weight(app):
             while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            target_weight = max(0, target_weight - 1)
-            dialog.update_value(target_weight)
-            ping_buzzer(0.05)
+            if target_weight > 0:
+                target_weight = max(0, target_weight - 1)
+                dialog.update_value(target_weight)
+                ping_buzzer(0.05)
+            else:
+                ping_buzzer_invalid()
             time.sleep(DEBOUNCE)
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
@@ -274,9 +298,12 @@ def set_time_limit(app):
             while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            time_limit = max(0, time_limit - 100)
-            dialog.update_value(time_limit)
-            ping_buzzer(0.05)
+            if time_limit > 0:
+                time_limit = max(0, time_limit - 100)
+                dialog.update_value(time_limit)
+                ping_buzzer(0.05)
+            else:
+                ping_buzzer_invalid()
             time.sleep(DEBOUNCE)
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
@@ -345,11 +372,6 @@ def poll_hardware(app):
         
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
-
-def ping_buzzer(duration=0.05):
-    GPIO.output(BUZZER_PIN, GPIO.HIGH)
-    time.sleep(duration)
-    GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 def main():
     try:

@@ -289,11 +289,13 @@ class ValueInputDialog(QDialog):
 
         self.label = QLabel(f"{self.value} {self.unit}")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setFont(QFont("Cascadia Code SemiBold", 32))
-        self.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent;")
+        self.label.setFont(QFont("Cascadia Code SemiBold", 48))  # Larger font
+        self.label.setStyleSheet(
+            f"color: {color_scheme['fg']}; background: transparent; padding: 32px;"
+        )
         layout.addWidget(self.label)
 
-        # self.setFixedSize(350, 200)
+        self.setFixedSize(500, 300)  # Larger dialog size
 
     def update_value(self, value):
         try:
