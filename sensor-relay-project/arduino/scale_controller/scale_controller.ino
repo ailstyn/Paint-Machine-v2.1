@@ -19,6 +19,7 @@
 #define TARE_SCALE 0x09
 #define RELAY_DEACTIVATED 0xFA
 #define VERBOSE_DEBUG 0xFE
+#define BEGIN_FILL 0x10
 
 // Global variables
 HX711 scale;
@@ -115,6 +116,9 @@ void fill() {
     digitalWrite(LED_PIN, HIGH); // Turn LED ON at start of fill
 
     scale.tare();
+
+    Serial.write(BEGIN_FILL); // Send BEGIN_FILL as a byte
+
     // Request target weight from Raspberry Pi
     Serial.write(REQUEST_TARGET_WEIGHT);
 

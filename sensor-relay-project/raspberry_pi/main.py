@@ -53,6 +53,7 @@ TARE_SCALE = b'\x09'  # New byte for tare command
 RELAY_DEACTIVATED = b'\xFA'
 TARGET_WEIGHT = b'\x08'
 VERBOSE_DEBUG = b'\xFE'
+BEGIN_FILL = b'\x10'  # Choose an unused byte value for BEGIN_FILL
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -404,6 +405,9 @@ def poll_hardware(app):
                     app.current_weight = float(current_weight)
                     app.target_weight = float(target_weight)
                     app.refresh_ui()
+                elif message_type == BEGIN_FILL:
+                    print("Received BEGIN FILL from Arduino.")
+                    app.set_fill_mode(target_weight)  # You need to implement set_fill_mode in your GUI
                 elif message_type == VERBOSE_DEBUG:
                     debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
                     print(f"Arduino (debug): {debug_line}")
