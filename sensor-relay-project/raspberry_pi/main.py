@@ -204,7 +204,7 @@ def handle_button_presses(app):
     if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
         ping_buzzer()
         app.handle_select()
-        time.sleep(0.2)
+        time.sleep(0.4)  # Increased debounce delay for select action
 
 def startup(app):
     # Display the "CLEAR SCALES" message

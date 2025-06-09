@@ -293,7 +293,6 @@ class ValueInputDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.value = initial_value
         self.unit = unit
         self.color_scheme = color_scheme
