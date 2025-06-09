@@ -233,89 +233,127 @@ def startup(app):
     # Reload the main screen
     app.reload_main_screen()
 
+def adjust_value_with_acceleration(
+    initial_value, 
+    dialog, 
+    up_button_pin, 
+    down_button_pin, 
+    unit_increment=1, 
+    min_value=0, 
+    up_callback=None, 
+    down_callback=None
+):
+    value = initial_value
+    DEBOUNCE = 0.05  # seconds for polling
+    while True:
+        # UP BUTTON
+        if GPIO.input(up_button_pin) == GPIO.LOW:
+            start_time = time.time()
+            repeats = 0
+            increment = unit_increment
+            while GPIO.input(up_button_pin) == GPIO.LOW:
+                elapsed = time.time() - start_time
+                # Acceleration logic
+                if repeats >= 20 or elapsed >= 10:
+                    increment = unit_increment * 100
+                elif repeats >= 10 or elapsed >= 5:
+                    increment = unit_increment * 10
+                else:
+                    increment = unit_increment
+                value += increment
+                if up_callback:
+                    up_callback(value)
+                dialog.update_value(value)
+                ping_buzzer(0.05)
+                repeats += 1
+                # Wait for 0.5s or until button released
+                for _ in range(int(0.5 / DEBOUNCE)):
+                    if GPIO.input(up_button_pin) == GPIO.HIGH:
+                        break
+                    QApplication.processEvents()
+                    time.sleep(DEBOUNCE)
+            continue  # Skip to next loop to avoid double-processing
+
+        # DOWN BUTTON
+        if GPIO.input(down_button_pin) == GPIO.LOW:
+            start_time = time.time()
+            repeats = 0
+            increment = unit_increment
+            while GPIO.input(down_button_pin) == GPIO.LOW:
+                elapsed = time.time() - start_time
+                # Acceleration logic
+                if repeats >= 20 or elapsed >= 10:
+                    increment = unit_increment * 100
+                elif repeats >= 10 or elapsed >= 5:
+                    increment = unit_increment * 10
+                else:
+                    increment = unit_increment
+                if value - increment >= min_value:
+                    value -= increment
+                    if down_callback:
+                        down_callback(value)
+                    dialog.update_value(value)
+                    ping_buzzer(0.05)
+                else:
+                    ping_buzzer_invalid()
+                repeats += 1
+                # Wait for 0.5s or until button released
+                for _ in range(int(0.5 / DEBOUNCE)):
+                    if GPIO.input(down_button_pin) == GPIO.HIGH:
+                        break
+                    QApplication.processEvents()
+                    time.sleep(DEBOUNCE)
+            continue
+
+        # SELECT BUTTON
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer(0.05)
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+            dialog.accept()
+            break
+
+        QApplication.processEvents()
+        time.sleep(DEBOUNCE)
+    dialog.close()
+    return value
+
+# Usage in set_target_weight:
 def set_target_weight(app):
     global target_weight
-    DEBOUNCE = 0.5  # seconds
-
     print("Opening target weight dialog...")
     dialog = app.create_value_input_dialog(
         title="SET TARGET WEIGHT",
         initial_value=target_weight,
         unit="g"
     )
-
-    while True:
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-            target_weight += 1
-            dialog.update_value(target_weight)
-            ping_buzzer(0.05)
-            time.sleep(DEBOUNCE)
-            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            if target_weight > 0:
-                target_weight = max(0, target_weight - 1)
-                dialog.update_value(target_weight)
-                ping_buzzer(0.05)
-            else:
-                ping_buzzer_invalid()
-            time.sleep(DEBOUNCE)
-            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            ping_buzzer(0.05)
-            time.sleep(DEBOUNCE)
-            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-            dialog.accept()
-            break
-        QApplication.processEvents()
-    dialog.close()
+    target_weight = adjust_value_with_acceleration(
+        initial_value=target_weight,
+        dialog=dialog,
+        up_button_pin=UP_BUTTON_PIN,
+        down_button_pin=DOWN_BUTTON_PIN,
+        unit_increment=1,
+        min_value=0
+    )
     print("Closed target weight dialog.")
 
+# Usage in set_time_limit:
 def set_time_limit(app):
     global time_limit
-    DEBOUNCE = 0.5  # seconds
-
-    if E_STOP:
-        print("E-Stop is active. Cannot set time limit.")
-        logging.error('E-Stop is active. Cannot set time limit.')
-        return
-
     print("Opening time limit dialog...")
     dialog = app.create_value_input_dialog(
         title="SET TIME LIMIT",
         initial_value=time_limit,
         unit="ms"
     )
-
-    while True:
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-            time_limit += 100
-            dialog.update_value(time_limit)
-            ping_buzzer(0.05)
-            time.sleep(DEBOUNCE)
-            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            if time_limit > 0:
-                time_limit = max(0, time_limit - 100)
-                dialog.update_value(time_limit)
-                ping_buzzer(0.05)
-            else:
-                ping_buzzer_invalid()
-            time.sleep(DEBOUNCE)
-            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            ping_buzzer(0.05)
-            time.sleep(DEBOUNCE)
-            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-            dialog.accept()
-            break
-        QApplication.processEvents()
-    dialog.close()
+    time_limit = adjust_value_with_acceleration(
+        initial_value=time_limit,
+        dialog=dialog,
+        up_button_pin=UP_BUTTON_PIN,
+        down_button_pin=DOWN_BUTTON_PIN,
+        unit_increment=100,
+        min_value=0
+    )
     print("Closed time limit dialog.")
 
 def poll_hardware(app):
