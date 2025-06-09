@@ -306,8 +306,6 @@ class ValueInputDialog(QDialog):
             screen.top() + (screen.height() - h) // 2
         )
 
-        self.setFixedSize(500, 300)  # Larger dialog size
-
     def update_value(self, value):
         try:
             self.value = value
