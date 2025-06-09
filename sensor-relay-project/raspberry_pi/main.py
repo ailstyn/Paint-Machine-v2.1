@@ -245,6 +245,7 @@ def adjust_value_with_acceleration(
 ):
     value = initial_value
     DEBOUNCE = 0.05  # seconds for polling
+    INTERVAL = 0.25  # seconds between changes when holding
     while True:
         # UP BUTTON
         if GPIO.input(up_button_pin) == GPIO.LOW:
@@ -253,7 +254,7 @@ def adjust_value_with_acceleration(
             increment = unit_increment
             while GPIO.input(up_button_pin) == GPIO.LOW:
                 elapsed = time.time() - start_time
-                # Acceleration logic
+                # Acceleration logic: 0-9 = 1x, 10-19 = 10x, 20+ = 100x
                 if repeats >= 20 or elapsed >= 10:
                     increment = unit_increment * 100
                 elif repeats >= 10 or elapsed >= 5:
@@ -266,8 +267,8 @@ def adjust_value_with_acceleration(
                 dialog.update_value(value)
                 ping_buzzer(0.05)
                 repeats += 1
-                # Wait for 0.5s or until button released
-                for _ in range(int(0.5 / DEBOUNCE)):
+                # Wait for INTERVAL or until button released
+                for _ in range(int(INTERVAL / DEBOUNCE)):
                     if GPIO.input(up_button_pin) == GPIO.HIGH:
                         break
                     QApplication.processEvents()
@@ -281,7 +282,6 @@ def adjust_value_with_acceleration(
             increment = unit_increment
             while GPIO.input(down_button_pin) == GPIO.LOW:
                 elapsed = time.time() - start_time
-                # Acceleration logic
                 if repeats >= 20 or elapsed >= 10:
                     increment = unit_increment * 100
                 elif repeats >= 10 or elapsed >= 5:
@@ -297,8 +297,7 @@ def adjust_value_with_acceleration(
                 else:
                     ping_buzzer_invalid()
                 repeats += 1
-                # Wait for 0.5s or until button released
-                for _ in range(int(0.5 / DEBOUNCE)):
+                for _ in range(int(INTERVAL / DEBOUNCE)):
                     if GPIO.input(down_button_pin) == GPIO.HIGH:
                         break
                     QApplication.processEvents()
