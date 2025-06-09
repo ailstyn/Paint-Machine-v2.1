@@ -148,7 +148,7 @@ class RelayControlApp(QWidget):
 
         # Move this to the end:
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.show()
+        #self.show()
         self.showFullScreen()
 
         self.overlay_widget = OverlayWidget(self)
@@ -278,7 +278,14 @@ class ValueInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setStyleSheet(f"background: {color_scheme['splash']}; border-radius: 18px;")
+        # Add a border using the foreground color
+        self.setStyleSheet(
+            f"""
+            background: {color_scheme['splash']};
+            border-radius: 18px;
+            border: 4px solid {color_scheme['fg']};
+            """
+        )
 
         self.label = QLabel(f"{self.value} {self.unit}")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
