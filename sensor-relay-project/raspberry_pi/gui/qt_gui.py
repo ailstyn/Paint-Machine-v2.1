@@ -117,21 +117,31 @@ class RelayControlApp(QWidget):
         self.progress_bar_column.setContentsMargins(0, 0, 0, 0)
         self.progress_bar_column.setSpacing(0)
         self.progress_bar_column.addStretch(1)  # Top stretch
+
+        # Make the progress bar 20% larger (width)
+        progress_bar_width = 36  # original was likely 30, increase by 20%
         self.progress_bar = QProgressBar()
         self.progress_bar.setOrientation(Qt.Orientation.Vertical)
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(50)
-        self.progress_bar.setStyleSheet(f"QProgressBar {{background: {self.bg};}}")
         self.progress_bar.setTextVisible(False)
+        self.progress_bar.setFixedWidth(progress_bar_width)
+        # Set the background to foreground color and the bar to splash color
+        self.progress_bar.setStyleSheet(
+            f"""
+            QProgressBar {{
+                background: {self.fg};
+                border: 2px solid {self.fg};
+                border-radius: 5px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {self.splash};
+                border-radius: 5px;
+            }}
+            """
+        )
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-        # Add percentage label below the progress bar
-        self.progress_percent_label = QLabel("0%")
-        self.progress_percent_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self.progress_percent_label.setFont(QFont("Cascadia Code SemiBold", 16, QFont.Weight.Bold))
-        self.progress_percent_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.progress_bar_column.addWidget(self.progress_percent_label, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.progress_bar_column.addStretch(1)  # Bottom stretch
 
         # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
@@ -183,7 +193,7 @@ class RelayControlApp(QWidget):
             percent = 0
             if self.target_weight > 0:
                 percent = int((self.current_weight / self.target_weight) * 100)
-            self.progress_percent_label.setText(f"{percent}%")
+            # self.progress_percent_label.setText(f"{percent}%")  # Removed per request
         except Exception as e:
             logging.error(f"Error in refresh_ui: {e}")
 
@@ -205,7 +215,6 @@ class RelayControlApp(QWidget):
         for dot_label in self.dot_widgets:
             dot_label.setStyleSheet(f"background: transparent; border-radius: 8px; color: {self.fg};")
         # Update progress bar color
-        self.progress_percent_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
