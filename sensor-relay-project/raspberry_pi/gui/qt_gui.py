@@ -84,6 +84,8 @@ class RelayControlApp(QWidget):
                 dot_label.setText("")
             self.dot_column.addWidget(dot_label)
             self.dot_widgets.append(dot_label)
+            if i < len(icon_files) - 1:
+                self.dot_column.addSpacing(32)  # Match icon spacing
         self.dot_column.addStretch(1)  # Bottom stretch for vertical centering
 
         # --- Icon Column (rightmost) ---
