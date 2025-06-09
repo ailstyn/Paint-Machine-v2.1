@@ -89,7 +89,7 @@ class RelayControlApp(QWidget):
         # --- Icon Column (rightmost) ---
         self.icon_column = QVBoxLayout()
         self.icon_column.setContentsMargins(0, 0, 0, 0)
-        self.icon_column.setSpacing(0)
+        self.icon_column.setSpacing(32)  # Increase spacing between icons
         self.icon_labels = []
         self.icon_column.addStretch(1)
         for filename, alt in icon_files:
@@ -97,7 +97,7 @@ class RelayControlApp(QWidget):
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
                 pixmap = pixmap.scaled(
-                    40, 40,
+                    80, 80,  # Double the previous 40x40 size
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 )
@@ -105,7 +105,7 @@ class RelayControlApp(QWidget):
                 icon_label.setPixmap(pixmap)
             else:
                 icon_label = QLabel(alt)
-                icon_label.setFont(QFont("Arial", 32))
+                icon_label.setFont(QFont("Arial", 64))  # Double the previous 32 size
                 icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
             icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.icon_column.addWidget(icon_label)
