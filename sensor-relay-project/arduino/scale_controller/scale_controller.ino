@@ -20,6 +20,7 @@
 #define RELAY_DEACTIVATED 0xFA
 #define VERBOSE_DEBUG 0xFE
 #define BEGIN_FILL 0x10
+#define FINAL_WEIGHT 0x11
 
 // Global variables
 HX711 scale;
@@ -199,18 +200,26 @@ void fill() {
             Serial.println("TIME LIMIT REACHED");
             digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
             digitalWrite(LED_PIN, LOW);    // Turn LED OFF at end of fill
+
+            // Report final weight
+            long finalWeight = scale.get_units(3);
+            Serial.write(FINAL_WEIGHT);
+            Serial.println(finalWeight);
+
             return;
         }
-
-        // Read and send current weight to Raspberry Pi
-        long currentWeight = scale.get_units(3);
-        Serial.write(CURRENT_WEIGHT);
-        Serial.println(currentWeight);
     }
 
+    // If fill ended because target weight was reached:
     digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
-    Serial.println("Filling Complete");
+    Serial.write(VERBOSE_DEBUG);
+    Serial.println("TARGET WEIGHT REACHED");
     digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
+
+    // Report final weight
+    long finalWeight = scale.get_units(3);
+    Serial.write(FINAL_WEIGHT);
+    Serial.println(finalWeight);
 }
 
 // Function to handle recalibration
