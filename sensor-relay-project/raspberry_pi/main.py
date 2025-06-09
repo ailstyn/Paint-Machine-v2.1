@@ -407,7 +407,8 @@ def poll_hardware(app):
                     app.refresh_ui()
                 elif message_type == BEGIN_FILL:
                     print("Received BEGIN FILL from Arduino.")
-                    app.set_fill_mode(target_weight)  # You need to implement set_fill_mode in your GUI
+                    # Show current and target weight in the GUI
+                    app.set_fill_mode(app.current_weight, target_weight)  # Pass both values
                 elif message_type == VERBOSE_DEBUG:
                     debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
                     print(f"Arduino (debug): {debug_line}")
