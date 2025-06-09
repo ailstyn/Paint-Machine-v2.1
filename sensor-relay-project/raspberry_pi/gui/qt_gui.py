@@ -49,11 +49,25 @@ class RelayControlApp(QWidget):
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.main_layout.addWidget(self.main_label)
 
-        self.value_label = QLabel("0.0 g")
-        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.value_label.setFont(QFont("Cascadia Code SemiBold", 28))
-        self.value_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.main_layout.addWidget(self.value_label)
+        self.value_row = QHBoxLayout()
+        self.value_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.current_weight_label = QLabel("0.0 g")
+        self.current_weight_label.setFont(QFont("Cascadia Code SemiBold", 28))
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+
+        self.slash_label = QLabel("/")
+        self.slash_label.setFont(QFont("Cascadia Code SemiBold", 28))
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+
+        self.target_weight_label = QLabel("0.0 g")
+        self.target_weight_label.setFont(QFont("Cascadia Code SemiBold", 28))
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+
+        self.value_row.addWidget(self.current_weight_label)
+        self.value_row.addWidget(self.slash_label)
+        self.value_row.addWidget(self.target_weight_label)
+        self.main_layout.addLayout(self.value_row)
 
         # Horizontal layout for main content (progress bar, center, icons)
         self.content_layout = QHBoxLayout()
@@ -293,15 +307,21 @@ class RelayControlApp(QWidget):
 
     def set_current_weight_mode(self, weight):
         self.main_label.setText("CURRENT WEIGHT")
-        self.value_label.setText(f"{weight:.1f} g")
+        self.current_weight_label.setText(f"{weight:.1f} g")
+        self.slash_label.setText("")  # Hide slash
+        self.target_weight_label.setText("")  # Hide target
 
     def set_target_weight_mode(self, target_weight):
         self.main_label.setText("SET TARGET WEIGHT")
-        self.value_label.setText(f"{target_weight:.1f} g")
+        self.target_weight_label.setText(f"{target_weight:.1f} g")
+        self.slash_label.setText("")  # Hide slash
+        self.current_weight_label.setText("")  # Hide current
 
     def set_fill_mode(self, current_weight, target_weight):
         self.main_label.setText("FILLING")
-        self.value_label.setText(f"{current_weight:.1f} g / {target_weight:.1f} g")
+        self.current_weight_label.setText(f"{current_weight:.1f} g")
+        self.slash_label.setText("/")
+        self.target_weight_label.setText(f"{target_weight:.1f} g")
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
