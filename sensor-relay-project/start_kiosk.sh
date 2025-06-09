@@ -8,4 +8,4 @@ sleep 2
 unclutter &
 
 # Launch your app (adjust the path as needed)
-python3 /home/pi/sensor-relay-project/main.py
+python3 /home/chris/Paint-Machine-v2.1/sensor-relay-project/raspberry_pi/main.py
