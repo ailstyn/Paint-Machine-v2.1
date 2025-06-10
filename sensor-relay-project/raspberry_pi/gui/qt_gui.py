@@ -179,12 +179,34 @@ class RelayControlApp(QWidget):
                 self.icon_column.addSpacing(32)
         self.icon_column.addStretch(1)
 
+        # --- Combine dot and icon columns into a container ---
+        self.dot_icon_container = QWidget()
+        dot_icon_layout = QVBoxLayout()
+        dot_icon_layout.setSpacing(0)
+        dot_icon_layout.setContentsMargins(0, 0, 0, 0)
+        dot_icon_layout.addLayout(self.dot_column)
+        dot_icon_layout.addLayout(self.icon_column)
+        self.dot_icon_container.setLayout(dot_icon_layout)
+
+        # Calculate combined width (adjust as needed for your icon/dot sizes and spacings)
+        dot_icon_width = 80 + 80 + 32  # 80px per column + 32px spacing (if any)
+        self.dot_icon_container.setFixedWidth(dot_icon_width)
+
+        # Set progress bar column width to match
+        self.progress_bar_container = QWidget()
+        progress_bar_layout = QVBoxLayout()
+        progress_bar_layout.setContentsMargins(0, 0, 0, 0)
+        progress_bar_layout.addStretch(1)
+        progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
+        progress_bar_layout.addStretch(1)
+        self.progress_bar_container.setLayout(progress_bar_layout)
+        self.progress_bar_container.setFixedWidth(dot_icon_width)
+
         # --- Add all columns to the main horizontal layout with left/right buffer ---
         self.main_layout.insertSpacing(0, 24)  # Buffer to the left of progress bar
-        self.main_layout.addLayout(self.progress_bar_column)
+        self.main_layout.addWidget(self.progress_bar_container)
         self.main_layout.addLayout(self.labels_column, stretch=1)
-        self.main_layout.addLayout(self.dot_column)
-        self.main_layout.addLayout(self.icon_column)
+        self.main_layout.addWidget(self.dot_icon_container)
         self.main_layout.addSpacing(24)  # Buffer to the right of icon column
 
         # --- To move the selection dot in code ---
