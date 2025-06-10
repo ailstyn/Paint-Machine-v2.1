@@ -23,7 +23,7 @@ class RelayControlApp(QWidget):
         self.set_time_limit_callback = set_time_limit_callback
         self.set_calibrate_callback = set_calibrate_callback
 
-        self.selected_index = 0  # <-- Move this here, before dot column setup
+        self.selected_index = 0
 
         # --- CREATE SYSINFO LABEL FIRST ---
         self.sysinfo_label = QLabel()
@@ -58,7 +58,7 @@ class RelayControlApp(QWidget):
         # System info label (top)
         self.main_layout.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
-        # Main label and value row
+        # Main label
         self.main_label = QLabel("CURRENT WEIGHT")
         self.main_label.setFont(QFont("Cascadia Code SemiBold", 32))
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
@@ -68,17 +68,17 @@ class RelayControlApp(QWidget):
         # --- Value labels row (current, target, slash) ---
         self.current_weight_label = QLabel("0.0 g")
         self.current_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")  # REVERT: transparent background
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.target_weight_label = QLabel("")
         self.target_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")    # REVERT: transparent background
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.slash_label = QLabel("")
         self.slash_label.setFont(QFont("Cascadia Code", 48))
-        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")            # REVERT: transparent background
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Add value labels to a horizontal layout
@@ -88,8 +88,8 @@ class RelayControlApp(QWidget):
         self.value_row.addWidget(self.current_weight_label)
         self.value_row.addWidget(self.slash_label)
         self.value_row.addWidget(self.target_weight_label)
-        
-        # Add the value row widget to the main layout
+
+        # Add the value row widget to the main layout, centered
         self.value_row_widget = QWidget()
         self.value_row_widget.setLayout(self.value_row)
         self.main_layout.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -97,111 +97,6 @@ class RelayControlApp(QWidget):
         # Create center_frame
         self.center_frame = QFrame()
         self.center_frame.setStyleSheet("background: transparent;")
-
-        # Horizontal content layout (centered area)
-        self.content_layout = QHBoxLayout()
-        self.content_layout.setContentsMargins(0, 0, 0, 0)
-        self.content_layout.setSpacing(0)
-        self.main_layout.addLayout(self.content_layout)
-        self.dot_widgets = []
-
-        # --- Dot column ---
-        self.dot_column = QVBoxLayout()
-        self.dot_column.addStretch(1)
-        for i in range(len(self.icon_files)):
-            dot_label = QLabel()
-            dot_label.setFixedSize(80, 80)
-            dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            dot_label.setStyleSheet(
-                "background: transparent;"
-                "border-radius: 8px;"
-                f"color: {self.fg};"
-            )
-            if i == self.selected_index:
-                dot_label.setText('<span style="font-size:20px;">●</span>')
-            else:
-                dot_label.setText("")
-            self.dot_column.addWidget(dot_label)
-            self.dot_widgets.append(dot_label)
-            if i < len(self.icon_files) - 1:
-                self.dot_column.addSpacing(32)
-        self.dot_column.addStretch(1)
-        self.icon_labels = []
-        # --- Icon column ---
-        self.icon_column = QVBoxLayout()
-        self.icon_column.addStretch(1)
-        for i, (filename, alt) in enumerate(self.icon_files):
-            icon_label = QLabel()
-            icon_path = os.path.join(os.path.dirname(__file__), filename)
-            pixmap = QPixmap(icon_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaled(
-                    80, 80,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-                icon_label.setPixmap(pixmap)
-                icon_label.setText("")
-            else:
-                icon_label.setText(alt)
-                icon_label.setFont(QFont("Arial", 64))
-                icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-            self.icon_labels.append(icon_label)
-            self.icon_column.addWidget(icon_label)
-            if i < len(self.icon_files) - 1:
-                self.icon_column.addSpacing(32)
-        self.icon_column.addStretch(1)
-
-        # --- Combine dot and icon columns into a row ---
-        self.dot_icon_row = QHBoxLayout()
-        self.dot_icon_row.addLayout(self.dot_column)
-        self.dot_icon_row.addLayout(self.icon_column)
-
-        # --- Create a container widget for vertical centering ---
-        self.dot_icon_container = QWidget()
-        self.dot_icon_container.setLayout(self.dot_icon_row)
-        self.dot_icon_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-
-        # --- Add columns to content layout ---
-        self.content_layout.addSpacing(25)
-        self.content_layout.addLayout(self.progress_bar_column)
-        self.content_layout.addWidget(self.center_frame, stretch=1)
-        self.content_layout.addWidget(self.dot_icon_container, stretch=0)  # This will fill vertical space and center
-        self.content_layout.addSpacing(25)
-
-        # Add right buffer after the icons
-        self.right_buffer = QVBoxLayout()
-        self.right_buffer.addSpacing(25)
-        self.content_layout.addLayout(self.right_buffer)
-
-        # --- To move the selection dot in code ---
-        # Call this function when you want to update the selected icon
-        def update_selection_dot(new_index):
-            for i, dot_label in enumerate(self.dot_widgets):
-                if i == new_index:
-                    dot_label.setText('<span style="font-size:20px;">●</span>')
-                else:
-                    dot_label.setText("")
-            self.selected_index = new_index
-
-        self.update_selection_dot = update_selection_dot  # Expose for external use
-
-        # At the end of __init__:
-        QTimer.singleShot(0, self.adjust_progress_bar_height)
-
-        # Move this to the end:
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
-        self.showFullScreen()
-
-        self.overlay_widget = OverlayWidget(self)
-        self.overlay_widget.resize(self.size())
-        self.overlay_widget.raise_()
-        self.overlay_widget.hide()
-
-        content_widget = QWidget()
-        content_widget.setLayout(self.content_layout)
-        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.main_layout.addWidget(content_widget, stretch=1)
 
         # --- Progress bar and column ---
         self.progress_bar = QProgressBar()
@@ -228,12 +123,104 @@ class RelayControlApp(QWidget):
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.progress_bar_column.addStretch(1)
 
-        # --- Now add to content layout ---
+        # --- Dot and Icon columns ---
+        self.dot_widgets = []
+        self.icon_labels = []
+
+        # Dot column
+        self.dot_column = QVBoxLayout()
+        self.dot_column.addStretch(1)
+        for i in range(len(self.icon_files)):
+            dot_label = QLabel()
+            dot_label.setFixedSize(80, 80)
+            dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            dot_label.setStyleSheet(
+                "background: transparent;"
+                "border-radius: 8px;"
+                f"color: {self.fg};"
+            )
+            if i == self.selected_index:
+                dot_label.setText('<span style="font-size:20px;">●</span>')
+            else:
+                dot_label.setText("")
+            self.dot_column.addWidget(dot_label)
+            self.dot_widgets.append(dot_label)
+            if i < len(self.icon_files) - 1:
+                self.dot_column.addSpacing(32)
+        self.dot_column.addStretch(1)
+
+        # Icon column
+        self.icon_column = QVBoxLayout()
+        self.icon_column.addStretch(1)
+        for i, (filename, alt) in enumerate(self.icon_files):
+            icon_label = QLabel()
+            icon_path = os.path.join(os.path.dirname(__file__), filename)
+            pixmap = QPixmap(icon_path)
+            if not pixmap.isNull():
+                pixmap = pixmap.scaled(
+                    80, 80,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                icon_label.setPixmap(pixmap)
+                icon_label.setText("")
+            else:
+                icon_label.setText(alt)
+                icon_label.setFont(QFont("Arial", 64))
+                icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+            self.icon_labels.append(icon_label)
+            self.icon_column.addWidget(icon_label)
+            if i < len(self.icon_files) - 1:
+                self.icon_column.addSpacing(32)
+        self.icon_column.addStretch(1)
+
+        # Combine dot and icon columns into a row
+        self.dot_icon_row = QHBoxLayout()
+        self.dot_icon_row.addLayout(self.dot_column)
+        self.dot_icon_row.addLayout(self.icon_column)
+
+        # Create a container widget for vertical centering
+        self.dot_icon_container = QWidget()
+        self.dot_icon_container.setLayout(self.dot_icon_row)
+        self.dot_icon_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+
+        # --- Horizontal content layout (centered area) ---
+        self.content_layout = QHBoxLayout()
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(0)
         self.content_layout.addSpacing(25)
         self.content_layout.addLayout(self.progress_bar_column)
         self.content_layout.addWidget(self.center_frame, stretch=1)
         self.content_layout.addWidget(self.dot_icon_container, stretch=0)
         self.content_layout.addSpacing(25)
+
+        # Add content layout to a widget that expands
+        content_widget = QWidget()
+        content_widget.setLayout(self.content_layout)
+        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.main_layout.addWidget(content_widget, stretch=1)
+
+        # --- To move the selection dot in code ---
+        def update_selection_dot(new_index):
+            for i, dot_label in enumerate(self.dot_widgets):
+                if i == new_index:
+                    dot_label.setText('<span style="font-size:20px;">●</span>')
+                else:
+                    dot_label.setText("")
+            self.selected_index = new_index
+
+        self.update_selection_dot = update_selection_dot  # Expose for external use
+
+        # At the end of __init__:
+        QTimer.singleShot(0, self.adjust_progress_bar_height)
+
+        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
+        self.showFullScreen()
+
+        self.overlay_widget = OverlayWidget(self)
+        self.overlay_widget.resize(self.size())
+        self.overlay_widget.raise_()
+        self.overlay_widget.hide()
 
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
