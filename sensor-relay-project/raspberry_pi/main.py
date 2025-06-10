@@ -357,7 +357,6 @@ def adjust_value_with_acceleration(
 # Usage in set_target_weight:
 def set_target_weight(app):
     global target_weight
-    print("set_target_weight called")
 
     def update_display(value, *args, **kwargs):
         app.show_dialog_content(
@@ -365,9 +364,16 @@ def set_target_weight(app):
             message=f"{value} g\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
         )
 
+    # Show the initial value immediately
+    update_display(target_weight)
+
     target_weight = adjust_value_with_acceleration(
         initial_value=target_weight,
-        dialog=type('DialogStub', (), {'update_value': update_display, 'accept': lambda: None, 'close': lambda: None})(),
+        dialog=type('DialogStub', (), {
+            'update_value': staticmethod(update_display),
+            'accept': staticmethod(lambda *args, **kwargs: None),
+            'close': staticmethod(lambda *args, **kwargs: None)
+        })(),
         up_button_pin=UP_BUTTON_PIN,
         down_button_pin=DOWN_BUTTON_PIN,
         unit_increment=1,
@@ -375,14 +381,12 @@ def set_target_weight(app):
         up_callback=update_display,
         down_callback=update_display
     )
-    print('exiting set_target_weight')
     clear_serial_buffer(arduinos[0])
     app.clear_dialog_content()
 
 # Usage in set_time_limit:
 def set_time_limit(app):
     global time_limit
-    print("set_time_limit called")
 
     def update_display(value, *args, **kwargs):
         app.show_dialog_content(
@@ -390,9 +394,16 @@ def set_time_limit(app):
             message=f"{value} ms\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
         )
 
+    # Show the initial value immediately
+    update_display(time_limit)
+
     time_limit = adjust_value_with_acceleration(
         initial_value=time_limit,
-        dialog=type('DialogStub', (), {'update_value': update_display, 'accept': lambda: None, 'close': lambda: None})(),
+        dialog=type('DialogStub', (), {
+            'update_value': staticmethod(update_display),
+            'accept': staticmethod(lambda *args, **kwargs: None),
+            'close': staticmethod(lambda *args, **kwargs: None)
+        })(),
         up_button_pin=UP_BUTTON_PIN,
         down_button_pin=DOWN_BUTTON_PIN,
         unit_increment=100,
@@ -400,7 +411,6 @@ def set_time_limit(app):
         up_callback=update_display,
         down_callback=update_display
     )
-    print('exiting set_time_limit')
     clear_serial_buffer(arduinos[0])
     app.clear_dialog_content()
 

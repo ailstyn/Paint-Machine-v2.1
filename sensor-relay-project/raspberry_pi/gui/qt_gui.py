@@ -108,9 +108,6 @@ class RelayControlApp(QWidget):
         self.dialog_area = QWidget()
         self.dialog_area_layout = QVBoxLayout(self.dialog_area)
         self.dialog_area_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.dialog_label = QLabel("")  # Placeholder for now
-        self.dialog_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.dialog_area_layout.addWidget(self.dialog_label)
         self.dialog_area.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
 
         # --- Section 4: Selection dot and icon columns (right) ---
@@ -202,9 +199,6 @@ class RelayControlApp(QWidget):
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
 
-        self.center_frame = QWidget()
-        self.center_frame.setStyleSheet("background: transparent;")
-
     def adjust_progress_bar_height(self):
         parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
         new_height = int(parent_height * 0.9)  # Increase from 0.6 to 0.9
@@ -235,7 +229,6 @@ class RelayControlApp(QWidget):
         self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")  # TEMP: black background
         self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")    # TEMP: black background
         self.slash_label.setStyleSheet(f"color: {self.fg}; background: black;")            # TEMP: black background
-        self.center_frame.setStyleSheet("background: transparent;")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
         for dot_label in self.dot_widgets:
@@ -297,17 +290,6 @@ class RelayControlApp(QWidget):
         except Exception as e:
             logging.error(f"Error in resizeEvent: {e}")
 
-
-    def create_value_input_dialog(self, title, initial_value, unit):
-        dialog = ValueInputDialog(
-            title=title,
-            initial_value=initial_value,
-            unit=unit,
-            color_scheme=COLOR_SCHEMES[self.color_scheme_index],
-            parent=self
-        )
-        dialog.show()
-        return dialog
 
     def set_current_weight_mode(self, weight):
         self.main_label.setText("CURRENT WEIGHT")
