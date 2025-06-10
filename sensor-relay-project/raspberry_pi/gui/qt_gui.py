@@ -110,7 +110,7 @@ class RelayControlApp(QWidget):
         self.dot_column.addStretch(1)
         for i in range(len(self.icon_files)):
             dot_label = QLabel()
-            dot_label.setFixedSize(80, 80)  # 80px wide, 80px tall to match icon size
+            dot_label.setFixedSize(80, 80)
             dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dot_label.setStyleSheet(
                 "background: transparent;"
@@ -124,66 +124,49 @@ class RelayControlApp(QWidget):
             self.dot_column.addWidget(dot_label)
             self.dot_widgets.append(dot_label)
             if i < len(self.icon_files) - 1:
-                self.dot_column.addSpacing(32)  # Match icon spacing
+                self.dot_column.addSpacing(32)
         self.dot_column.addStretch(1)
-        self.icon_labels = []
+
         # --- Icon column ---
         self.icon_column = QVBoxLayout()
         self.icon_column.addStretch(1)
         for i, (filename, alt) in enumerate(self.icon_files):
-            try:
-                icon_label = QLabel()
-                icon_path = os.path.join(os.path.dirname(__file__), filename)
-                pixmap = QPixmap(icon_path)
-                if not pixmap.isNull():
-                    pixmap = pixmap.scaled(
-                        80, 80,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation
-                    )
-                    icon_label.setPixmap(pixmap)
-                    icon_label.setText("")
-                else:
-                    icon_label.setText(alt)
-                    icon_label.setFont(QFont("Arial", 64))
-                    icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-                self.icon_labels.append(icon_label)
-                self.icon_column.addWidget(icon_label)
-            except Exception as e:
-                logging.error(f"Error loading icon '{filename}': {e}")
+            icon_label = QLabel()
+            icon_path = os.path.join(os.path.dirname(__file__), filename)
+            pixmap = QPixmap(icon_path)
+            if not pixmap.isNull():
+                pixmap = pixmap.scaled(
+                    80, 80,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                icon_label.setPixmap(pixmap)
+                icon_label.setText("")
+            else:
+                icon_label.setText(alt)
+                icon_label.setFont(QFont("Arial", 64))
+                icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+            self.icon_labels.append(icon_label)
+            self.icon_column.addWidget(icon_label)
+            if i < len(self.icon_files) - 1:
+                self.icon_column.addSpacing(32)
         self.icon_column.addStretch(1)
 
-        # --- Progress bar column ---
-        self.progress_bar_column = QVBoxLayout()
-        self.progress_bar_column.addStretch(1)
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(0)
-        self.progress_bar.setTextVisible(False)
-        self.progress_bar.setOrientation(Qt.Orientation.Vertical)
-        self.progress_bar.setStyleSheet(
-            f"""
-            QProgressBar {{
-                background: {self.bg};
-                border: 2px solid {self.fg};
-                border-radius: 5px;
-            }}
-            QProgressBar::chunk {{
-                background-color: {self.fg};
-                border-radius: 5px;
-            }}
-            """
-        )
-        self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.progress_bar_column.addStretch(1)
+        # --- Combine dot and icon columns into a row ---
+        self.dot_icon_row = QHBoxLayout()
+        self.dot_icon_row.addLayout(self.dot_column)
+        self.dot_icon_row.addLayout(self.icon_column)
+
+        # --- Create a container widget for vertical centering ---
+        self.dot_icon_container = QWidget()
+        self.dot_icon_container.setLayout(self.dot_icon_row)
+        self.dot_icon_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         # --- Add columns to content layout ---
         self.content_layout.addSpacing(25)
         self.content_layout.addLayout(self.progress_bar_column)
         self.content_layout.addWidget(self.center_frame, stretch=1)
-        self.content_layout.addLayout(self.dot_column)
-        self.content_layout.addLayout(self.icon_column)
+        self.content_layout.addWidget(self.dot_icon_container, stretch=0)  # This will fill vertical space and center
         self.content_layout.addSpacing(25)
 
         # Add right buffer after the icons
