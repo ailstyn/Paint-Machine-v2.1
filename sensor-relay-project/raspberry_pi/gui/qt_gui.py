@@ -15,17 +15,6 @@ COLOR_SCHEMES = [
     {"name": "Green Alert", "bg": "#1B9E3A", "fg": "#FFFFFF", "splash": "#FF6F61"},
 ]
 
-def tint_pixmap(pixmap, color):
-    """Return a new QPixmap tinted with the given color."""
-    tinted = QPixmap(pixmap.size())
-    tinted.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(tinted)
-    painter.drawPixmap(0, 0, pixmap)
-    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
-    painter.fillRect(tinted.rect(), QColor(color))
-    painter.end()
-    return tinted
-
 class RelayControlApp(QWidget):
     def __init__(self, parent=None, set_target_weight_callback=None, set_time_limit_callback=None):
         super().__init__(parent)
@@ -130,8 +119,6 @@ class RelayControlApp(QWidget):
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation
                     )
-                    if i in (0, 1):
-                        pixmap = tint_pixmap(pixmap, self.fg)
                     icon_label.setPixmap(pixmap)
                     icon_label.setText("")
                 else:
