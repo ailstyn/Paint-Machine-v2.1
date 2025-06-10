@@ -220,7 +220,7 @@ class RelayControlApp(QWidget):
 
         QTimer.singleShot(0, self.adjust_progress_bar_height)
 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.showFullScreen()
 
         self.overlay_widget = OverlayWidget(self)
