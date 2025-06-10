@@ -68,17 +68,17 @@ class RelayControlApp(QWidget):
         # --- Value labels row (current, target, slash) ---
         self.current_weight_label = QLabel("0.0 g")
         self.current_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")  # TEMP: black background
         self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.target_weight_label = QLabel("")
         self.target_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")    # TEMP: black background
         self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.slash_label = QLabel("")
         self.slash_label.setFont(QFont("Cascadia Code", 48))
-        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: black;")            # TEMP: black background
         self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Add value labels to a horizontal layout
@@ -159,6 +159,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
+        self.progress_bar.setOrientation(Qt.Orientation.Vertical)
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
@@ -250,7 +251,9 @@ class RelayControlApp(QWidget):
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")  # TEMP: black background
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")    # TEMP: black background
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: black;")            # TEMP: black background
         self.center_frame.setStyleSheet("background: transparent;")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
