@@ -333,7 +333,6 @@ def adjust_value_with_acceleration(
 # Usage in set_target_weight:
 def set_target_weight(app):
     global target_weight
-    print("Opening target weight dialog...")
     dialog = app.create_value_input_dialog(
         title="SET TARGET WEIGHT",
         initial_value=target_weight,
@@ -348,11 +347,11 @@ def set_target_weight(app):
         min_value=0
     )
     print("Closed target weight dialog.")
+    clear_serial_buffer(arduinos[0])  # <-- Add this line
 
 # Usage in set_time_limit:
 def set_time_limit(app):
     global time_limit
-    print("Opening time limit dialog...")
     dialog = app.create_value_input_dialog(
         title="SET TIME LIMIT",
         initial_value=time_limit,
@@ -367,6 +366,12 @@ def set_time_limit(app):
         min_value=0
     )
     print("Closed time limit dialog.")
+    clear_serial_buffer(arduinos[0])  # <-- Add this line
+
+def clear_serial_buffer(arduino):
+    """Read and discard all available bytes from the Arduino serial buffer."""
+    while arduino.in_waiting > 0:
+        arduino.read(arduino.in_waiting)
 
 def poll_hardware(app):
     global E_STOP

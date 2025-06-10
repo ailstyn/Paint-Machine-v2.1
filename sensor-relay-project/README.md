@@ -60,6 +60,9 @@ python raspberry_pi/gui/app.py
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
 
+Icons provided by:
+
+
 ## Requirements
 
 lightdm

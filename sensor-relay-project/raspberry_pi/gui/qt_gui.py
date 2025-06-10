@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QProgressBar, QFrame, QDialog, QStackedLayout, QGraphicsDropShadowEffect, QSizePolicy
 )
-from PyQt6.QtGui import QPixmap, QFont, QColor
+from PyQt6.QtGui import QPixmap, QFont, QColor, QPainter
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 import os
 import random
@@ -14,6 +14,17 @@ COLOR_SCHEMES = [
     {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020"},
     {"name": "Green Alert", "bg": "#1B9E3A", "fg": "#FFFFFF", "splash": "#FF6F61"},
 ]
+
+def tint_pixmap(pixmap, color):
+    """Return a new QPixmap tinted with the given color."""
+    tinted = QPixmap(pixmap.size())
+    tinted.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(tinted)
+    painter.drawPixmap(0, 0, pixmap)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+    painter.fillRect(tinted.rect(), QColor(color))
+    painter.end()
+    return tinted
 
 class RelayControlApp(QWidget):
     def __init__(self, parent=None, set_target_weight_callback=None, set_time_limit_callback=None):
@@ -117,14 +128,15 @@ class RelayControlApp(QWidget):
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 )
-                icon_label = QLabel()
-                icon_label.setPixmap(pixmap)
+                # Only recolor the weight and time icons (not the color icon)
+                if i in (0, 1):
+                    pixmap = tint_pixmap(pixmap, self.fg)
+                self.icon_labels[i].setPixmap(pixmap)
+                self.icon_labels[i].setText("")
             else:
-                icon_label = QLabel(alt)
-                icon_label.setFont(QFont("Arial", 64))  # Double the previous 32 size
-                icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.icon_column.addWidget(icon_label)
+                self.icon_labels[i].setText(alt)
+                self.icon_labels[i].setFont(QFont("Arial", 64))
+                self.icon_labels[i].setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
             self.icon_labels.append(icon_label)
         self.icon_column.addStretch(1)
 
