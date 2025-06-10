@@ -22,6 +22,14 @@ class RelayControlApp(QWidget):
         self.set_target_weight_callback = set_target_weight_callback
         self.set_time_limit_callback = set_time_limit_callback
         self.set_calibrate_callback = set_calibrate_callback
+
+        # --- CREATE SYSINFO LABEL FIRST ---
+        self.sysinfo_label = QLabel()
+        self.sysinfo_label.setFont(QFont("Cascadia Code", 10))
+        self.sysinfo_label.setStyleSheet("color: #888; background: rgba(255,255,255,0.7); border-radius: 4px; padding: 2px;")
+        self.sysinfo_label.setFixedWidth(220)
+        self.sysinfo_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+
         print("Initializing RelayControlApp (PyQt)...")
         self.color_scheme_index = 0
         scheme = COLOR_SCHEMES[self.color_scheme_index]
