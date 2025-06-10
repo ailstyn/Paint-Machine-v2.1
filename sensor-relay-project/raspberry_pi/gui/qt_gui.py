@@ -1,13 +1,13 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QProgressBar, QFrame, QDialog, QStackedLayout, QGraphicsDropShadowEffect, QSizePolicy
+    QProgressBar, QFrame, QDialog, QStackedLayout, QGraphicsDropShadowEffect, QSizePolicy,
+    QGridLayout
 )
 from PyQt6.QtGui import QPixmap, QFont, QColor, QPainter
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 import os
 import random
 import logging
-import psutil
 import sys
 from PyQt6.QtWidgets import QApplication
 
@@ -29,14 +29,6 @@ class RelayControlApp(QWidget):
         self.set_calibrate_callback = set_calibrate_callback
 
         self.selected_index = 0
-
-        # --- CREATE SYSINFO LABEL FIRST ---
-        self.sysinfo_label = QLabel()
-        self.sysinfo_label.setFont(QFont("Cascadia Code", 10))
-        self.sysinfo_label.setStyleSheet("color: #888; background: rgba(255,255,255,0.7); border-radius: 4px; padding: 2px;")
-        self.sysinfo_label.setFixedWidth(220)
-        self.sysinfo_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-
         self.color_scheme_index = 0
         scheme = COLOR_SCHEMES[self.color_scheme_index]
         self.bg = scheme["bg"]
@@ -53,13 +45,7 @@ class RelayControlApp(QWidget):
             ("color.png", "Color"),
         ]
 
-        # --- Main horizontal layout ---
-        self.main_layout = QHBoxLayout(self)
-        self.main_layout.setContentsMargins(8, 8, 8, 8)
-        self.setLayout(self.main_layout)
-        self.main_layout.setSpacing(0)
-
-        # --- Progress bar column ---
+        # --- Section 1: Progress Bar (left) ---
         self.progress_bar = QProgressBar()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
@@ -79,12 +65,13 @@ class RelayControlApp(QWidget):
             }}
             """
         )
-        self.progress_bar_column = QVBoxLayout()
-        self.progress_bar_column.addStretch(1)
-        self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.progress_bar_column.addStretch(1)
+        progress_bar_container = QWidget()
+        progress_bar_layout = QVBoxLayout(progress_bar_container)
+        progress_bar_layout.addWidget(self.progress_bar)
+        progress_bar_layout.addStretch(1)
+        progress_bar_layout.setContentsMargins(16, 16, 16, 16)
 
-        # --- Labels column ---
+        # --- Section 2: Main label + weight labels (top center) ---
         self.main_label = QLabel("CURRENT WEIGHT")
         self.main_label.setFont(QFont("Cascadia Code SemiBold", 32))
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
@@ -105,38 +92,30 @@ class RelayControlApp(QWidget):
         self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.labels_column = QVBoxLayout()
-        self.labels_column.setSpacing(0)
+        top_center_container = QWidget()
+        top_center_layout = QVBoxLayout(top_center_container)
+        top_center_layout.setContentsMargins(16, 16, 16, 16)
+        top_center_layout.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        # Weight row
+        weight_row = QHBoxLayout()
+        weight_row.addWidget(self.current_weight_label)
+        weight_row.addWidget(self.slash_label)
+        weight_row.addWidget(self.target_weight_label)
+        weight_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        top_center_layout.addLayout(weight_row)
 
-        # Add a buffer above the main label
-        self.labels_column.addSpacing(24)
+        # --- Section 3: Dialog/message area (center) ---
+        self.dialog_area = QWidget()
+        self.dialog_area_layout = QVBoxLayout(self.dialog_area)
+        self.dialog_area_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.dialog_label = QLabel("")  # Placeholder for now
+        self.dialog_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.dialog_area_layout.addWidget(self.dialog_label)
 
-        # --- Add a buffer to the left of the main label ---
-        main_label_row = QHBoxLayout()
-        main_label_row.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.labels_column.addLayout(main_label_row)
-
-        # --- Add a buffer to the left of the value row ---
-        self.value_row = QHBoxLayout()
-        self.value_row.addWidget(self.current_weight_label)
-        self.value_row.addWidget(self.slash_label)
-        self.value_row.addWidget(self.target_weight_label)
-        self.value_row.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self.value_row_widget = QWidget()
-        self.value_row_widget.setLayout(self.value_row)
-
-        value_row_outer = QHBoxLayout()
-        value_row_outer.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.labels_column.addLayout(value_row_outer)
-
-        # Add stretch to push sysinfo label to the bottom
-        self.labels_column.addStretch(1)
-        self.labels_column.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
-
-        # --- Dot column ---
+        # --- Section 4: Selection dot and icon columns (right) ---
         self.dot_widgets = []
-        self.dot_column = QVBoxLayout()
-        self.dot_column.addStretch(1)
+        dot_column = QVBoxLayout()
+        dot_column.addStretch(1)
         for i in range(len(self.icon_files)):
             dot_label = QLabel()
             dot_label.setFixedSize(80, 80)
@@ -150,16 +129,15 @@ class RelayControlApp(QWidget):
                 dot_label.setText('<span style="font-size:20px;">●</span>')
             else:
                 dot_label.setText("")
-            self.dot_column.addWidget(dot_label)
+            dot_column.addWidget(dot_label)
             self.dot_widgets.append(dot_label)
             if i < len(self.icon_files) - 1:
-                self.dot_column.addSpacing(32)
-        self.dot_column.addStretch(1)
+                dot_column.addSpacing(32)
+        dot_column.addStretch(1)
 
-        # --- Icon column ---
+        icon_column = QVBoxLayout()
+        icon_column.addStretch(1)
         self.icon_labels = []
-        self.icon_column = QVBoxLayout()
-        self.icon_column.addStretch(1)
         for i, (filename, alt) in enumerate(self.icon_files):
             icon_label = QLabel()
             icon_path = os.path.join(os.path.dirname(__file__), filename)
@@ -177,40 +155,28 @@ class RelayControlApp(QWidget):
                 icon_label.setFont(QFont("Arial", 64))
                 icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
             self.icon_labels.append(icon_label)
-            self.icon_column.addWidget(icon_label)
+            icon_column.addWidget(icon_label)
             if i < len(self.icon_files) - 1:
-                self.icon_column.addSpacing(32)
-        self.icon_column.addStretch(1)
+                icon_column.addSpacing(32)
+        icon_column.addStretch(1)
 
-        # --- Combine dot and icon columns into a QWidget ---
-        self.dot_icon_container = QWidget()
-        dot_icon_layout = QHBoxLayout()
+        dot_icon_container = QWidget()
+        dot_icon_layout = QVBoxLayout(dot_icon_container)
         dot_icon_layout.setContentsMargins(0, 0, 0, 0)
         dot_icon_layout.setSpacing(0)
-        dot_icon_layout.addLayout(self.dot_column)
-        dot_icon_layout.addLayout(self.icon_column)
-        self.dot_icon_container.setLayout(dot_icon_layout)
+        dot_icon_layout.addLayout(dot_column)
+        dot_icon_layout.addLayout(icon_column)
 
-        # Calculate the combined width (adjust as needed)
-        dot_icon_width = 80 + 80 + 32  # 80px per column + 32px spacing between
-        self.dot_icon_container.setFixedWidth(dot_icon_width)
+        # --- Main grid layout ---
+        grid = QGridLayout(self)
+        grid.setContentsMargins(8, 8, 8, 8)
+        grid.setSpacing(8)
+        grid.addWidget(progress_bar_container, 0, 0, 2, 1)   # Section 1: left, spans 2 rows
+        grid.addWidget(top_center_container, 0, 1, 1, 1)     # Section 2: top center
+        grid.addWidget(self.dialog_area, 1, 1, 1, 1)         # Section 3: center
+        grid.addWidget(dot_icon_container, 0, 2, 2, 1)       # Section 4: right, spans 2 rows
 
-        # --- Progress bar in a QWidget with matching width ---
-        self.progress_bar_container = QWidget()
-        progress_bar_layout = QVBoxLayout()
-        progress_bar_layout.setContentsMargins(0, 0, 0, 0)
-        progress_bar_layout.addStretch(1)
-        progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        progress_bar_layout.addStretch(1)
-        self.progress_bar_container.setLayout(progress_bar_layout)
-        self.progress_bar_container.setFixedWidth(dot_icon_width)
-
-        # --- Add all columns to the main horizontal layout with left/right buffer ---
-        self.main_layout.insertSpacing(0, 24)  # Buffer to the left of progress bar
-        self.main_layout.addWidget(self.progress_bar_container)
-        self.main_layout.addLayout(self.labels_column, stretch=1)
-        self.main_layout.addWidget(self.dot_icon_container)
-        self.main_layout.addSpacing(24)  # Buffer to the right of icon column
+        self.setLayout(grid)
 
         # --- To move the selection dot in code ---
         def update_selection_dot(new_index):
@@ -363,27 +329,6 @@ class RelayControlApp(QWidget):
         self.slash_label.setText("/")
         self.target_weight_label.setText(f"{target_weight:.1f} g")
 
-    def update_sysinfo(self):
-        try:
-            cpu = psutil.cpu_percent(interval=None)
-            ram = psutil.virtual_memory()
-            ram_used = ram.used // (1024 * 1024)
-            ram_total = ram.total // (1024 * 1024)
-            # Pi temperature (if available)
-            temp = "N/A"
-            try:
-                with open("/sys/class/thermal/thermal_zone0/temp") as f:
-                    temp = f"{int(f.read())/1000:.1f}°C"
-            except Exception:
-                pass
-            self.sysinfo_label.setText(
-                f"CPU: {cpu:.1f}%\n"
-                f"RAM: {ram_used} / {ram_total} MB\n"
-                f"Temp: {temp}"
-            )
-        except Exception as e:
-            self.sysinfo_label.setText("SysInfo error")
-
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
         super().__init__(parent)
@@ -395,6 +340,7 @@ class ValueInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Add border with foreground color
         self.setStyleSheet(
             f"""
             background: {color_scheme['fg']};
@@ -414,32 +360,22 @@ class ValueInputDialog(QDialog):
 
         self.setFixedSize(600, 325)  # Set your preferred size here
 
+    def update_value(self, value):
+        try:
+            self.value = value
+            self.label.setText(f"{self.value} {self.unit}")
+        except Exception as e:
+            logging.error(f"Error in ValueInputDialog.update_value: {e}")
+
     @classmethod
     def message_only(cls, title, message, color_scheme, parent=None):
         dlg = cls(title, "", "", color_scheme, parent)
         dlg.label.setText(message)
         dlg.label.setFont(QFont("Cascadia Code SemiBold", 32))
-        dlg.label.setStyleSheet(f"color: {color_scheme['bg']}; background: transparent; padding: 32px;")
-        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dlg.setFixedSize(600, 325)
-        return dlg
-
-    @classmethod
-    def fullscreen_message_only(cls, title, message, color_scheme, parent=None):
-        dlg = cls(title, "", "", color_scheme, parent)
-        dlg.label.setText(message)
-        dlg.label.setFont(QFont("Cascadia Code SemiBold", 48))
         dlg.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent; padding: 32px;")
-        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dlg.setStyleSheet(
-            f"""
-            background: {color_scheme['bg']};
-            border-radius: 0px;
-            """
-        )
-        dlg.showFullScreen()
+        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure label text is centered
+        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure layout is centered
+        dlg.setFixedSize(600, 325)  # Ensure message-only dialogs are also fixed size
         return dlg
 
 class OverlayWidget(QWidget):
@@ -476,21 +412,13 @@ class OverlayWidget(QWidget):
     def hide_overlay(self):
         self.hide()
 
-def create_message_dialog(self, title, message, fullscreen=False):
-    if fullscreen:
-        return ValueInputDialog.fullscreen_message_only(
-            title=title,
-            message=message,
-            color_scheme=COLOR_SCHEMES[self.color_scheme_index],
-            parent=self
-        )
-    else:
-        return ValueInputDialog.message_only(
-            title=title,
-            message=message,
-            color_scheme=COLOR_SCHEMES[self.color_scheme_index],
-            parent=self
-        )
+def create_message_dialog(self, title, message):
+    return ValueInputDialog.message_only(
+        title=title,
+        message=message,
+        color_scheme=COLOR_SCHEMES[self.color_scheme_index],
+        parent=self
+    )
 RelayControlApp.create_message_dialog = create_message_dialog
 
 if __name__ == "__main__":

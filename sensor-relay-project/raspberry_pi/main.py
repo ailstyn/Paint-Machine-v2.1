@@ -118,8 +118,7 @@ def calibrate_scale(arduino_id, app):
     for idx, instruction in enumerate(steps):
         dialog = app.create_message_dialog(
             title=f"Calibration (Arduino {arduino_id+1})",
-            message=instruction,
-            fullscreen=True  # Use fullscreen for calibrate scale
+            message=instruction
         )
         dialog.show()
         dialog.raise_()
