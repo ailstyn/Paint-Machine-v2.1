@@ -394,7 +394,6 @@ class ValueInputDialog(QDialog):
         self.setStyleSheet(
             f"""
             background: {color_scheme['bg']};
-            border: 4px solid {color_scheme['fg']};
             """
         )
 
