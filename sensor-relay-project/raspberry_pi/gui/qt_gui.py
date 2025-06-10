@@ -103,6 +103,9 @@ class RelayControlApp(QWidget):
         self.labels_column = QVBoxLayout()
         self.labels_column.setSpacing(0)
 
+        # Add a buffer above the main label
+        self.labels_column.addSpacing(24)  # Adjust value as desired for more/less space
+
         # Add main label and value row widget at the top
         self.labels_column.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -168,11 +171,13 @@ class RelayControlApp(QWidget):
                 self.icon_column.addSpacing(32)
         self.icon_column.addStretch(1)
 
-        # --- Add all columns to the main horizontal layout ---
+        # --- Add all columns to the main horizontal layout with left/right buffer ---
+        self.main_layout.insertSpacing(0, 24)  # Buffer to the left of progress bar
         self.main_layout.addLayout(self.progress_bar_column)
         self.main_layout.addLayout(self.labels_column, stretch=1)
         self.main_layout.addLayout(self.dot_column)
         self.main_layout.addLayout(self.icon_column)
+        self.main_layout.addSpacing(24)  # Buffer to the right of icon column
 
         # --- To move the selection dot in code ---
         def update_selection_dot(new_index):
