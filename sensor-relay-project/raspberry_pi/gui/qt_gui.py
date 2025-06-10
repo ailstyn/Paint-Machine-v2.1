@@ -11,9 +11,6 @@ import logging
 import sys
 from PyQt6.QtWidgets import QApplication
 
-app = QApplication(sys.argv)
-app.setStyle("Windows")
-
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
     {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61"},
