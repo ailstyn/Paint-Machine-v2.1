@@ -273,7 +273,7 @@ class RelayControlApp(QWidget):
         elif self.selected_index == 2:
             print("Calibrate selected")
             if self.set_calibrate_callback:
-                self.set_calibrate_callback(self)
+                self.set_calibrate_callback(0, self)
         elif self.selected_index == 3:
             self.cycle_color_scheme()
 
