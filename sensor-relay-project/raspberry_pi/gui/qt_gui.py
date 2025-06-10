@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal, pyqtSlot
 import os
 import random
 import logging
+import psutil
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
@@ -38,9 +39,17 @@ class RelayControlApp(QWidget):
 
         # Main vertical layout
         self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(8, 8, 8, 8)
         self.setLayout(self.main_layout)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
+
+        # --- System Info Label (top of the screen) ---
+        self.sysinfo_label = QLabel()
+        self.sysinfo_label.setFont(QFont("Cascadia Code", 10))
+        self.sysinfo_label.setStyleSheet("color: #888; background: rgba(255,255,255,0.7); border-radius: 4px; padding: 2px;")
+        self.sysinfo_label.setFixedWidth(220)
+        self.sysinfo_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.main_layout.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         # --- Main display labels in the center ---
         self.main_label = QLabel("CURRENT WEIGHT")
@@ -327,6 +336,27 @@ class RelayControlApp(QWidget):
         self.current_weight_label.setText(f"{current_weight:.1f} g")
         self.slash_label.setText("/")
         self.target_weight_label.setText(f"{target_weight:.1f} g")
+
+    def update_sysinfo(self):
+        try:
+            cpu = psutil.cpu_percent(interval=None)
+            ram = psutil.virtual_memory()
+            ram_used = ram.used // (1024 * 1024)
+            ram_total = ram.total // (1024 * 1024)
+            # Pi temperature (if available)
+            temp = "N/A"
+            try:
+                with open("/sys/class/thermal/thermal_zone0/temp") as f:
+                    temp = f"{int(f.read())/1000:.1f}°C"
+            except Exception:
+                pass
+            self.sysinfo_label.setText(
+                f"CPU: {cpu:.1f}%\n"
+                f"RAM: {ram_used} / {ram_total} MB\n"
+                f"Temp: {temp}"
+            )
+        except Exception as e:
+            self.sysinfo_label.setText("SysInfo error")
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
