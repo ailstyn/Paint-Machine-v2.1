@@ -41,11 +41,11 @@ class RelayControlApp(QWidget):
         self.setWindowTitle("Relay Control")
         self.setStyleSheet(f"background-color: {self.bg};")
 
-        icon_files = [
-                ("dumbell.png", "Dumbbell"),
-                ("stopwatch.png", "Stopwatch"),
-                ("color.png", "Color"),
-                ]
+        self.icon_files = [
+            ("dumbell.png", "Dumbbell"),
+            ("stopwatch.png", "Stopwatch"),
+            ("color.png", "Color"),
+        ]
 
         # Main vertical layout
         self.main_layout = QVBoxLayout(self)
@@ -94,7 +94,7 @@ class RelayControlApp(QWidget):
         self.selected_index = 0  # Start with the first icon selected
 
         self.dot_column.addStretch(1)  # Top stretch for vertical centering
-        for i in range(len(icon_files)):
+        for i in range(len(self.icon_files)):
             dot_label = QLabel()
             dot_label.setFixedSize(80, 80)  # 80px wide, 80px tall to match icon size
             dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -109,7 +109,7 @@ class RelayControlApp(QWidget):
                 dot_label.setText("")
             self.dot_column.addWidget(dot_label)
             self.dot_widgets.append(dot_label)
-            if i < len(icon_files) - 1:
+            if i < len(self.icon_files) - 1:
                 self.dot_column.addSpacing(32)  # Match icon spacing
         self.dot_column.addStretch(1)  # Bottom stretch for vertical centering
 
@@ -119,8 +119,7 @@ class RelayControlApp(QWidget):
         self.icon_column.setSpacing(32)  # Increase spacing between icons
         self.icon_labels = []
         self.icon_column.addStretch(1)
-        for i, (filename, alt) in enumerate(icon_files):
-            icon_label = QLabel()
+        for i, (filename, alt) in enumerate(self.icon_files):
             icon_path = os.path.join(os.path.dirname(__file__), filename)
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
@@ -132,13 +131,12 @@ class RelayControlApp(QWidget):
                 # Only recolor the weight and time icons (not the color icon)
                 if i in (0, 1):
                     pixmap = tint_pixmap(pixmap, self.fg)
-                icon_label.setPixmap(pixmap)
-                icon_label.setText("")
+                self.icon_labels[i].setPixmap(pixmap)
+                self.icon_labels[i].setText("")
             else:
-                icon_label.setText(alt)
-                icon_label.setFont(QFont("Arial", 64))
-                icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-            self.icon_labels.append(icon_label)
+                self.icon_labels[i].setText(alt)
+                self.icon_labels[i].setFont(QFont("Arial", 64))
+                self.icon_labels[i].setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
             self.icon_column.addWidget(icon_label)
         self.icon_column.addStretch(1)
 
