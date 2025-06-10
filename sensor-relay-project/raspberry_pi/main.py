@@ -128,6 +128,8 @@ def calibrate_scale(arduino_id, app):
         while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:
             QApplication.processEvents()
             time.sleep(0.01)
+            
+        ping_buzzer()  # Beep once when the button is pressed
 
         # Wait for SELECT button release (HIGH)
         while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
