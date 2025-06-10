@@ -23,6 +23,8 @@ class RelayControlApp(QWidget):
         self.set_time_limit_callback = set_time_limit_callback
         self.set_calibrate_callback = set_calibrate_callback
 
+        self.selected_index = 0  # <-- Move this here, before dot column setup
+
         # --- CREATE SYSINFO LABEL FIRST ---
         self.sysinfo_label = QLabel()
         self.sysinfo_label.setFont(QFont("Cascadia Code", 10))
@@ -202,8 +204,6 @@ class RelayControlApp(QWidget):
         self.overlay_widget.resize(self.size())
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
-
-        self.selected_index = 0
 
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
