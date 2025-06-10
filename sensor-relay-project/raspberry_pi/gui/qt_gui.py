@@ -370,10 +370,12 @@ class ValueInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # Use the background color for the dialog and a border with the foreground color
+        # Add border with foreground color
         self.setStyleSheet(
             f"""
             background: {color_scheme['bg']};
+            border: 4px solid {color_scheme['fg']};
+            border-radius: 18px;
             """
         )
 
@@ -409,7 +411,8 @@ class ValueInputDialog(QDialog):
         dlg.label.setText(message)
         dlg.label.setFont(QFont("Cascadia Code SemiBold", 32))
         dlg.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent; padding: 32px;")
-        # Optionally hide input widgets if you have any
+        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure label text is centered
+        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure layout is centered
         return dlg
 
 class OverlayWidget(QWidget):
