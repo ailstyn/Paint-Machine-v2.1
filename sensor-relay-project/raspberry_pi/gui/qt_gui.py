@@ -57,7 +57,35 @@ class RelayControlApp(QWidget):
         self.main_layout.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
         # Main label and value row
+        self.main_label = QLabel("CURRENT WEIGHT")
+        self.main_label.setFont(QFont("Cascadia Code SemiBold", 32))
+        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_layout.addWidget(self.main_label)
+
+        # --- Value labels row (current, target, slash) ---
+        self.current_weight_label = QLabel("0.0 g")
+        self.current_weight_label.setFont(QFont("Cascadia Code", 48))
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.target_weight_label = QLabel("")
+        self.target_weight_label.setFont(QFont("Cascadia Code", 48))
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.slash_label = QLabel("")
+        self.slash_label.setFont(QFont("Cascadia Code", 48))
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Add value labels to a horizontal layout
+        self.value_row = QHBoxLayout()
+        self.value_row.setContentsMargins(0, 0, 0, 0)
+        self.value_row.setSpacing(0)
+        self.value_row.addWidget(self.current_weight_label)
+        self.value_row.addWidget(self.slash_label)
+        self.value_row.addWidget(self.target_weight_label)
         self.main_layout.addLayout(self.value_row)
 
         # Horizontal content layout (centered area)
@@ -117,6 +145,24 @@ class RelayControlApp(QWidget):
         # --- Progress bar column ---
         self.progress_bar_column = QVBoxLayout()
         self.progress_bar_column.addStretch(1)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setStyleSheet(
+            f"""
+            QProgressBar {{
+                background: {self.bg};
+                border: 2px solid {self.fg};
+                border-radius: 5px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {self.fg};
+                border-radius: 5px;
+            }}
+            """
+        )
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.progress_bar_column.addStretch(1)
 
