@@ -120,23 +120,28 @@ class RelayControlApp(QWidget):
         self.icon_labels = []
         self.icon_column.addStretch(1)
         for i, (filename, alt) in enumerate(self.icon_files):
-            icon_path = os.path.join(os.path.dirname(__file__), filename)
-            pixmap = QPixmap(icon_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaled(
-                    80, 80,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-                # Only recolor the weight and time icons (not the color icon)
-                if i in (0, 1):
-                    pixmap = tint_pixmap(pixmap, self.fg)
-                self.icon_labels[i].setPixmap(pixmap)
-                self.icon_labels[i].setText("")
-            else:
-                self.icon_labels[i].setText(alt)
-                self.icon_labels[i].setFont(QFont("Arial", 64))
-                self.icon_labels[i].setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+            try:
+                icon_label = QLabel()
+                icon_path = os.path.join(os.path.dirname(__file__), filename)
+                pixmap = QPixmap(icon_path)
+                if not pixmap.isNull():
+                    pixmap = pixmap.scaled(
+                        80, 80,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    if i in (0, 1):
+                        pixmap = tint_pixmap(pixmap, self.fg)
+                    icon_label.setPixmap(pixmap)
+                    icon_label.setText("")
+                else:
+                    icon_label.setText(alt)
+                    icon_label.setFont(QFont("Arial", 64))
+                    icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+                self.icon_labels.append(icon_label)
+                self.icon_column.addWidget(icon_label)
+            except Exception as e:
+                logging.error(f"Error loading icon '{filename}': {e}")
         self.icon_column.addStretch(1)
 
         # --- Progress Bar Column (leftmost) ---
