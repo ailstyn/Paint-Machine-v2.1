@@ -403,6 +403,15 @@ class ValueInputDialog(QDialog):
         except Exception as e:
             logging.error(f"Error in ValueInputDialog.update_value: {e}")
 
+    @classmethod
+    def message_only(cls, title, message, color_scheme, parent=None):
+        dlg = cls(title, "", "", color_scheme, parent)
+        dlg.label.setText(message)
+        dlg.label.setFont(QFont("Cascadia Code SemiBold", 32))
+        dlg.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent; padding: 32px;")
+        # Optionally hide input widgets if you have any
+        return dlg
+
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -437,22 +446,13 @@ class OverlayWidget(QWidget):
     def hide_overlay(self):
         self.hide()
 
-class MessageDialog(QDialog):
-    def __init__(self, title, message, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle(title)
-        layout = QVBoxLayout(self)
-        label = QLabel(message)
-        label.setWordWrap(True)
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-        self.setModal(True)
-        self.setMinimumWidth(400)
-
 def create_message_dialog(self, title, message):
-    return MessageDialog(title, message, self)
-
-# Add this method to RelayControlApp:
+    return ValueInputDialog.message_only(
+        title=title,
+        message=message,
+        color_scheme=COLOR_SCHEMES[self.color_scheme_index],
+        parent=self
+    )
 RelayControlApp.create_message_dialog = create_message_dialog
 
 if __name__ == "__main__":
