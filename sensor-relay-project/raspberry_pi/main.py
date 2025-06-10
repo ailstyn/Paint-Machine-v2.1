@@ -4,10 +4,11 @@ import time
 import logging
 import RPi.GPIO as GPIO
 from gui.qt_gui import RelayControlApp
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QSpinBox
 from PyQt6.QtCore import QTimer
 import sys
 import signal
+
 
 # Configure logging
 logging.basicConfig(
@@ -116,27 +117,23 @@ def calibrate_scale(arduino_id, app):
     ]
 
     for idx, instruction in enumerate(steps):
-        dialog = app.create_message_dialog(
+        # Show the instruction in the dialog/message area
+        app.show_dialog_content(
             title=f"Calibration (Arduino {arduino_id+1})",
             message=instruction
         )
-        dialog.show()
-        dialog.raise_()
-        dialog.activateWindow()
 
         # Wait for SELECT button press (LOW)
         while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:
             QApplication.processEvents()
             time.sleep(0.01)
-            
+
         ping_buzzer()  # Beep once when the button is pressed
 
         # Wait for SELECT button release (HIGH)
         while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             QApplication.processEvents()
             time.sleep(0.01)
-
-        dialog.close()
 
         # Perform hardware actions at each step
         if idx == 0:
@@ -156,6 +153,7 @@ def calibrate_scale(arduino_id, app):
         # idx == 2 is just the finish step
 
     # Optionally reload the main screen or update the UI
+    app.clear_dialog_content()
     app.reload_main_screen()
 
 def tare_scale(arduino_id):
@@ -359,40 +357,48 @@ def adjust_value_with_acceleration(
 # Usage in set_target_weight:
 def set_target_weight(app):
     global target_weight
-    dialog = app.create_value_input_dialog(
-        title="SET TARGET WEIGHT",
-        initial_value=target_weight,
-        unit="g"
-    )
+
+    def update_display(value):
+        app.show_dialog_content(
+            title="SET TARGET WEIGHT",
+            message=f"{value} g\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+        )
+
     target_weight = adjust_value_with_acceleration(
         initial_value=target_weight,
-        dialog=dialog,
+        dialog=type('DialogStub', (), {'update_value': update_display, 'accept': lambda: None, 'close': lambda: None})(),
         up_button_pin=UP_BUTTON_PIN,
         down_button_pin=DOWN_BUTTON_PIN,
         unit_increment=1,
-        min_value=0
+        min_value=0,
+        up_callback=update_display,
+        down_callback=update_display
     )
-    print("Closed target weight dialog.")
-    clear_serial_buffer(arduinos[0])  # <-- Add this line
+    clear_serial_buffer(arduinos[0])
+    app.clear_dialog_content()
 
 # Usage in set_time_limit:
 def set_time_limit(app):
     global time_limit
-    dialog = app.create_value_input_dialog(
-        title="SET TIME LIMIT",
-        initial_value=time_limit,
-        unit="ms"
-    )
+
+    def update_display(value):
+        app.show_dialog_content(
+            title="SET TIME LIMIT",
+            message=f"{value} ms\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+        )
+
     time_limit = adjust_value_with_acceleration(
         initial_value=time_limit,
-        dialog=dialog,
+        dialog=type('DialogStub', (), {'update_value': update_display, 'accept': lambda: None, 'close': lambda: None})(),
         up_button_pin=UP_BUTTON_PIN,
         down_button_pin=DOWN_BUTTON_PIN,
         unit_increment=100,
-        min_value=0
+        min_value=0,
+        up_callback=update_display,
+        down_callback=update_display
     )
-    print("Closed time limit dialog.")
-    clear_serial_buffer(arduinos[0])  # <-- Add this line
+    clear_serial_buffer(arduinos[0])
+    app.clear_dialog_content()
 
 def clear_serial_buffer(arduino):
     """Read and discard all available bytes from the Arduino serial buffer."""

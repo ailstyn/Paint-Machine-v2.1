@@ -327,6 +327,44 @@ class RelayControlApp(QWidget):
         self.slash_label.setText("/")
         self.target_weight_label.setText(f"{target_weight:.1f} g")
 
+    def show_dialog_content(self, title, message, input_widget=None, on_accept=None):
+        # Clear previous content
+        for i in reversed(range(self.dialog_area_layout.count())):
+            widget = self.dialog_area_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.setParent(None)
+
+        # Title
+        title_label = QLabel(title)
+        title_label.setFont(QFont("Cascadia Code SemiBold", 32))
+        title_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.dialog_area_layout.addWidget(title_label)
+
+        # Message
+        message_label = QLabel(message)
+        message_label.setFont(QFont("Cascadia Code", 24))
+        message_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.dialog_area_layout.addWidget(message_label)
+
+        # Optional input widget (e.g., QSpinBox, QLineEdit, etc.)
+        if input_widget:
+            self.dialog_area_layout.addWidget(input_widget)
+
+        # Optional accept button
+        if on_accept:
+            accept_btn = QPushButton("OK")
+            accept_btn.setFont(QFont("Cascadia Code", 20))
+            accept_btn.clicked.connect(on_accept)
+            self.dialog_area_layout.addWidget(accept_btn)
+
+    def clear_dialog_content(self):
+        for i in reversed(range(self.dialog_area_layout.count())):
+            widget = self.dialog_area_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.setParent(None)
+
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
         super().__init__(parent)
