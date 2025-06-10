@@ -398,8 +398,8 @@ class ValueInputDialog(QDialog):
         # Add border with foreground color
         self.setStyleSheet(
             f"""
-            background: {color_scheme['bg']};
-            border: 4px solid {color_scheme['fg']};
+            background: {color_scheme['fg']};
+            /* No border */
             border-radius: 8px;
             """
         )
@@ -408,10 +408,10 @@ class ValueInputDialog(QDialog):
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setFont(QFont("Cascadia Code SemiBold", 48))
         self.label.setStyleSheet(
-            f"""color: {color_scheme['fg']};
+            f"""color: {color_scheme['bg']};
             background: transparent;
             padding: 32px;"""
-                                )
+        )
         layout.addWidget(self.label)
 
         self.setFixedSize(600, 325)  # Set your preferred size here
