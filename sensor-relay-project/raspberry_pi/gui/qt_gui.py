@@ -203,6 +203,7 @@ class RelayControlApp(QWidget):
         content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.main_layout.addWidget(content_widget, stretch=1)
 
+        # --- Progress bar and column ---
         self.progress_bar = QProgressBar()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
@@ -222,11 +223,17 @@ class RelayControlApp(QWidget):
             }}
             """
         )
-
         self.progress_bar_column = QVBoxLayout()
         self.progress_bar_column.addStretch(1)
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.progress_bar_column.addStretch(1)
+
+        # --- Now add to content layout ---
+        self.content_layout.addSpacing(25)
+        self.content_layout.addLayout(self.progress_bar_column)
+        self.content_layout.addWidget(self.center_frame, stretch=1)
+        self.content_layout.addWidget(self.dot_icon_container, stretch=0)
+        self.content_layout.addSpacing(25)
 
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
