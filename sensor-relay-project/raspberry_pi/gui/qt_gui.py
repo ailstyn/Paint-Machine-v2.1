@@ -414,17 +414,7 @@ class ValueInputDialog(QDialog):
                                 )
         layout.addWidget(self.label)
 
-        # Dynamically size dialog to 60% width, 40% height of the screen, max 500x300
-        screen = QApplication.primaryScreen().availableGeometry()
-        w = min(500, int(screen.width() * 0.6))
-        h = min(300, int(screen.height() * 0.4))
-        self.resize(w, h)
-        # Center the dialog
-        self.move(
-            screen.left() + (screen.width() - w) // 2,
-            screen.top() + (screen.height() - h) // 2
-        )
-        self.setFixedSize(500, 350)  # Set your preferred size here
+        self.setFixedSize(600, 325)  # Set your preferred size here
 
     def update_value(self, value):
         try:
@@ -441,7 +431,7 @@ class ValueInputDialog(QDialog):
         dlg.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent; padding: 32px;")
         dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure label text is centered
         dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure layout is centered
-        dlg.setFixedSize(500, 350)  # Ensure message-only dialogs are also fixed size
+        dlg.setFixedSize(600, 325)  # Ensure message-only dialogs are also fixed size
         return dlg
 
 class OverlayWidget(QWidget):
