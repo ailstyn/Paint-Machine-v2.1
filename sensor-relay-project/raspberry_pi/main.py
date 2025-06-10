@@ -359,7 +359,7 @@ def set_target_weight(app):
     global target_weight
     print("set_target_weight called")
 
-    def update_display(value):
+    def update_display(value, *args, **kwargs):
         app.show_dialog_content(
             title="SET TARGET WEIGHT",
             message=f"{value} g\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
@@ -384,7 +384,7 @@ def set_time_limit(app):
     global time_limit
     print("set_time_limit called")
 
-    def update_display(value):
+    def update_display(value, *args, **kwargs):
         app.show_dialog_content(
             title="SET TIME LIMIT",
             message=f"{value} ms\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
