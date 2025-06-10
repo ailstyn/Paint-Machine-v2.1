@@ -67,7 +67,7 @@ class RelayControlApp(QWidget):
         )
         progress_bar_container = QWidget()
         progress_bar_layout = QVBoxLayout(progress_bar_container)
-        progress_bar_layout.addWidget(self.progress_bar)
+        progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         progress_bar_layout.addStretch(1)
         progress_bar_layout.setContentsMargins(16, 16, 16, 16)
         progress_bar_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
@@ -216,16 +216,11 @@ class RelayControlApp(QWidget):
     def refresh_ui(self):
         try:
             self.current_weight_label.setText(f"{self.current_weight:.1f} g")
-            # Only show slash and target if in fill mode
-            if self.main_label.text() == "FILLING":
-                self.slash_label.setText("/")
-                self.target_weight_label.setText(f"{self.target_weight:.1f} g")
-            else:
-                self.slash_label.setText("")
-                self.target_weight_label.setText("")
-            # Update progress bar
-            self.progress_bar.setMaximum(int(self.target_weight))
             self.progress_bar.setValue(int(self.current_weight))
+            # If you have a target weight, update that too:
+            self.target_weight_label.setText(f"{getattr(self, 'target_weight', 0):.1f} g")
+            self.progress_bar.setMaximum(int(getattr(self, 'target_weight', 100)))
+            # Update any other widgets as needed
         except Exception as e:
             logging.error(f"Error in refresh_ui: {e}")
 
