@@ -52,7 +52,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
-                background: {self.bg};
+                background: transparent;
                 border: 2px solid {self.fg};
                 border-radius: 5px;
             }}
@@ -81,7 +81,7 @@ class RelayControlApp(QWidget):
         self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.slash_label = QLabel("")
+        self.slash_label = QLabel("/")
         self.slash_label.setFont(QFont("Cascadia Code", 48))
         self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -229,7 +229,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
-                background: {self.bg};
+                background: transparent;
                 border: 2px solid {self.fg};
                 border-radius: 5px;
             }}
@@ -285,18 +285,12 @@ class RelayControlApp(QWidget):
 
     def set_current_weight_mode(self, weight):
         self.current_weight_label.setText(f"{weight:.1f} g")
-        self.slash_label.setText("")  # Hide slash
-        self.target_weight_label.setText("")  # Hide target
 
     def set_target_weight_mode(self, target_weight):
         self.target_weight_label.setText(f"{target_weight:.1f} g")
-        self.slash_label.setText("")  # Hide slash
-        self.current_weight_label.setText("")  # Hide current
 
     def set_fill_mode(self, current_weight, target_weight):
         self.current_weight_label.setText(f"{current_weight:.1f} g")
-        self.slash_label.setText("/")
-        self.target_weight_label.setText(f"{target_weight:.1f} g")
 
     def show_dialog_content(self, title, message, input_widget=None, on_accept=None):
         # Clear previous content
