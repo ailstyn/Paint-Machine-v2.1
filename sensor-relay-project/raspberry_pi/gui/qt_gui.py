@@ -70,6 +70,7 @@ class RelayControlApp(QWidget):
         progress_bar_layout.addWidget(self.progress_bar)
         progress_bar_layout.addStretch(1)
         progress_bar_layout.setContentsMargins(16, 16, 16, 16)
+        progress_bar_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
 
         # --- Section 2: Main label + weight labels (top center) ---
         self.main_label = QLabel("CURRENT WEIGHT")
@@ -103,6 +104,7 @@ class RelayControlApp(QWidget):
         weight_row.addWidget(self.target_weight_label)
         weight_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
         top_center_layout.addLayout(weight_row)
+        top_center_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
 
         # --- Section 3: Dialog/message area (center) ---
         self.dialog_area = QWidget()
@@ -111,6 +113,7 @@ class RelayControlApp(QWidget):
         self.dialog_label = QLabel("")  # Placeholder for now
         self.dialog_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.dialog_area_layout.addWidget(self.dialog_label)
+        self.dialog_area.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
 
         # --- Section 4: Selection dot and icon columns (right) ---
         self.dot_widgets = []
@@ -166,6 +169,7 @@ class RelayControlApp(QWidget):
         dot_icon_layout.setSpacing(0)
         dot_icon_layout.addLayout(dot_column)
         dot_icon_layout.addLayout(icon_column)
+        dot_icon_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
 
         # --- Main grid layout ---
         grid = QGridLayout(self)
