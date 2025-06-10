@@ -95,7 +95,8 @@ class RelayControlApp(QWidget):
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(0)
         self.main_layout.addLayout(self.content_layout)
-
+        self.dot_widgets = []
+        
         # --- Dot column ---
         self.dot_column = QVBoxLayout()
         self.dot_column.addStretch(1)
