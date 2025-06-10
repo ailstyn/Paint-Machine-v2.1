@@ -11,7 +11,8 @@ import psutil
 import sys
 from PyQt6.QtWidgets import QApplication
 
-QApplication.setStyle("Fusion")
+app = QApplication(sys.argv)
+app.setStyle("Fusion")
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
@@ -487,6 +488,7 @@ RelayControlApp.create_message_dialog = create_message_dialog
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
     window = RelayControlApp()
     # window.show()
 
