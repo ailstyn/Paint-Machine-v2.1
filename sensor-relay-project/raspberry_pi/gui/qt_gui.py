@@ -271,13 +271,12 @@ class RelayControlApp(QWidget):
             if self.set_time_limit_callback:
                 self.set_time_limit_callback(self)
         elif self.selected_index == 2:
+            print("Calibrate selected")
             if self.set_calibrate_callback:
                 self.set_calibrate_callback(self)
         elif self.selected_index == 3:
             self.cycle_color_scheme()
 
-    # Example: call this method when the select button is pressed
-    # self.handle_select()
 
     def keyPressEvent(self, event):
         try:

@@ -98,6 +98,7 @@ def write_scale_calibrations():
         logging.error(f"Error writing to {config_file}: {e}")
 
 def calibrate_scale(arduino_id, app):
+    print(f"calibrate_scale called for arduino_id={arduino_id}")
     """
     Guides the user through a multi-step calibration process for the specified Arduino.
     Shows instructions and waits for the select button to be pressed to proceed.
@@ -206,6 +207,7 @@ def ping_buzzer_invalid():
 def handle_button_presses(app):
     try:
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            print("UP button pressed")
             if app.selected_index > 0:
                 app.update_selection_dot(app.selected_index - 1)  # Move dot first
                 ping_buzzer()
@@ -216,6 +218,7 @@ def handle_button_presses(app):
                 QApplication.processEvents()
                 time.sleep(0.01)
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            print("DOWN button pressed")
             if app.selected_index < len(app.dot_widgets) - 1:
                 app.update_selection_dot(app.selected_index + 1)
                 ping_buzzer()
@@ -225,11 +228,13 @@ def handle_button_presses(app):
                 QApplication.processEvents()
                 time.sleep(0.01)
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            print(f"SELECT button pressed at index {app.selected_index}")
             ping_buzzer()
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             app.handle_select()
+            print("handle_select() called")
             time.sleep(0.1)
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")
