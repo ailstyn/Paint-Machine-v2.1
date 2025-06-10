@@ -120,7 +120,6 @@ class RelayControlApp(QWidget):
             dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dot_label.setStyleSheet(
                 "background: transparent;"
-                "border-radius: 8px;"
                 f"color: {self.fg};"
             )
             if i == self.selected_index:
@@ -164,7 +163,6 @@ class RelayControlApp(QWidget):
         dot_icon_layout.setSpacing(0)
         dot_icon_layout.addLayout(dot_column)
         dot_icon_layout.addLayout(icon_column)
-        dot_icon_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
         dot_icon_container.setFixedWidth(150)  # Adjust this value as needed (was likely 200 before)
 
         # --- Main grid layout ---
@@ -226,9 +224,9 @@ class RelayControlApp(QWidget):
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")  # TEMP: black background
-        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")    # TEMP: black background
-        self.slash_label.setStyleSheet(f"color: {self.fg}; background: black;")            # TEMP: black background
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
         for dot_label in self.dot_widgets:
