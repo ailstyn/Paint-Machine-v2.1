@@ -88,6 +88,7 @@ class RelayControlApp(QWidget):
         self.value_row.addWidget(self.current_weight_label)
         self.value_row.addWidget(self.slash_label)
         self.value_row.addWidget(self.target_weight_label)
+        
         self.main_layout.addLayout(self.value_row)
 
         # Horizontal content layout (centered area)
@@ -96,7 +97,7 @@ class RelayControlApp(QWidget):
         self.content_layout.setSpacing(0)
         self.main_layout.addLayout(self.content_layout)
         self.dot_widgets = []
-        
+
         # --- Dot column ---
         self.dot_column = QVBoxLayout()
         self.dot_column.addStretch(1)
@@ -118,7 +119,7 @@ class RelayControlApp(QWidget):
             if i < len(self.icon_files) - 1:
                 self.dot_column.addSpacing(32)  # Match icon spacing
         self.dot_column.addStretch(1)
-
+        self.icon_labels = []
         # --- Icon column ---
         self.icon_column = QVBoxLayout()
         self.icon_column.addStretch(1)
@@ -205,6 +206,9 @@ class RelayControlApp(QWidget):
         self.overlay_widget.resize(self.size())
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
+
+        self.center_frame = QFrame()
+        self.center_frame.setStyleSheet("background: transparent;")
 
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
