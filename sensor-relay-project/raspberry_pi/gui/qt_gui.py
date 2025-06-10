@@ -67,14 +67,9 @@ class RelayControlApp(QWidget):
         progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         progress_bar_layout.addStretch(1)
         progress_bar_layout.setContentsMargins(16, 16, 16, 16)
-        progress_bar_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
         progress_bar_container.setFixedWidth(150)  # Adjust this value as needed (was likely 200 before)
 
-        # --- Section 2: Main label + weight labels (top center) ---
-        self.main_label = QLabel("CURRENT WEIGHT")
-        self.main_label.setFont(QFont("Cascadia Code SemiBold", 32))
-        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # --- Section 2: Weight label (top center) ---
 
         self.current_weight_label = QLabel("0.0 g")
         self.current_weight_label.setFont(QFont("Cascadia Code", 48))
@@ -94,7 +89,6 @@ class RelayControlApp(QWidget):
         top_center_container = QWidget()
         top_center_layout = QVBoxLayout(top_center_container)
         top_center_layout.setContentsMargins(16, 16, 16, 16)
-        top_center_layout.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignCenter)
         # Weight row
         weight_row = QHBoxLayout()
         weight_row.addWidget(self.current_weight_label)
@@ -290,19 +284,16 @@ class RelayControlApp(QWidget):
 
 
     def set_current_weight_mode(self, weight):
-        self.main_label.setText("CURRENT WEIGHT")
         self.current_weight_label.setText(f"{weight:.1f} g")
         self.slash_label.setText("")  # Hide slash
         self.target_weight_label.setText("")  # Hide target
 
     def set_target_weight_mode(self, target_weight):
-        self.main_label.setText("SET TARGET WEIGHT")
         self.target_weight_label.setText(f"{target_weight:.1f} g")
         self.slash_label.setText("")  # Hide slash
         self.current_weight_label.setText("")  # Hide current
 
     def set_fill_mode(self, current_weight, target_weight):
-        self.main_label.setText("FILLING")
         self.current_weight_label.setText(f"{current_weight:.1f} g")
         self.slash_label.setText("/")
         self.target_weight_label.setText(f"{target_weight:.1f} g")
