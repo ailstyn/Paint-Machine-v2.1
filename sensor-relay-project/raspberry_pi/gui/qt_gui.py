@@ -395,7 +395,6 @@ class ValueInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # Add border with foreground color
         self.setStyleSheet(
             f"""
             background: {color_scheme['fg']};
@@ -415,13 +414,6 @@ class ValueInputDialog(QDialog):
 
         self.setFixedSize(600, 325)  # Set your preferred size here
 
-    def update_value(self, value):
-        try:
-            self.value = value
-            self.label.setText(f"{self.value} {self.unit}")
-        except Exception as e:
-            logging.error(f"Error in ValueInputDialog.update_value: {e}")
-
     @classmethod
     def message_only(cls, title, message, color_scheme, parent=None):
         dlg = cls(title, "", "", color_scheme, parent)
@@ -431,6 +423,23 @@ class ValueInputDialog(QDialog):
         dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
         dlg.setFixedSize(600, 325)
+        return dlg
+
+    @classmethod
+    def fullscreen_message_only(cls, title, message, color_scheme, parent=None):
+        dlg = cls(title, "", "", color_scheme, parent)
+        dlg.label.setText(message)
+        dlg.label.setFont(QFont("Cascadia Code SemiBold", 48))
+        dlg.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent; padding: 32px;")
+        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dlg.setStyleSheet(
+            f"""
+            background: {color_scheme['bg']};
+            border-radius: 0px;
+            """
+        )
+        dlg.showFullScreen()
         return dlg
 
 class OverlayWidget(QWidget):
@@ -467,13 +476,21 @@ class OverlayWidget(QWidget):
     def hide_overlay(self):
         self.hide()
 
-def create_message_dialog(self, title, message):
-    return ValueInputDialog.message_only(
-        title=title,
-        message=message,
-        color_scheme=COLOR_SCHEMES[self.color_scheme_index],
-        parent=self
-    )
+def create_message_dialog(self, title, message, fullscreen=False):
+    if fullscreen:
+        return ValueInputDialog.fullscreen_message_only(
+            title=title,
+            message=message,
+            color_scheme=COLOR_SCHEMES[self.color_scheme_index],
+            parent=self
+        )
+    else:
+        return ValueInputDialog.message_only(
+            title=title,
+            message=message,
+            color_scheme=COLOR_SCHEMES[self.color_scheme_index],
+            parent=self
+        )
 RelayControlApp.create_message_dialog = create_message_dialog
 
 if __name__ == "__main__":
