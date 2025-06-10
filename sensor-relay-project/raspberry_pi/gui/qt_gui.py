@@ -102,17 +102,18 @@ class RelayControlApp(QWidget):
 
         self.labels_column = QVBoxLayout()
         self.labels_column.addStretch(1)
-        self.labels_column.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.labels_column.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.value_row = QHBoxLayout()
         self.value_row.addWidget(self.current_weight_label)
         self.value_row.addWidget(self.slash_label)
         self.value_row.addWidget(self.target_weight_label)
+        self.value_row.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.value_row_widget = QWidget()
         self.value_row_widget.setLayout(self.value_row)
         self.labels_column.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.labels_column.addStretch(1)
+        self.labels_column.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
 
         # --- Dot column ---
         self.dot_widgets = []
