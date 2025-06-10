@@ -17,10 +17,11 @@ COLOR_SCHEMES = [
 ]
 
 class RelayControlApp(QWidget):
-    def __init__(self, parent=None, set_target_weight_callback=None, set_time_limit_callback=None):
+    def __init__(self, parent=None, set_target_weight_callback=None, set_time_limit_callback=None, set_calibrate_callback=None):
         super().__init__(parent)
         self.set_target_weight_callback = set_target_weight_callback
         self.set_time_limit_callback = set_time_limit_callback
+        self.set_calibrate_callback = set_calibrate_callback
         print("Initializing RelayControlApp (PyQt)...")
         self.color_scheme_index = 0
         scheme = COLOR_SCHEMES[self.color_scheme_index]
@@ -34,6 +35,7 @@ class RelayControlApp(QWidget):
         self.icon_files = [
             ("dumbell.png", "Dumbbell"),
             ("stopwatch.png", "Stopwatch"),
+            ("geometric-tool.png", "Calibrate"),
             ("color.png", "Color"),
         ]
 
@@ -269,12 +271,16 @@ class RelayControlApp(QWidget):
         )
 
     def handle_select(self):
-        # 0 = dumbell, 1 = stopwatch, 2 = color
-        if self.selected_index == 0 and self.set_target_weight_callback:
-            self.set_target_weight_callback(self)
-        elif self.selected_index == 1 and self.set_time_limit_callback:
-            self.set_time_limit_callback(self)
+        if self.selected_index == 0:
+            if self.set_target_weight_callback:
+                self.set_target_weight_callback(self)
+        elif self.selected_index == 1:
+            if self.set_time_limit_callback:
+                self.set_time_limit_callback(self)
         elif self.selected_index == 2:
+            if self.set_calibrate_callback:
+                self.set_calibrate_callback(self)
+        elif self.selected_index == 3:
             self.cycle_color_scheme()
 
     # Example: call this method when the select button is pressed

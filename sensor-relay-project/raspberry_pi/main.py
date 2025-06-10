@@ -457,7 +457,8 @@ def main():
         app_qt = QApplication(sys.argv)
         app = RelayControlApp(
             set_target_weight_callback=set_target_weight,
-            set_time_limit_callback=set_time_limit
+            set_time_limit_callback=set_time_limit,
+            set_calibrate_callback=calibrate_scale
         )
         # app.show()
         print('app initialized, contacting arduinos')

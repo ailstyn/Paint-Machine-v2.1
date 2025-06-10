@@ -62,6 +62,9 @@ This project is licensed under the MIT License. See the LICENSE file for more de
 
 Icons provided by:
 
+<a href="https://www.flaticon.com/free-icons/diameter" title="diameter icons">Diameter icons created by Vectorslab - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/dumbell" title="Dumbell icons">Dumbell icons created by Vitaly Gorbachev - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/color-wheel" title="color wheel icons">Color wheel icons created by Hasymi - Flaticon</a>
 
 ## Requirements
 
