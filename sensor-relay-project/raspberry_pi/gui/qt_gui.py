@@ -164,7 +164,7 @@ class RelayControlApp(QWidget):
         icon_column.addStretch(1)
 
         dot_icon_container = QWidget()
-        dot_icon_layout = QVBoxLayout(dot_icon_container)
+        dot_icon_layout = QHBoxLayout(dot_icon_container)  # <-- Use QHBoxLayout here!
         dot_icon_layout.setContentsMargins(0, 0, 0, 0)
         dot_icon_layout.setSpacing(0)
         dot_icon_layout.addLayout(dot_column)
