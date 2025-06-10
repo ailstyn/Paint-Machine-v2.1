@@ -8,6 +8,10 @@ import os
 import random
 import logging
 import psutil
+import sys
+from PyQt6.QtWidgets import QApplication
+
+QApplication.setStyle("Fusion")
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
