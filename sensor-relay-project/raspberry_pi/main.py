@@ -375,6 +375,7 @@ def set_target_weight(app):
         up_callback=update_display,
         down_callback=update_display
     )
+    print('exiting set_target_weight')
     clear_serial_buffer(arduinos[0])
     app.clear_dialog_content()
 
@@ -399,6 +400,7 @@ def set_time_limit(app):
         up_callback=update_display,
         down_callback=update_display
     )
+    print('exiting set_time_limit')
     clear_serial_buffer(arduinos[0])
     app.clear_dialog_content()
 
