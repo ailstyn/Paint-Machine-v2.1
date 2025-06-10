@@ -68,17 +68,17 @@ class RelayControlApp(QWidget):
         # --- Value labels row (current, target, slash) ---
         self.current_weight_label = QLabel("0.0 g")
         self.current_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")  # TEMP: black background
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")  # REVERT: transparent background
         self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.target_weight_label = QLabel("")
         self.target_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: black;")    # TEMP: black background
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")    # REVERT: transparent background
         self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.slash_label = QLabel("")
         self.slash_label.setFont(QFont("Cascadia Code", 48))
-        self.slash_label.setStyleSheet(f"color: {self.fg}; background: black;")            # TEMP: black background
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")            # REVERT: transparent background
         self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Add value labels to a horizontal layout
@@ -89,8 +89,10 @@ class RelayControlApp(QWidget):
         self.value_row.addWidget(self.slash_label)
         self.value_row.addWidget(self.target_weight_label)
         
-        self.main_layout.addLayout(self.value_row)
-        self.value_row.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # Add the value row widget to the main layout
+        self.value_row_widget = QWidget()
+        self.value_row_widget.setLayout(self.value_row)
+        self.main_layout.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Create center_frame
         self.center_frame = QFrame()
