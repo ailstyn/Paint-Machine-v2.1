@@ -399,8 +399,7 @@ class ValueInputDialog(QDialog):
         self.setStyleSheet(
             f"""
             background: {color_scheme['fg']};
-            /* No border */
-            border-radius: 8px;
+            border-radius: 24px;
             """
         )
 
@@ -428,10 +427,10 @@ class ValueInputDialog(QDialog):
         dlg = cls(title, "", "", color_scheme, parent)
         dlg.label.setText(message)
         dlg.label.setFont(QFont("Cascadia Code SemiBold", 32))
-        dlg.label.setStyleSheet(f"color: {color_scheme['fg']}; background: transparent; padding: 32px;")
-        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure label text is centered
-        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)  # Ensure layout is centered
-        dlg.setFixedSize(600, 325)  # Ensure message-only dialogs are also fixed size
+        dlg.label.setStyleSheet(f"color: {color_scheme['bg']}; background: transparent; padding: 32px;")
+        dlg.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dlg.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
+        dlg.setFixedSize(600, 325)
         return dlg
 
 class OverlayWidget(QWidget):
