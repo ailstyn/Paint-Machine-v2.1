@@ -179,20 +179,20 @@ class RelayControlApp(QWidget):
                 self.icon_column.addSpacing(32)
         self.icon_column.addStretch(1)
 
-        # --- Combine dot and icon columns into a container ---
+        # --- Combine dot and icon columns into a QWidget ---
         self.dot_icon_container = QWidget()
-        dot_icon_layout = QVBoxLayout()
-        dot_icon_layout.setSpacing(0)
+        dot_icon_layout = QHBoxLayout()
         dot_icon_layout.setContentsMargins(0, 0, 0, 0)
+        dot_icon_layout.setSpacing(0)
         dot_icon_layout.addLayout(self.dot_column)
         dot_icon_layout.addLayout(self.icon_column)
         self.dot_icon_container.setLayout(dot_icon_layout)
 
-        # Calculate combined width (adjust as needed for your icon/dot sizes and spacings)
-        dot_icon_width = 80 + 80 + 32  # 80px per column + 32px spacing (if any)
+        # Calculate the combined width (adjust as needed)
+        dot_icon_width = 80 + 80 + 32  # 80px per column + 32px spacing between
         self.dot_icon_container.setFixedWidth(dot_icon_width)
 
-        # Set progress bar column width to match
+        # --- Progress bar in a QWidget with matching width ---
         self.progress_bar_container = QWidget()
         progress_bar_layout = QVBoxLayout()
         progress_bar_layout.setContentsMargins(0, 0, 0, 0)
