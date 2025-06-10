@@ -7,6 +7,7 @@ from gui.qt_gui import RelayControlApp
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 import sys
+import signal
 
 # Configure logging
 logging.basicConfig(
@@ -432,6 +433,14 @@ def poll_hardware(app):
         
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
+
+def handle_exit(signum, frame):
+    print("Caught exit signal, cleaning up GPIO...")
+    GPIO.cleanup()
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, handle_exit)
+signal.signal(signal.SIGTERM, handle_exit)
 
 def main():
     try:
