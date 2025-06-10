@@ -203,6 +203,8 @@ class RelayControlApp(QWidget):
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
 
+        self.selected_index = 0
+
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
         parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
