@@ -104,11 +104,15 @@ class RelayControlApp(QWidget):
         self.labels_column.setSpacing(0)
 
         # Add a buffer above the main label
-        self.labels_column.addSpacing(24)  # Adjust value as desired for more/less space
+        self.labels_column.addSpacing(24)
 
-        # Add main label and value row widget at the top
-        self.labels_column.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # --- Add a buffer to the left of the main label ---
+        main_label_row = QHBoxLayout()
+        main_label_row.addSpacing(24)  # Left buffer
+        main_label_row.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.labels_column.addLayout(main_label_row)
 
+        # --- Add a buffer to the left of the value row ---
         self.value_row = QHBoxLayout()
         self.value_row.addWidget(self.current_weight_label)
         self.value_row.addWidget(self.slash_label)
@@ -116,7 +120,11 @@ class RelayControlApp(QWidget):
         self.value_row.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.value_row_widget = QWidget()
         self.value_row_widget.setLayout(self.value_row)
-        self.labels_column.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        value_row_outer = QHBoxLayout()
+        value_row_outer.addSpacing(24)  # Left buffer
+        value_row_outer.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.labels_column.addLayout(value_row_outer)
 
         # Add stretch to push sysinfo label to the bottom
         self.labels_column.addStretch(1)
