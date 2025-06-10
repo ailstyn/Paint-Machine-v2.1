@@ -32,7 +32,6 @@ class RelayControlApp(QWidget):
         self.sysinfo_label.setFixedWidth(220)
         self.sysinfo_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
-        print("Initializing RelayControlApp (PyQt)...")
         self.color_scheme_index = 0
         scheme = COLOR_SCHEMES[self.color_scheme_index]
         self.bg = scheme["bg"]
@@ -49,56 +48,13 @@ class RelayControlApp(QWidget):
             ("color.png", "Color"),
         ]
 
-        # Main vertical layout
-        self.main_layout = QVBoxLayout(self)
+        # --- Main horizontal layout ---
+        self.main_layout = QHBoxLayout(self)
         self.main_layout.setContentsMargins(8, 8, 8, 8)
         self.setLayout(self.main_layout)
         self.main_layout.setSpacing(0)
 
-        # System info label (top)
-        self.main_layout.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-
-        # Main label
-        self.main_label = QLabel("CURRENT WEIGHT")
-        self.main_label.setFont(QFont("Cascadia Code SemiBold", 32))
-        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_layout.addWidget(self.main_label)
-
-        # --- Value labels row (current, target, slash) ---
-        self.current_weight_label = QLabel("0.0 g")
-        self.current_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.target_weight_label = QLabel("")
-        self.target_weight_label.setFont(QFont("Cascadia Code", 48))
-        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.slash_label = QLabel("")
-        self.slash_label.setFont(QFont("Cascadia Code", 48))
-        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Add value labels to a horizontal layout
-        self.value_row = QHBoxLayout()
-        self.value_row.setContentsMargins(0, 0, 0, 0)
-        self.value_row.setSpacing(0)
-        self.value_row.addWidget(self.current_weight_label)
-        self.value_row.addWidget(self.slash_label)
-        self.value_row.addWidget(self.target_weight_label)
-
-        # Add the value row widget to the main layout, centered
-        self.value_row_widget = QWidget()
-        self.value_row_widget.setLayout(self.value_row)
-        self.main_layout.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-        # Create center_frame
-        self.center_frame = QFrame()
-        self.center_frame.setStyleSheet("background: transparent;")
-
-        # --- Progress bar and column ---
+        # --- Progress bar column ---
         self.progress_bar = QProgressBar()
         self.progress_bar.setMinimum(0)
         self.progress_bar.setMaximum(100)
@@ -119,16 +75,47 @@ class RelayControlApp(QWidget):
             """
         )
         self.progress_bar_column = QVBoxLayout()
-        # Optionally comment out one or both stretches for a taller bar
-        # self.progress_bar_column.addStretch(1)
+        self.progress_bar_column.addStretch(1)
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.progress_bar_column.addStretch(1)
+        self.progress_bar_column.addStretch(1)
 
-        # --- Dot and Icon columns ---
+        # --- Labels column ---
+        self.main_label = QLabel("CURRENT WEIGHT")
+        self.main_label.setFont(QFont("Cascadia Code SemiBold", 32))
+        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.current_weight_label = QLabel("0.0 g")
+        self.current_weight_label.setFont(QFont("Cascadia Code", 48))
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.target_weight_label = QLabel("")
+        self.target_weight_label.setFont(QFont("Cascadia Code", 48))
+        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.slash_label = QLabel("")
+        self.slash_label.setFont(QFont("Cascadia Code", 48))
+        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.labels_column = QVBoxLayout()
+        self.labels_column.addStretch(1)
+        self.labels_column.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self.labels_column.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.value_row = QHBoxLayout()
+        self.value_row.addWidget(self.current_weight_label)
+        self.value_row.addWidget(self.slash_label)
+        self.value_row.addWidget(self.target_weight_label)
+        self.value_row_widget = QWidget()
+        self.value_row_widget.setLayout(self.value_row)
+        self.labels_column.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.labels_column.addStretch(1)
+
+        # --- Dot column ---
         self.dot_widgets = []
-        self.icon_labels = []
-
-        # Dot column
         self.dot_column = QVBoxLayout()
         self.dot_column.addStretch(1)
         for i in range(len(self.icon_files)):
@@ -150,7 +137,8 @@ class RelayControlApp(QWidget):
                 self.dot_column.addSpacing(32)
         self.dot_column.addStretch(1)
 
-        # Icon column
+        # --- Icon column ---
+        self.icon_labels = []
         self.icon_column = QVBoxLayout()
         self.icon_column.addStretch(1)
         for i, (filename, alt) in enumerate(self.icon_files):
@@ -175,37 +163,11 @@ class RelayControlApp(QWidget):
                 self.icon_column.addSpacing(32)
         self.icon_column.addStretch(1)
 
-        # Combine dot and icon columns into a row
-        self.dot_icon_row = QHBoxLayout()
-        self.dot_icon_row.addLayout(self.dot_column)
-        self.dot_icon_row.addLayout(self.icon_column)
-
-        # Create a container widget for vertical centering
-        self.dot_icon_container = QWidget()
-        self.dot_icon_container.setLayout(self.dot_icon_row)
-        self.dot_icon_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-
-        # --- Wrap dot_icon_container in a vertical layout for centering ---
-        self.dot_icon_vbox = QVBoxLayout()
-        self.dot_icon_vbox.addStretch(1)
-        self.dot_icon_vbox.addWidget(self.dot_icon_container, alignment=Qt.AlignmentFlag.AlignVCenter)
-        self.dot_icon_vbox.addStretch(1)
-
-        # --- Horizontal content layout (centered area) ---
-        self.content_layout = QHBoxLayout()
-        self.content_layout.setContentsMargins(0, 0, 0, 0)
-        self.content_layout.setSpacing(0)
-        self.content_layout.addSpacing(25)
-        self.content_layout.addLayout(self.progress_bar_column)
-        self.content_layout.addWidget(self.center_frame, stretch=1)
-        self.content_layout.addLayout(self.dot_icon_vbox, stretch=0)  # Use the vertical box here
-        self.content_layout.addSpacing(25)
-
-        # Add content layout to a widget that expands
-        content_widget = QWidget()
-        content_widget.setLayout(self.content_layout)
-        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.main_layout.addWidget(content_widget, stretch=1)
+        # --- Add all columns to the main horizontal layout ---
+        self.main_layout.addLayout(self.progress_bar_column)
+        self.main_layout.addLayout(self.labels_column, stretch=1)
+        self.main_layout.addLayout(self.dot_column)
+        self.main_layout.addLayout(self.icon_column)
 
         # --- To move the selection dot in code ---
         def update_selection_dot(new_index):
@@ -218,7 +180,6 @@ class RelayControlApp(QWidget):
 
         self.update_selection_dot = update_selection_dot  # Expose for external use
 
-        # At the end of __init__:
         QTimer.singleShot(0, self.adjust_progress_bar_height)
 
         self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
