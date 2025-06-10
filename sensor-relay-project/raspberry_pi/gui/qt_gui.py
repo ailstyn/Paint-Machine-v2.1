@@ -108,7 +108,6 @@ class RelayControlApp(QWidget):
 
         # --- Add a buffer to the left of the main label ---
         main_label_row = QHBoxLayout()
-        main_label_row.addSpacing(24)  # Left buffer
         main_label_row.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.labels_column.addLayout(main_label_row)
 
@@ -122,7 +121,6 @@ class RelayControlApp(QWidget):
         self.value_row_widget.setLayout(self.value_row)
 
         value_row_outer = QHBoxLayout()
-        value_row_outer.addSpacing(24)  # Left buffer
         value_row_outer.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.labels_column.addLayout(value_row_outer)
 
@@ -405,8 +403,10 @@ class ValueInputDialog(QDialog):
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setFont(QFont("Cascadia Code SemiBold", 48))
         self.label.setStyleSheet(
-            f"color: {color_scheme['fg']}; background: transparent; padding: 32px;"
-        )
+            f"""color: {color_scheme['fg']};
+            background: transparent;
+            padding: 32px;"""
+                                )
         layout.addWidget(self.label)
 
         # Dynamically size dialog to 60% width, 40% height of the screen, max 500x300
