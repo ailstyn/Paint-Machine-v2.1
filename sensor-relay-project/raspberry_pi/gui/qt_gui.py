@@ -45,55 +45,22 @@ class RelayControlApp(QWidget):
         self.setLayout(self.main_layout)
         self.main_layout.setSpacing(0)
 
-        # --- System Info Label (top of the screen) ---
-        self.sysinfo_label = QLabel()
-        self.sysinfo_label.setFont(QFont("Cascadia Code", 10))
-        self.sysinfo_label.setStyleSheet("color: #888; background: rgba(255,255,255,0.7); border-radius: 4px; padding: 2px;")
-        self.sysinfo_label.setFixedWidth(220)
-        self.sysinfo_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        # System info label (top)
         self.main_layout.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
 
-        # --- Main display labels in the center ---
-        self.main_label = QLabel("CURRENT WEIGHT")
-        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_label.setFont(QFont("Cascadia Code SemiBold", 40))
-        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        # Main label and value row
         self.main_layout.addWidget(self.main_label)
-
-        self.value_row = QHBoxLayout()
-        self.value_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.current_weight_label = QLabel("0.0 g")
-        self.current_weight_label.setFont(QFont("Cascadia Code SemiBold", 28))
-        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-
-        self.slash_label = QLabel("/")
-        self.slash_label.setFont(QFont("Cascadia Code SemiBold", 28))
-        self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-
-        self.target_weight_label = QLabel("0.0 g")
-        self.target_weight_label.setFont(QFont("Cascadia Code SemiBold", 28))
-        self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-
-        self.value_row.addWidget(self.current_weight_label)
-        self.value_row.addWidget(self.slash_label)
-        self.value_row.addWidget(self.target_weight_label)
         self.main_layout.addLayout(self.value_row)
 
-        # Horizontal layout for main content (progress bar, center, icons)
+        # Horizontal content layout (centered area)
         self.content_layout = QHBoxLayout()
-        self.main_layout.addLayout(self.content_layout)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(0)
+        self.main_layout.addLayout(self.content_layout)
 
-        # --- Selection Dot Column (left of icons) ---
+        # --- Dot column ---
         self.dot_column = QVBoxLayout()
-        self.dot_column.setContentsMargins(0, 0, 0, 0)
-        self.dot_column.setSpacing(0)
-        self.dot_widgets = []
-        self.selected_index = 0  # Start with the first icon selected
-
-        self.dot_column.addStretch(1)  # Top stretch for vertical centering
+        self.dot_column.addStretch(1)
         for i in range(len(self.icon_files)):
             dot_label = QLabel()
             dot_label.setFixedSize(80, 80)  # 80px wide, 80px tall to match icon size
@@ -111,13 +78,10 @@ class RelayControlApp(QWidget):
             self.dot_widgets.append(dot_label)
             if i < len(self.icon_files) - 1:
                 self.dot_column.addSpacing(32)  # Match icon spacing
-        self.dot_column.addStretch(1)  # Bottom stretch for vertical centering
+        self.dot_column.addStretch(1)
 
-        # --- Icon Column (rightmost) ---
+        # --- Icon column ---
         self.icon_column = QVBoxLayout()
-        self.icon_column.setContentsMargins(0, 0, 0, 0)
-        self.icon_column.setSpacing(32)  # Increase spacing between icons
-        self.icon_labels = []
         self.icon_column.addStretch(1)
         for i, (filename, alt) in enumerate(self.icon_files):
             try:
@@ -142,50 +106,19 @@ class RelayControlApp(QWidget):
                 logging.error(f"Error loading icon '{filename}': {e}")
         self.icon_column.addStretch(1)
 
-        # --- Progress Bar Column (leftmost) ---
+        # --- Progress bar column ---
         self.progress_bar_column = QVBoxLayout()
-        self.progress_bar_column.setContentsMargins(0, 0, 0, 0)
-        self.progress_bar_column.setSpacing(0)
-        self.progress_bar_column.addStretch(1)  # Top stretch
-
-        # Make the progress bar 20% larger (width)
-        progress_bar_width = 36  # original was likely 30, increase by 20%
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setOrientation(Qt.Orientation.Vertical)
-        self.progress_bar.setMinimum(0)
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(50)
-        self.progress_bar.setTextVisible(False)
-        self.progress_bar.setFixedWidth(progress_bar_width)
-        # Set the background to foreground color and the bar to splash color
-        self.progress_bar.setStyleSheet(
-            f"""
-            QProgressBar {{
-                background: {self.fg};
-                border: 2px solid {self.fg};
-                border-radius: 5px;
-            }}
-            QProgressBar::chunk {{
-                background-color: {self.splash};
-                border-radius: 5px;
-            }}
-            """
-        )
+        self.progress_bar_column.addStretch(1)
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.progress_bar_column.addStretch(1)  # Bottom stretch
+        self.progress_bar_column.addStretch(1)
 
-        # --- Add columns to the main content layout in order: progress bar, center, dot, icon ---
-        self.center_frame = QFrame()
-        self.center_frame.setStyleSheet(f"background-color: {self.bg};")
-        self.center_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # Add left buffer before the progress bar
-
-        self.content_layout.addSpacing(25)  # Add 25px buffer to the left of the progress bar
+        # --- Add columns to content layout ---
+        self.content_layout.addSpacing(25)
         self.content_layout.addLayout(self.progress_bar_column)
         self.content_layout.addWidget(self.center_frame, stretch=1)
         self.content_layout.addLayout(self.dot_column)
         self.content_layout.addLayout(self.icon_column)
-        self.content_layout.addSpacing(25)  # Add 25px buffer to the right of the icons
+        self.content_layout.addSpacing(25)
 
         # Add right buffer after the icons
         self.right_buffer = QVBoxLayout()
