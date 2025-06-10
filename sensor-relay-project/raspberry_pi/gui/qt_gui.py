@@ -91,6 +91,10 @@ class RelayControlApp(QWidget):
         
         self.main_layout.addLayout(self.value_row)
 
+        # Create center_frame
+        self.center_frame = QFrame()
+        self.center_frame.setStyleSheet("background: transparent;")
+
         # Horizontal content layout (centered area)
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(0, 0, 0, 0)
@@ -206,9 +210,6 @@ class RelayControlApp(QWidget):
         self.overlay_widget.resize(self.size())
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
-
-        self.center_frame = QFrame()
-        self.center_frame.setStyleSheet("background: transparent;")
 
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
