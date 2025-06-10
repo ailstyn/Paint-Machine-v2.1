@@ -96,7 +96,6 @@ class RelayControlApp(QWidget):
         weight_row.addWidget(self.target_weight_label)
         weight_row.setAlignment(Qt.AlignmentFlag.AlignCenter)
         top_center_layout.addLayout(weight_row)
-        top_center_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
 
         # --- Section 3: Dialog/message area (center) ---
         self.dialog_area = QWidget()
@@ -217,12 +216,13 @@ class RelayControlApp(QWidget):
 
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
-        self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        for icon_label in self.icon_labels:
-            icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+        for icon_label, (filename, alt) in zip(self.icon_labels, self.icon_files):
+            if icon_label.pixmap() is None or icon_label.pixmap().isNull():
+                icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
+            # If you want to update the pixmap for a different color scheme, reload it here
         for dot_label in self.dot_widgets:
             dot_label.setStyleSheet(f"background: transparent; border-radius: 8px; color: {self.fg};")
         # Update progress bar color
