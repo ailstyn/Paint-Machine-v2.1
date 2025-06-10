@@ -89,7 +89,8 @@ class RelayControlApp(QWidget):
         self.value_row.addWidget(self.slash_label)
         self.value_row.addWidget(self.target_weight_label)
         
-        self.main_layout.addLayout(self.value_row, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.main_layout.addLayout(self.value_row)
+        self.value_row.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         # Create center_frame
         self.center_frame = QFrame()
