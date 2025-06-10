@@ -97,51 +97,63 @@ def write_scale_calibrations():
     except Exception as e:
         logging.error(f"Error writing to {config_file}: {e}")
 
-def calibrate_scale(arduino_id, data_queue):
-    # Initiate the scale recalibration process for the specified Arduino.
-
+def calibrate_scale(arduino_id, app):
+    """
+    Guides the user through a multi-step calibration process for the specified Arduino.
+    Shows instructions and waits for the select button to be pressed to proceed.
+    Uses a long debounce to avoid accidental double-presses.
+    """
     if arduino_id < 0 or arduino_id >= len(arduinos):
         logging.error(f"Invalid Arduino ID: {arduino_id}")
         return
 
     arduino = arduinos[arduino_id]
+    steps = [
+        "Step 1: Remove all weight from the scale.\n\nPress SELECT to tare.",
+        "Step 2: Place a known weight (e.g., 500g) on the scale.\n\nPress SELECT to calibrate.",
+        "Step 3: Calibration complete!\n\nPress SELECT to finish."
+    ]
 
-    try:
-        # Send the RESET_CALIBRATION message to the selected Arduino
-        arduino.write(b'\x05')  # Example: Use b'\x05' for RESET_CALIBRATION
-        print(f"Sent RESET_CALIBRATION to Arduino {arduino_id}")
+    for idx, instruction in enumerate(steps):
+        dialog = app.create_message_dialog(
+            title=f"Calibration (Arduino {arduino_id+1})",
+            message=instruction
+        )
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
 
-        # Update the GUI to display "CLEAR SCALE"
-        data_queue.put((arduino_id, {"current_weight": "CLEAR SCALE", "time_remaining": ""}))
+        # Wait for SELECT button press (LOW)
+        while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:
+            QApplication.processEvents()
+            time.sleep(0.01)
 
-        while True:
-            if arduino.in_waiting > 0:
-                # Read the message type (1 byte)
-                message_type = arduino.read(1)
+        # Wait for SELECT button release (HIGH)
+        while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            QApplication.processEvents()
+            time.sleep(0.01)
 
-                # Handle "current weight" messages
-                if message_type == CURRENT_WEIGHT:
-                    current_weight = arduino.readline().decode('utf-8').strip()
-                    data_queue.put((arduino_id, {"current_weight": current_weight, "time_remaining": ""}))
+        dialog.close()
 
-                # Handle recalibration steps
-                elif message_type == b'\x06':  # Example: Use b'\x06' for "place calibration weight"
-                    data_queue.put((arduino_id, {"current_weight": "PLACE WEIGHT ON SCALE", "time_remaining": ""}))
-                    print("Arduino requested to place calibration weight.")
+        # Perform hardware actions at each step
+        if idx == 0:
+            # Tare the scale
+            try:
+                arduino.write(TARE_SCALE)
+                logging.info(f"Tare command sent to Arduino {arduino_id}")
+            except Exception as e:
+                logging.error(f"Error sending TARE_SCALE: {e}")
+        elif idx == 1:
+            # Send calibration command (implement your protocol here)
+            try:
+                arduino.write(REQUEST_CALIBRATION)
+                logging.info(f"Calibration command sent to Arduino {arduino_id}")
+            except Exception as e:
+                logging.error(f"Error sending calibration command: {e}")
+        # idx == 2 is just the finish step
 
-                elif message_type == b'\x07':  # Example: Use b'\x07' for "recalibration complete"
-                    data_queue.put((arduino_id, {"current_weight": "CALIBRATION COMPLETE", "time_remaining": ""}))
-                    print("Recalibration complete. Displaying message for 3 seconds...")
-                    time.sleep(3)  # Wait for 3 seconds
-                    break
-
-            time.sleep(0.1)  # Small delay to avoid overwhelming the CPU
-
-    except serial.SerialException as e:
-        logging.error(f"Error communicating with Arduino {arduino_id}: {e}")
-    except Exception as e:
-        logging.error(f"Unexpected error during calibration: {e}")
-
+    # Optionally reload the main screen or update the UI
+    app.reload_main_screen()
 
 def tare_scale(arduino_id):
 #     arduino_id: The ID of the Arduino to send the tare command to.
