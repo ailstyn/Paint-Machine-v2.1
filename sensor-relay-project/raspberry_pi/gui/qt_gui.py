@@ -235,6 +235,7 @@ class RelayControlApp(QWidget):
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.center_frame.setStyleSheet("background: transparent;")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
