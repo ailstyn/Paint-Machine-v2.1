@@ -101,7 +101,9 @@ class RelayControlApp(QWidget):
         self.slash_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.labels_column = QVBoxLayout()
-        self.labels_column.addStretch(1)
+        self.labels_column.setSpacing(0)
+
+        # Add main label and value row widget at the top
         self.labels_column.addWidget(self.main_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.value_row = QHBoxLayout()
@@ -112,6 +114,8 @@ class RelayControlApp(QWidget):
         self.value_row_widget = QWidget()
         self.value_row_widget.setLayout(self.value_row)
         self.labels_column.addWidget(self.value_row_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        # Add stretch to push sysinfo label to the bottom
         self.labels_column.addStretch(1)
         self.labels_column.addWidget(self.sysinfo_label, alignment=Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignBottom)
 
