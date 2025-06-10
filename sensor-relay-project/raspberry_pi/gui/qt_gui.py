@@ -89,7 +89,7 @@ class RelayControlApp(QWidget):
         self.value_row.addWidget(self.slash_label)
         self.value_row.addWidget(self.target_weight_label)
         
-        self.main_layout.addLayout(self.value_row)
+        self.main_layout.addLayout(self.value_row, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Create center_frame
         self.center_frame = QFrame()
@@ -210,6 +210,11 @@ class RelayControlApp(QWidget):
         self.overlay_widget.resize(self.size())
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
+
+        content_widget = QWidget()
+        content_widget.setLayout(self.content_layout)
+        content_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.main_layout.addWidget(content_widget, stretch=1)
 
     def adjust_progress_bar_height(self):
         # Use the available height in the progress bar column, minus some margin for the percent label
