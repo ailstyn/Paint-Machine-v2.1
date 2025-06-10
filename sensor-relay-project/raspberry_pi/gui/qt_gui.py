@@ -71,6 +71,7 @@ class RelayControlApp(QWidget):
         progress_bar_layout.addStretch(1)
         progress_bar_layout.setContentsMargins(16, 16, 16, 16)
         progress_bar_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
+        progress_bar_container.setFixedWidth(100)  # Adjust this value as needed (was likely 200 before)
 
         # --- Section 2: Main label + weight labels (top center) ---
         self.main_label = QLabel("CURRENT WEIGHT")
@@ -170,6 +171,7 @@ class RelayControlApp(QWidget):
         dot_icon_layout.addLayout(dot_column)
         dot_icon_layout.addLayout(icon_column)
         dot_icon_container.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
+        dot_icon_container.setFixedWidth(100)  # Adjust this value as needed (was likely 200 before)
 
         # --- Main grid layout ---
         grid = QGridLayout(self)
