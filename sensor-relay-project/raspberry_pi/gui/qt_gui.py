@@ -208,6 +208,9 @@ class RelayControlApp(QWidget):
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
 
+        self.center_frame = QWidget()
+        self.center_frame.setStyleSheet("background: transparent;")
+
     def adjust_progress_bar_height(self):
         parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
         new_height = int(parent_height * 0.9)  # Increase from 0.6 to 0.9
@@ -433,6 +436,24 @@ class OverlayWidget(QWidget):
 
     def hide_overlay(self):
         self.hide()
+
+class MessageDialog(QDialog):
+    def __init__(self, title, message, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        layout = QVBoxLayout(self)
+        label = QLabel(message)
+        label.setWordWrap(True)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+        self.setModal(True)
+        self.setMinimumWidth(400)
+
+def create_message_dialog(self, title, message):
+    return MessageDialog(title, message, self)
+
+# Add this method to RelayControlApp:
+RelayControlApp.create_message_dialog = create_message_dialog
 
 if __name__ == "__main__":
     import sys
