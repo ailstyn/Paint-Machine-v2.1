@@ -220,7 +220,7 @@ class RelayControlApp(QWidget):
 
         QTimer.singleShot(0, self.adjust_progress_bar_height)
 
-        self.setWindowFlags(self.windowFlags() | Qt.WindowType.FramelessWindowHint)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog | Qt.WindowType.WindowStaysOnTopHint)
         self.showFullScreen()
 
         self.overlay_widget = OverlayWidget(self)
@@ -382,7 +382,7 @@ class RelayControlApp(QWidget):
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
         super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog | Qt.WindowType.WindowStaysOnTopHint)
         self.setModal(True)
         self.value = initial_value
         self.unit = unit
@@ -394,6 +394,8 @@ class ValueInputDialog(QDialog):
         self.setStyleSheet(
             f"""
             background: {color_scheme['bg']};
+            border: 4px solid {color_scheme['fg']};
+            border-radius: 18px;
             """
         )
 
