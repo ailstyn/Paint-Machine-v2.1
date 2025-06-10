@@ -31,8 +31,9 @@ for port in arduino_ports:
         arduino = serial.Serial(port, 9600, timeout=1)
         arduinos.append(arduino)
         print(f"Connected to Arduino on {port}")
-    except serial.SerialException:
+    except serial.SerialException as e:
         print(f"Port {port} not available. Skipping.")
+        logging.error(f"SerialException on port {port}: {e}")
 
 if not arduinos:
     print("No Arduinos connected. Exiting program.")
@@ -158,19 +159,21 @@ def tare_scale(arduino_id):
 
 
 def setup_gpio():
-    # Set up GPIO mode
-    print('setting up GPIO')
-    GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
-    print('set mode BCM')
-    GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Up button with pull-up resistor
-    print('up button pin set')
-    GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Down button with pull-up resistor
-    print('down button pin set')
-    GPIO.setup(SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Select button with pull-up resistor
-    print('select button pin set')
-    GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # E-Stop button with pull-up resistor
-    GPIO.setup(BUZZER_PIN, GPIO.OUT)
-    GPIO.output(BUZZER_PIN, GPIO.LOW)
+    try:
+        print('setting up GPIO')
+        GPIO.setmode(GPIO.BCM)
+        print('set mode BCM')
+        GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        print('up button pin set')
+        GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        print('down button pin set')
+        GPIO.setup(SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        print('select button pin set')
+        GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(BUZZER_PIN, GPIO.OUT)
+        GPIO.output(BUZZER_PIN, GPIO.LOW)
+    except Exception as e:
+        logging.error(f"Error in setup_gpio: {e}")
 
 
 def ping_buzzer(duration=0.05):
@@ -189,32 +192,35 @@ def ping_buzzer_invalid():
     GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 def handle_button_presses(app):
-    if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-        if app.selected_index > 0:
-            app.update_selection_dot(app.selected_index - 1)  # Move dot first
+    try:
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            if app.selected_index > 0:
+                app.update_selection_dot(app.selected_index - 1)  # Move dot first
+                ping_buzzer()
+            else:
+                ping_buzzer_invalid()
+            # Replace blocking sleep with a short polling debounce
+            for _ in range(20):  # ~0.2s if DEBOUNCE=0.01
+                QApplication.processEvents()
+                time.sleep(0.01)
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            if app.selected_index < len(app.dot_widgets) - 1:
+                app.update_selection_dot(app.selected_index + 1)
+                ping_buzzer()
+            else:
+                ping_buzzer_invalid()
+            for _ in range(20):
+                QApplication.processEvents()
+                time.sleep(0.01)
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
-        else:
-            ping_buzzer_invalid()
-        # Replace blocking sleep with a short polling debounce
-        for _ in range(20):  # ~0.2s if DEBOUNCE=0.01
-            QApplication.processEvents()
-            time.sleep(0.01)
-    if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-        if app.selected_index < len(app.dot_widgets) - 1:
-            app.update_selection_dot(app.selected_index + 1)
-            ping_buzzer()
-        else:
-            ping_buzzer_invalid()
-        for _ in range(20):
-            QApplication.processEvents()
-            time.sleep(0.01)
-    if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-        ping_buzzer()
-        while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            QApplication.processEvents()
-            time.sleep(0.01)
-        app.handle_select()
-        time.sleep(0.1)
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            app.handle_select()
+            time.sleep(0.1)
+    except Exception as e:
+        logging.error(f"Error in handle_button_presses: {e}")
 
 def startup(app):
     # Display the "CLEAR SCALES" message
@@ -444,6 +450,7 @@ signal.signal(signal.SIGTERM, handle_exit)
 
 def main():
     try:
+        logging.info("Starting main application.")
         load_scale_calibrations()
         setup_gpio()
         app_qt = QApplication(sys.argv)
@@ -470,15 +477,17 @@ def main():
         # Start polling loop using QTimer instead of root.after
         poll_timer = QTimer()
         poll_timer.timeout.connect(lambda: poll_hardware(app))
-        poll_timer.start(100)
+        poll_timer.start(35)  # Match sensor update rate: 35ms ≈ 28.57Hz
 
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
         print("Program interrupted by user.")
+        logging.info("Program interrupted by user.")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
     finally:
         print("Shutting down...")
+        logging.info("Shutting down and cleaning up GPIO.")
         GPIO.cleanup()
 
 if __name__ == "__main__":
