@@ -102,6 +102,7 @@ class RelayControlApp(QWidget):
         self.dialog_area_layout = QVBoxLayout(self.dialog_area)
         self.dialog_area_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.dialog_area.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
+        self.dialog_area.setMaximumWidth(700)  # Adjust as needed
 
         # --- Section 4: Selection dot and icon columns (right) ---
         self.dot_widgets = []
@@ -311,6 +312,9 @@ class RelayControlApp(QWidget):
         message_label.setFont(QFont("Cascadia Code", 24))
         message_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        message_label.setWordWrap(True)
+        message_label.setMaximumWidth(700)  # Adjust width as needed
+        message_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.dialog_area_layout.addWidget(message_label)
 
         # Optional input widget (e.g., QSpinBox, QLineEdit, etc.)
