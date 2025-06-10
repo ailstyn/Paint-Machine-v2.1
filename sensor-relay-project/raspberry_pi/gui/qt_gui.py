@@ -126,7 +126,7 @@ class RelayControlApp(QWidget):
             if i < len(self.icon_files) - 1:
                 self.dot_column.addSpacing(32)
         self.dot_column.addStretch(1)
-
+        self.icon_labels = []
         # --- Icon column ---
         self.icon_column = QVBoxLayout()
         self.icon_column.addStretch(1)
