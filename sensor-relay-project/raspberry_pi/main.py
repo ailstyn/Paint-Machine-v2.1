@@ -439,7 +439,6 @@ def poll_hardware(app):
                     current_weight = arduino.readline().decode('utf-8').strip()
                     app.current_weight = float(current_weight)
                     app.target_weight = float(target_weight)
-                    app.update_sysinfo()
                     app.refresh_ui()
                 elif message_type == BEGIN_FILL:
                     print("Received BEGIN FILL from Arduino.")
