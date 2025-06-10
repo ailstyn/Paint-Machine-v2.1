@@ -190,25 +190,29 @@ def ping_buzzer_invalid():
 def handle_button_presses(app):
     if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
         if app.selected_index > 0:
+            app.update_selection_dot(app.selected_index - 1)  # Move dot first
             ping_buzzer()
-            app.update_selection_dot(app.selected_index - 1)
         else:
             ping_buzzer_invalid()
-        time.sleep(0.2)
+        # Replace blocking sleep with a short polling debounce
+        for _ in range(20):  # ~0.2s if DEBOUNCE=0.01
+            QApplication.processEvents()
+            time.sleep(0.01)
     if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
         if app.selected_index < len(app.dot_widgets) - 1:
-            ping_buzzer()
             app.update_selection_dot(app.selected_index + 1)
+            ping_buzzer()
         else:
             ping_buzzer_invalid()
-        time.sleep(0.2)
+        for _ in range(20):
+            QApplication.processEvents()
+            time.sleep(0.01)
     if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
         ping_buzzer()
-        # Wait for button release before executing the select action
         while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            QApplication.processEvents()
             time.sleep(0.01)
         app.handle_select()
-        # Optional: small debounce after action
         time.sleep(0.1)
 
 def startup(app):
