@@ -357,6 +357,7 @@ def adjust_value_with_acceleration(
 # Usage in set_target_weight:
 def set_target_weight(app):
     global target_weight
+    print("set_target_weight called")
 
     def update_display(value):
         app.show_dialog_content(
@@ -380,6 +381,7 @@ def set_target_weight(app):
 # Usage in set_time_limit:
 def set_time_limit(app):
     global time_limit
+    print("set_time_limit called")
 
     def update_display(value):
         app.show_dialog_content(
