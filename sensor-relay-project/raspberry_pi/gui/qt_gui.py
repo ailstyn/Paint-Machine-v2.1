@@ -9,7 +9,7 @@ import random
 import logging
 
 COLOR_SCHEMES = [
-    {"name": "Classic Blue", "bg": "#2e3192", "fg": "white", "splash": "red"},
+    {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
     {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61"},
     {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020"},
     {"name": "Green Alert", "bg": "#1B9E3A", "fg": "#FFFFFF", "splash": "#FF6F61"},
@@ -235,8 +235,7 @@ class RelayControlApp(QWidget):
         # Update styles for all widgets
         self.setStyleSheet(f"background-color: {self.bg};")
         self.main_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.value_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.center_frame.setStyleSheet(f"background-color: {self.bg};")
+        self.center_frame.setStyleSheet("background: transparent;")
         for icon_label in self.icon_labels:
             icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
         for dot_label in self.dot_widgets:
