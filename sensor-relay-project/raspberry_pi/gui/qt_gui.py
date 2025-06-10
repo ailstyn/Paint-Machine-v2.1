@@ -119,9 +119,10 @@ class RelayControlApp(QWidget):
             """
         )
         self.progress_bar_column = QVBoxLayout()
-        self.progress_bar_column.addStretch(1)
+        # Optionally comment out one or both stretches for a taller bar
+        # self.progress_bar_column.addStretch(1)
         self.progress_bar_column.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.progress_bar_column.addStretch(1)
+        # self.progress_bar_column.addStretch(1)
 
         # --- Dot and Icon columns ---
         self.dot_widgets = []
@@ -184,6 +185,12 @@ class RelayControlApp(QWidget):
         self.dot_icon_container.setLayout(self.dot_icon_row)
         self.dot_icon_container.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
+        # --- Wrap dot_icon_container in a vertical layout for centering ---
+        self.dot_icon_vbox = QVBoxLayout()
+        self.dot_icon_vbox.addStretch(1)
+        self.dot_icon_vbox.addWidget(self.dot_icon_container, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.dot_icon_vbox.addStretch(1)
+
         # --- Horizontal content layout (centered area) ---
         self.content_layout = QHBoxLayout()
         self.content_layout.setContentsMargins(0, 0, 0, 0)
@@ -191,7 +198,7 @@ class RelayControlApp(QWidget):
         self.content_layout.addSpacing(25)
         self.content_layout.addLayout(self.progress_bar_column)
         self.content_layout.addWidget(self.center_frame, stretch=1)
-        self.content_layout.addWidget(self.dot_icon_container, stretch=0)
+        self.content_layout.addLayout(self.dot_icon_vbox, stretch=0)  # Use the vertical box here
         self.content_layout.addSpacing(25)
 
         # Add content layout to a widget that expands
@@ -223,9 +230,8 @@ class RelayControlApp(QWidget):
         self.overlay_widget.hide()
 
     def adjust_progress_bar_height(self):
-        # Use the available height in the progress bar column, minus some margin for the percent label
         parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
-        new_height = int(parent_height * 0.6)
+        new_height = int(parent_height * 0.9)  # Increase from 0.6 to 0.9
         self.progress_bar.setFixedHeight(new_height)
 
     def refresh_ui(self):
