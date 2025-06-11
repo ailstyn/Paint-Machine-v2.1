@@ -430,7 +430,7 @@ class OverlayWidget(QWidget):
             fg = "#fff"
         self.label.setText(message)
         self.label.setStyleSheet(f"color: {fg}; font-size: 32px; background: transparent;")
-        self.setStyleSheet(f"background-color: {color};")
+        self.setStyleSheet(f"color: {color};")
         self.show()
         self.raise_()
 
