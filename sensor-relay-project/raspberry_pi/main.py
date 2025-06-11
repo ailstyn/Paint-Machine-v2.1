@@ -579,7 +579,7 @@ def poll_hardware(app):
         # E-Stop released
         if E_STOP:
             E_STOP = False
-            app.hide_overlay()
+            app.overlay_widget.hide_overlay()
 
         # Normal operation
         handle_button_presses(app)
