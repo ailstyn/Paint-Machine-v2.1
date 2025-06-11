@@ -416,7 +416,8 @@ class OverlayWidget(QWidget):
         self.setStyleSheet("background: transparent;")
         self.label = QLabel("", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("color: white; font-size: 32px; background: transparent;")
+        # Set initial style, but will be overridden in show_overlay
+        self.label.setStyleSheet("color: white; font-size: 48px; background: transparent;")
         self.hide()
 
     def show_overlay(self, message, color=None, fg=None):
@@ -429,8 +430,14 @@ class OverlayWidget(QWidget):
         if fg is None:
             fg = "#ffffff"
         self.label.setText(message)
-        self.label.setStyleSheet(f"color: {fg}; font-size: 32px;")
-        self.setStyleSheet(f"background: {color};")
+        # Larger font and bold for visibility
+        self.label.setStyleSheet(
+            f"color: {fg}; font-size: 64px; font-weight: bold; background: transparent; border: 6px solid {fg}; border-radius: 32px; padding: 32px;"
+        )
+        # Add a thick border and rounded corners to the overlay itself
+        self.setStyleSheet(
+            f"background-color: {color}; border: 8px solid {fg}; border-radius: 40px;"
+        )
         self.show()
         self.raise_()
 
