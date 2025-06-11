@@ -619,6 +619,10 @@ def poll_hardware(app):
                 else:
                     arduino.write(RELAY_DEACTIVATED)
         else:
+            # E-Stop switch has been released (pin HIGH)
+            if E_STOP:
+                E_STOP = False
+                app.clear_dialog_content()
             handle_button_presses(app)
             while arduino.in_waiting > 0:
                 message_type = arduino.read(1)
@@ -651,13 +655,10 @@ def poll_hardware(app):
                     debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
                     print(f"Arduino (debug): {debug_line}")
                 else:
-                    # Read and print any unexpected lines from Arduino
                     possible_line = arduino.readline().decode('utf-8', errors='replace').strip()
                     print(f"Arduino (unhandled): {possible_line}")
                     logging.warning(f"Unhandled message type: {message_type} | Line: {possible_line}")
-        # At the end, update the GUI:
-        app.refresh_ui()  # Or just update the widgets here
-        
+        app.refresh_ui()
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
 
