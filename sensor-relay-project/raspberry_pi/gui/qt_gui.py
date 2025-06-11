@@ -408,7 +408,6 @@ class OverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.setStyleSheet("background: transparent;")
         self.label = QLabel("", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # Set initial style, but will be overridden in show_overlay
