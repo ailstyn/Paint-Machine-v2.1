@@ -52,7 +52,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setOrientation(Qt.Orientation.Vertical)
-        self.progress_bar.setFixedSize(60, 400)  # <-- Set fixed width and height here
+        self.progress_bar.setFixedSize(60, 600)  # <-- Set fixed width and height here
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
@@ -68,9 +68,10 @@ class RelayControlApp(QWidget):
         )
         progress_bar_container = QWidget()
         progress_bar_layout = QVBoxLayout(progress_bar_container)
-        progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
-        progress_bar_layout.addStretch(1)
         progress_bar_layout.setContentsMargins(16, 16, 16, 16)
+        progress_bar_layout.addStretch(1)  # Add stretch above
+        progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
+        progress_bar_layout.addStretch(1)  # Add stretch below
         progress_bar_container.setFixedWidth(90)  # Adjust to match or slightly exceed progress bar width
 
         # --- Section 2: Weight label (top center) ---
