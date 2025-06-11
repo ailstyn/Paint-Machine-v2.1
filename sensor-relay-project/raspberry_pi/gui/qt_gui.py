@@ -288,11 +288,8 @@ class RelayControlApp(QWidget):
             logging.error(f"Error in keyPressEvent: {e}")
 
     def resizeEvent(self, event):
-        self.label.resize(int(self.width() * 0.9), int(self.height() * 0.8))
-        self.label.move(
-            (self.width() - self.label.width()) // 2,
-            (self.height() - self.label.height()) // 2
-        )
+        if hasattr(self, "overlay_widget"):
+            self.overlay_widget.resize(self.size())
         super().resizeEvent(event)
 
 
