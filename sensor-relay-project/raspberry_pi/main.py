@@ -127,7 +127,6 @@ def calibrate_scale(arduino_id, app):
                         print(f"[calibrate_scale] Error parsing weight: {e}")
 
             QApplication.processEvents()
-            time.sleep(0.05)
 
             # Check for SELECT button press
             if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
