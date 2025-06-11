@@ -315,7 +315,7 @@ class RelayControlApp(QWidget):
     def set_fill_mode(self, current_weight, target_weight):
         self.current_weight_label.setText(f"{current_weight:.1f} g")
 
-    def show_dialog_content(self, title, message, input_widget=None, on_accept=None):
+    def show_dialog_content(self, title, message, input_widget=None, on_accept=None, bg_color=None):
         # Clear previous content
         for i in reversed(range(self.dialog_area_layout.count())):
             widget = self.dialog_area_layout.itemAt(i).widget()
@@ -332,10 +332,14 @@ class RelayControlApp(QWidget):
         # Message
         message_label = QLabel(message)
         message_label.setFont(QFont("Cascadia Code", 24))
-        message_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        fg = self.fg
+        if bg_color:
+            message_label.setStyleSheet(f"color: {fg}; background: {bg_color}; border-radius: 12px;")
+        else:
+            message_label.setStyleSheet(f"color: {fg}; background: transparent;")
         message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         message_label.setWordWrap(True)
-        message_label.setMaximumWidth(700)  # Adjust width as needed
+        message_label.setMaximumWidth(700)
         message_label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.dialog_area_layout.addWidget(message_label)
 
@@ -468,6 +472,11 @@ if __name__ == "__main__":
     def show_estop_overlay():
         window.overlay_widget.show_overlay("E-STOP ACTIVATED", color=window.splash)
         QTimer.singleShot(2000, window.overlay_widget.hide_overlay)
+        window.show_dialog_content(
+            title="E-STOP ACTIVATED",
+            message="Emergency stop has been triggered!\n\nPress RESET to continue.",
+            bg_color=window.splash
+        )
 
     # Show overlay every 5 seconds
     overlay_timer = QTimer()

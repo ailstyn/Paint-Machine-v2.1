@@ -88,6 +88,8 @@ LANGUAGES = {
         "CLEAR_SCALES_MSG": "PRESS SELECT WHEN READY",
         "SCALES_RESET_TITLE": "SCALES RESET",
         "SCALES_RESET_MSG": "",
+        "ESTOP_TITLE": "E-STOP ACTIVATED",
+        "ESTOP_MSG": "Emergency stop has been triggered!\n\nPress RESET to continue.",
         # Add more as needed...
     },
     "es": {
@@ -105,6 +107,8 @@ LANGUAGES = {
         "CLEAR_SCALES_MSG": "PULSA SELECT CUANDO ESTÉ LISTO",
         "SCALES_RESET_TITLE": "BALANZAS REINICIADAS",
         "SCALES_RESET_MSG": "",
+        "ESTOP_TITLE": "PARADA DE EMERGENCIA",
+        "ESTOP_MSG": "¡Se ha activado la parada de emergencia!\n\nPulsa RESET para continuar.",
         # Add more as needed...
     }
 }
@@ -601,7 +605,12 @@ def poll_hardware(app):
         if GPIO.input(E_STOP_PIN) == GPIO.LOW:
             if not E_STOP:
                 E_STOP = True
-                app.show_overlay("E-STOP ACTIVATED", "")
+                # Show E-Stop dialog with splash background and localized text
+                app.show_dialog_content(
+                    title=LANGUAGES[app.language]["ESTOP_TITLE"],
+                    message=LANGUAGES[app.language]["ESTOP_MSG"],
+                    bg_color=app.splash
+                )
             # If E-Stop is active, respond to any message except CURRENT_WEIGHT
             while arduino.in_waiting > 0:
                 message_type = arduino.read(1)
