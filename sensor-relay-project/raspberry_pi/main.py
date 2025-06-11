@@ -57,6 +57,9 @@ RELAY_DEACTIVATED = b'\xFA'
 TARGET_WEIGHT = b'\x08'
 VERBOSE_DEBUG = b'\xFE'
 BEGIN_FILL = b'\x10'  # Choose an unused byte value for BEGIN_FILL
+CALIBRATION_STEP_DONE = b'\x12'
+CALIBRATION_CONTINUE = b'\x13'
+CALIBRATION_WEIGHT = b'\x14'  # New byte for calibration weight
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -99,60 +102,140 @@ def write_scale_calibrations():
         logging.error(f"Error writing to {config_file}: {e}")
 
 def calibrate_scale(arduino_id, app):
-    print(f"calibrate_scale called for arduino_id={arduino_id}")
-    """
-    Guides the user through a multi-step calibration process for the specified Arduino.
-    Shows instructions and waits for the select button to be pressed to proceed.
-    Uses a long debounce to avoid accidental double-presses.
-    """
-    if arduino_id < 0 or arduino_id >= len(arduinos):
-        logging.error(f"Invalid Arduino ID: {arduino_id}")
-        return
-
     arduino = arduinos[arduino_id]
-    steps = [
-        "Step 1: Remove all weight from the scale.\n\nPress SELECT to tare.",
-        "Step 2: Place a known weight (e.g., 500g) on the scale.\n\nPress SELECT to calibrate.",
-        "Step 3: Calibration complete!\n\nPress SELECT to finish."
-    ]
 
-    for idx, instruction in enumerate(steps):
-        # Show the instruction in the dialog/message area
+    # Step 1: Remove all weight from the scale
+    app.show_dialog_content(
+        title="Calibration",
+        message="Remove all weight from the scale\n\nPress SELECT when ready"
+    )
+
+    while True:
+        # Read current weight from Arduino
+        if arduino.in_waiting > 0:
+            msg_type = arduino.read(1)
+            if msg_type == CURRENT_WEIGHT:
+                try:
+                    weight_line = arduino.readline().decode('utf-8', errors='replace').strip()
+                    weight = float(weight_line)
+                    app.set_current_weight_mode(weight)
+                except Exception:
+                    pass  # Ignore parse errors
+
+        QApplication.processEvents()
+        time.sleep(0.05)
+
+        # Check for SELECT button press
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            # Wait for button release to avoid double press
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            # Send CALIBRATION_CONTINUE to Arduino
+            arduino.write(CALIBRATION_CONTINUE)
+            break
+
+    # Wait for CALIBRATION_STEP_DONE from Arduino before proceeding to Step 2
+    while True:
+        if arduino.in_waiting > 0:
+            msg_type = arduino.read(1)
+            if msg_type == CALIBRATION_STEP_DONE:
+                break
+        QApplication.processEvents()
+        time.sleep(0.01)
+
+    # --- Step 2: Place calibration weight and set value ---
+    calib_weight = 100  # Default value in grams
+
+    def update_display(value, *args, **kwargs):
         app.show_dialog_content(
             title=f"Calibration (Arduino {arduino_id+1})",
-            message=instruction
+            message=f"Place a weight on the scale and set the value\n\n"
+                    f"Calibration Weight: {value} g\n\n"
+                    f"Use UP/DOWN to adjust.\nPress SELECT when ready."
         )
 
-        # Wait for SELECT button press (LOW)
-        while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:
-            QApplication.processEvents()
-            time.sleep(0.01)
+    # Show the initial value immediately
+    update_display(calib_weight)
 
-        ping_buzzer()  # Beep once when the button is pressed
+    calib_weight = adjust_value_with_acceleration(
+        initial_value=calib_weight,
+        dialog=type('DialogStub', (), {
+            'update_value': staticmethod(update_display),
+            'accept': staticmethod(lambda *args, **kwargs: None),
+            'close': staticmethod(lambda *args, **kwargs: None)
+        })(),
+        up_button_pin=UP_BUTTON_PIN,
+        down_button_pin=DOWN_BUTTON_PIN,
+        unit_increment=1,
+        min_value=0,
+        up_callback=update_display,
+        down_callback=update_display
+    )
 
-        # Wait for SELECT button release (HIGH)
-        while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            QApplication.processEvents()
-            time.sleep(0.01)
+    while True:
+        QApplication.processEvents()
+        time.sleep(0.01)
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            # Wait for button release to avoid double press
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            # Send CALIBRATION_WEIGHT byte and value to Arduino
+            arduino.write(CALIBRATION_WEIGHT)
+            arduino.write(f"{calib_weight}\n".encode('utf-8'))
+            break
 
-        # Perform hardware actions at each step
-        if idx == 0:
-            # Tare the scale
-            try:
-                arduino.write(TARE_SCALE)
-                logging.info(f"Tare command sent to Arduino {arduino_id}")
-            except Exception as e:
-                logging.error(f"Error sending TARE_SCALE: {e}")
-        elif idx == 1:
-            # Send calibration command (implement your protocol here)
-            try:
-                arduino.write(REQUEST_CALIBRATION)
-                logging.info(f"Calibration command sent to Arduino {arduino_id}")
-            except Exception as e:
-                logging.error(f"Error sending calibration command: {e}")
-        # idx == 2 is just the finish step
+    # Wait for CALIBRATION_STEP_DONE from Arduino before proceeding
+    while True:
+        if arduino.in_waiting > 0:
+            msg_type = arduino.read(1)
+            if msg_type == CALIBRATION_STEP_DONE:
+                break
+        QApplication.processEvents()
+        time.sleep(0.01)
 
-    # Optionally reload the main screen or update the UI
+    # --- Step 3: Wait for calibration value from Arduino ---
+    app.show_dialog_content(
+        title=f"Calibration (Arduino {arduino_id+1})",
+        message="Calculating ratio..."
+    )
+
+    new_calibration = None
+    while True:
+        if arduino.in_waiting > 0:
+            msg_type = arduino.read(1)
+            if msg_type == CALIBRATION_WEIGHT:
+                # Read the calibration value sent as a string (e.g., "427.53\n")
+                try:
+                    calib_line = arduino.readline().decode('utf-8', errors='replace').strip()
+                    new_calibration = float(calib_line)
+                    break
+                except Exception:
+                    logging.error("Failed to parse calibration value from Arduino.")
+        QApplication.processEvents()
+        time.sleep(0.01)
+
+    # Save the new calibration value for this Arduino
+    scale_calibrations[arduino_id] = new_calibration
+    write_scale_calibrations()
+
+    # Optionally show a confirmation dialog
+    app.show_dialog_content(
+        title="Calibration Complete",
+        message=f"New calibration value saved: {new_calibration:.6f}\n\nPress SELECT to finish"
+    )
+    # Wait for SELECT to finish
+    while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:
+        QApplication.processEvents()
+        time.sleep(0.01)
+    ping_buzzer()
+    while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+        QApplication.processEvents()
+        time.sleep(0.01)
+
     app.clear_dialog_content()
     app.reload_main_screen()
 

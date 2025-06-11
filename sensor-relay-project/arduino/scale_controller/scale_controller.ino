@@ -21,11 +21,16 @@
 #define VERBOSE_DEBUG 0xFE
 #define BEGIN_FILL 0x10
 #define FINAL_WEIGHT 0x11
+#define CALIBRATION_STEP_DONE 0x12
+#define CALIBRATION_CONTINUE  0x13
+#define CALIBRATION_WEIGHT 0x14
 
 // Global variables
 HX711 scale;
 float scaleCalibration = 427.530059; // Default calibration value
 float calibWeight = 61.0;     // Calibration weight in grams
+float cWeight1 = 0.0; // Variable to store the calibration value
+float cWeight2 = 0.0; // Variable to store the calibration value
 
 void setup() {
     pinMode(RELAY_PIN, OUTPUT);
@@ -83,7 +88,7 @@ void setup() {
 }
 
 void loop() {
-        if (digitalRead(BUTTON_PIN) == LOW) {
+    if (digitalRead(BUTTON_PIN) == LOW) {
         fill();
     }
 
@@ -229,40 +234,56 @@ void fill() {
 void recalibrate() {
     Serial.println("Starting recalibration...");
 
-    // Continuously send current scale readings to the Raspberry Pi
+    // --- Step 1: Ask user to clear the scale ---
     while (true) {
         long weight = scale.get_units(3);
-        Serial.print("Current Weight: ");
+        Serial.write(CURRENT_WEIGHT);
         Serial.println(weight);
 
-        // Check for button press to start the first step of recalibration
-        if (digitalRead(BUTTON_PIN) == LOW) {
-            delay(200); // Debounce delay
-            scale.set_scale(); // Reset the scale
-            scale.tare();      // Tare the scale
-            Serial.println("Scale reset and tared. Place calibration weight.");
-            break;
+        // Check for "step complete" message from Pi
+        if (Serial.available() > 0) {
+            byte msg = Serial.read();
+            if (msg == CALIBRATION_CONTINUE) {
+                break; // Proceed to next step
+            }
         }
-        delay(500); // Delay to avoid overwhelming the serial output
+        delay(200); // Adjust delay as needed for update rate
     }
+    tare();
+    set_scale();
+    tare();
+    long cWeight1 = scale.get_units(10);
+    Serial.write(CALIBRATION_STEP_DONE);
 
-    // Wait for the second button press to finalize calibration
+    // --- Step 2: Wait for user to place calibration weight ---
     while (true) {
-        long weight = scale.get_units(3);
-        Serial.print("Current Weight: ");
-        Serial.println(weight);
-
-        if (digitalRead(BUTTON_PIN) == LOW) {
-            delay(200); // Debounce delay
-            float rawUnits = scale.get_units(3); // Get the raw units
-            scaleCalibration = rawUnits / calibWeight; // Calculate the new calibration factor
-            scale.set_scale(scaleCalibration); // Apply the new calibration factor
-            Serial.print("New calibration factor applied: ");
-            Serial.println(scaleCalibration);
-            break;
+        // Check for "step complete" message from Pi
+        if (Serial.available() > 0) {
+            byte msg = Serial.read();
+            if (msg == CALIBRATION_WEIGHT) {
+                String receivedData = Serial.readStringUntil('\n'); // Read the calibration weight
+                calibWeight = receivedData.toFloat(); // Convert to float
+                delay(100); // Allow time for the weight to stabilize
+                Serial.write(CALIBRATION_STEP_DONE);
+                delay(200); // Allow time for the message to be sent
+                break;
+            }
         }
-        delay(500); // Delay to avoid overwhelming the serial output
+    }
+    long cWeight2 = scale.get_units(10);
+    Serial.write(CALIBRATION_STEP_DONE);
+
+    // --- Step 3: Calculate and set new calibration value ---
+    float delta = cWeight2 - cWeight1;
+    if (calibWeight != 0) {
+        scaleCalibration = delta / calibWeight;
+        scale.set_scale(scaleCalibration);
     }
 
-    Serial.println("Recalibration complete.");
+    // Send the new calibration value to the Pi
+    Serial.write(CALIBRATION_WEIGHT);
+    Serial.println(scaleCalibration);
+
+    // Optionally send step done and debug info
+    Serial.write(CALIBRATION_STEP_DONE);
 }
