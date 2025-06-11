@@ -191,7 +191,6 @@ class RelayControlApp(QWidget):
 
         self.overlay_widget = OverlayWidget(self)
         self.overlay_widget.resize(self.size())
-        self.overlay_widget.raise_()
         self.overlay_widget.hide()
 
         self.display_unit = "g"  # or "oz"
@@ -420,20 +419,20 @@ class OverlayWidget(QWidget):
         self.label.setStyleSheet("color: white; font-size: 32px; background: transparent;")
         self.hide()
 
-    def show_overlay(self, message, color=None, fg="#fff"):
-        # Use splash color if color is not provided
-        if color is None and hasattr(self.parent(), "splash"):
-            color = self.parent().splash
-        elif color is None:
-            color = "#800020"
-        self.setStyleSheet(f"background: rgba(0,0,0,128);")
+    def show_overlay(self, message, color=None, fg=None):
+        # Use parent's color scheme if not provided
+        if self.parent() and hasattr(self.parent(), "splash"):
+            if color is None:
+                color = self.parent().splash
+            if fg is None and hasattr(self.parent(), "fg"):
+                fg = self.parent().fg
+        if fg is None:
+            fg = "#fff"
         self.label.setText(message)
-        self.label.setStyleSheet(
-            f"color: {fg}; font-size: 32px; background: {color}; border-radius: 18px; padding: 24px;"
-        )
-        self.label.resize(int(self.width() * 0.7), 120)
-        self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
+        self.label.setStyleSheet(f"color: {fg}; font-size: 32px; background: transparent;")
+        self.setStyleSheet(f"background-color: {color};")
         self.show()
+        self.raise_()
 
     def resizeEvent(self, event):
         # Keep label centered on resize
