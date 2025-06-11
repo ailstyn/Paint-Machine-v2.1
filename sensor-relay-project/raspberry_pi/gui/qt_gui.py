@@ -38,8 +38,10 @@ class RelayControlApp(QWidget):
         self.icon_files = [
             ("dumbell.png", "Dumbbell"),
             ("stopwatch.png", "Stopwatch"),
-            ("geometric-tool.png", "Calibrate"),
             ("color.png", "Color"),
+            ("language.png", "Language"),
+            ("ruler.png", "Ruler"),
+            ("geometric-tool.png", "Calibrate"),
         ]
 
         # --- Section 1: Progress Bar (left) ---
@@ -110,7 +112,7 @@ class RelayControlApp(QWidget):
         dot_column.addStretch(1)
         for i in range(len(self.icon_files)):
             dot_label = QLabel()
-            dot_label.setFixedSize(80, 80)
+            dot_label.setFixedSize(60, 60)  # Changed from 80x80 to 60x60
             dot_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             dot_label.setStyleSheet(
                 "background: transparent;"
@@ -123,7 +125,7 @@ class RelayControlApp(QWidget):
             dot_column.addWidget(dot_label)
             self.dot_widgets.append(dot_label)
             if i < len(self.icon_files) - 1:
-                dot_column.addSpacing(32)
+                dot_column.addSpacing(24)  # Optionally reduce spacing for more icons
         dot_column.addStretch(1)
 
         icon_column = QVBoxLayout()
@@ -135,7 +137,7 @@ class RelayControlApp(QWidget):
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
                 pixmap = pixmap.scaled(
-                    80, 80,
+                    60, 60,  # Changed from 80x80 to 60x60
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 )
@@ -143,12 +145,12 @@ class RelayControlApp(QWidget):
                 icon_label.setText("")
             else:
                 icon_label.setText(alt)
-                icon_label.setFont(QFont("Arial", 64))
+                icon_label.setFont(QFont("Arial", 48))  # Adjust font size for smaller icon
                 icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
             self.icon_labels.append(icon_label)
             icon_column.addWidget(icon_label)
             if i < len(self.icon_files) - 1:
-                icon_column.addSpacing(32)
+                icon_column.addSpacing(24)  # Optionally reduce spacing for more icons
         icon_column.addStretch(1)
 
         dot_icon_container = QWidget()
@@ -190,6 +192,8 @@ class RelayControlApp(QWidget):
         self.overlay_widget.resize(self.size())
         self.overlay_widget.raise_()
         self.overlay_widget.hide()
+
+        self.display_unit = "g"  # or "oz"
 
     def adjust_progress_bar_height(self):
         parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
@@ -249,11 +253,20 @@ class RelayControlApp(QWidget):
             if self.set_time_limit_callback:
                 self.set_time_limit_callback(self)
         elif self.selected_index == 2:
+            self.cycle_color_scheme()
+        elif self.selected_index == 3:
+            print("Language selected")
+            # Add your language selection logic here
+        elif self.selected_index == 4:
+            # Toggle between grams and ounces
+            self.display_unit = "oz" if self.display_unit == "g" else "g"
+            self.set_current_weight_mode(self.current_weight)
+            self.set_target_weight_mode(self.target_weight)
+            print(f"Switched display unit to {self.display_unit}")
+        elif self.selected_index == 5:
             print("Calibrate selected")
             if self.set_calibrate_callback:
                 self.set_calibrate_callback(0, self)
-        elif self.selected_index == 3:
-            self.cycle_color_scheme()
 
 
     def keyPressEvent(self, event):
@@ -285,10 +298,18 @@ class RelayControlApp(QWidget):
 
 
     def set_current_weight_mode(self, weight):
-        self.current_weight_label.setText(f"{weight:.1f} g")
+        if self.display_unit == "g":
+            self.current_weight_label.setText(f"{weight:.1f} g")
+        else:
+            ounces = weight * 0.03527
+            self.current_weight_label.setText(f"{ounces:.2f} oz")
 
     def set_target_weight_mode(self, target_weight):
-        self.target_weight_label.setText(f"{target_weight:.1f} g")
+        if self.display_unit == "g":
+            self.target_weight_label.setText(f"{target_weight:.1f} g")
+        else:
+            ounces = target_weight * 0.03527
+            self.target_weight_label.setText(f"{ounces:.2f} oz")
 
     def set_fill_mode(self, current_weight, target_weight):
         self.current_weight_label.setText(f"{current_weight:.1f} g")

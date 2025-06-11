@@ -65,6 +65,8 @@ Icons provided by:
 <a href="https://www.flaticon.com/free-icons/diameter" title="diameter icons">Diameter icons created by Vectorslab - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/dumbell" title="Dumbell icons">Dumbell icons created by Vitaly Gorbachev - Flaticon</a>
 <a href="https://www.flaticon.com/free-icons/color-wheel" title="color wheel icons">Color wheel icons created by Hasymi - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/global" title="global icons">Global icons created by srip - Flaticon</a>
+<a href="https://www.flaticon.com/free-icons/ruler" title="ruler icons">Ruler icons created by Good Ware - Flaticon</a>
 
 ## Requirements
 

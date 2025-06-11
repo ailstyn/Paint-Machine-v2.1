@@ -265,12 +265,12 @@ def calibrate_scale(arduino_id, app):
             time.sleep(0.01)
 
         app.clear_dialog_content()
-        app.reload_main_screen()
         print("[calibrate_scale] Calibration process finished and UI reset")
 
     except Exception as e:
         logging.error(f"[calibrate_scale] Unexpected error: {e}")
         print(f"[calibrate_scale] Unexpected error: {e}")
+        
 def tare_scale(arduino_id):
 #     arduino_id: The ID of the Arduino to send the tare command to.
 
