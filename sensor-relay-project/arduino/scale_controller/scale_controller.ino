@@ -247,7 +247,6 @@ void recalibrate() {
                 break; // Proceed to next step
             }
         }
-        delay(200); // Adjust delay as needed for update rate
     }
     scale.tare();
     scale.set_scale();
