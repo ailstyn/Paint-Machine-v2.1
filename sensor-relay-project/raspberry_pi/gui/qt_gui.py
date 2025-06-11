@@ -52,6 +52,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setOrientation(Qt.Orientation.Vertical)
+        self.progress_bar.setFixedSize(60, 400)  # <-- Set fixed width and height here
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
@@ -70,7 +71,7 @@ class RelayControlApp(QWidget):
         progress_bar_layout.addWidget(self.progress_bar, alignment=Qt.AlignmentFlag.AlignHCenter)
         progress_bar_layout.addStretch(1)
         progress_bar_layout.setContentsMargins(16, 16, 16, 16)
-        progress_bar_container.setFixedWidth(150)  # Adjust this value as needed (was likely 200 before)
+        progress_bar_container.setFixedWidth(90)  # Adjust to match or slightly exceed progress bar width
 
         # --- Section 2: Weight label (top center) ---
 
@@ -184,8 +185,6 @@ class RelayControlApp(QWidget):
 
         self.update_selection_dot = update_selection_dot  # Expose for external use
 
-        QTimer.singleShot(0, self.adjust_progress_bar_height)
-
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.showFullScreen()
 
@@ -195,11 +194,6 @@ class RelayControlApp(QWidget):
 
         self.display_unit = "g"  # or "oz"
         self.language = "en"
-
-    def adjust_progress_bar_height(self):
-        parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()
-        new_height = int(parent_height * 0.9)  # Increase from 0.6 to 0.9
-        self.progress_bar.setFixedHeight(new_height)
 
     def refresh_ui(self):
         try:
