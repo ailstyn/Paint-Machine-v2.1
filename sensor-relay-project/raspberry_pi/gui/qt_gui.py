@@ -454,37 +454,22 @@ RelayControlApp.create_message_dialog = create_message_dialog
 
 if __name__ == "__main__":
     import sys
+    from PyQt6.QtCore import QTimer
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = RelayControlApp()
-    # window.show()
+    window.show()
 
-    # Simulate progress bar going up and down
-    def simulate_progress():
-        value = random.randint(0, 100)
-        window.progress_bar.setValue(value)
-
-    progress_timer = QTimer()
-    progress_timer.timeout.connect(simulate_progress)
-    progress_timer.start(500)  # Update every 500ms
-
-    # Simulate overlay opening and closing
-    def show_estop_overlay():
+    def show_and_hide_overlay():
         lang = window.language if hasattr(window, "language") else "en"
         window.overlay_widget.show_overlay(
             f"<b>{LANGUAGES[lang]['ESTOP_TITLE']}</b><br>{LANGUAGES[lang]['ESTOP_MSG'].replace(chr(10), '<br>')}",
             color=window.splash
         )
-        QTimer.singleShot(2000, window.overlay_widget.hide_overlay)
-        window.show_dialog_content(
-            title="E-STOP ACTIVATED",
-            message="Emergency stop has been triggered!\n\nPress RESET to continue.",
-            bg_color=window.splash
-        )
+        # Hide overlay after 6 seconds
+        QTimer.singleShot(6000, window.overlay_widget.hide_overlay)
 
-    # Show overlay every 5 seconds
-    overlay_timer = QTimer()
-    overlay_timer.timeout.connect(show_estop_overlay)
-    overlay_timer.start(5000)
+    # Show overlay after 2 seconds
+    QTimer.singleShot(2000, show_and_hide_overlay)
 
     sys.exit(app.exec())
