@@ -288,14 +288,12 @@ class RelayControlApp(QWidget):
             logging.error(f"Error in keyPressEvent: {e}")
 
     def resizeEvent(self, event):
-        try:
-            if hasattr(self, "progress_bar"):
-                self.adjust_progress_bar_height()
-            if hasattr(self, "overlay_widget"):
-                self.overlay_widget.resize(self.size())
-            super().resizeEvent(event)
-        except Exception as e:
-            logging.error(f"Error in resizeEvent: {e}")
+        self.label.resize(int(self.width() * 0.9), int(self.height() * 0.8))
+        self.label.move(
+            (self.width() - self.label.width()) // 2,
+            (self.height() - self.label.height()) // 2
+        )
+        super().resizeEvent(event)
 
 
     def set_current_weight_mode(self, weight):
@@ -421,7 +419,8 @@ class OverlayWidget(QWidget):
         self.hide()
 
     def show_overlay(self, message, color=None, fg=None):
-        # Use parent's color scheme if not provided
+        if self.parent():
+            self.resize(self.parent().size())
         if self.parent() and hasattr(self.parent(), "splash"):
             if color is None:
                 color = self.parent().splash
@@ -430,11 +429,9 @@ class OverlayWidget(QWidget):
         if fg is None:
             fg = "#ffffff"
         self.label.setText(message)
-        # Larger font and bold for visibility
         self.label.setStyleSheet(
             f"color: {fg}; font-size: 64px; font-weight: bold; background: transparent; border: 6px solid {fg}; border-radius: 32px; padding: 32px;"
         )
-        # Add a thick border and rounded corners to the overlay itself
         self.setStyleSheet(
             f"background-color: {color}; border: 8px solid {fg}; border-radius: 40px;"
         )
@@ -442,9 +439,11 @@ class OverlayWidget(QWidget):
         self.raise_()
 
     def resizeEvent(self, event):
-        # Keep label centered on resize
-        self.label.resize(int(self.width() * 0.7), 120)
-        self.label.move((self.width() - self.label.width()) // 2, (self.height() - self.label.height()) // 2)
+        self.label.resize(int(self.width() * 0.9), int(self.height() * 0.8))
+        self.label.move(
+            (self.width() - self.label.width()) // 2,
+            (self.height() - self.label.height()) // 2
+        )
         super().resizeEvent(event)
 
     def hide_overlay(self):
