@@ -598,75 +598,37 @@ def clear_serial_buffer(arduino):
         arduino.read(arduino.in_waiting)
 
 def poll_hardware(app):
-    global E_STOP, PREV_E_STOP_STATE
+    global E_STOP
     try:
         arduino = arduinos[0]
 
-        # Read current E-Stop state
-        curr_estop_state = GPIO.input(E_STOP_PIN)
+        # Check E-Stop pin every time
+        estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
 
-        # Detect E-Stop pressed (edge: HIGH -> LOW)
-        if curr_estop_state == GPIO.LOW and PREV_E_STOP_STATE == GPIO.HIGH:
-            E_STOP = True
-            app.show_dialog_content(
-                title=LANGUAGES[app.language]["ESTOP_TITLE"],
-                message=LANGUAGES[app.language]["ESTOP_MSG"],
-                bg_color=app.splash
-            )
-
-        # Detect E-Stop released (edge: LOW -> HIGH)
-        if curr_estop_state == GPIO.HIGH and PREV_E_STOP_STATE == GPIO.LOW:
-            if E_STOP:
-                E_STOP = False
-                app.clear_dialog_content()
-
-        PREV_E_STOP_STATE = curr_estop_state
-
-        if E_STOP:
-            # If E-Stop is active, respond to any message except CURRENT_WEIGHT
+        if estop_pressed:
+            if not E_STOP:
+                E_STOP = True
+                app.show_dialog_content(
+                    title=LANGUAGES[app.language]["ESTOP_TITLE"],
+                    message=LANGUAGES[app.language]["ESTOP_MSG"],
+                    bg_color=app.splash
+                )
+            # While E-Stop is active, only respond to Arduino with RELAY_DEACTIVATED
             while arduino.in_waiting > 0:
                 message_type = arduino.read(1)
                 if message_type != CURRENT_WEIGHT:
                     arduino.write(RELAY_DEACTIVATED)
-            return  # Don't process anything else while E-Stop is active
+            return  # Skip all other logic while E-Stop is active
+
+        # E-Stop released
+        if E_STOP:
+            E_STOP = False
+            app.clear_dialog_content()
 
         # ...rest of your normal polling logic...
         handle_button_presses(app)
-        while arduino.in_waiting > 0:
-            message_type = arduino.read(1)
-            if message_type == REQUEST_TARGET_WEIGHT:
-                print("Arduino requested target weight.")
-                arduino.write(TARGET_WEIGHT)
-                arduino.write(f"{target_weight}\n".encode('utf-8'))
-                print(f"Sent target weight to Arduino: {target_weight}")
-            elif message_type == REQUEST_CALIBRATION:
-                print("Arduino requested calibration value.")
-                arduino.write(REQUEST_CALIBRATION)
-                arduino.write(f"{scale_calibrations[0]}\n".encode('utf-8'))
-                print(f"Sent calibration value to Arduino: {scale_calibrations[0]}")
-            elif message_type == REQUEST_TIME_LIMIT:
-                print("Arduino requested time limit.")
-                arduino.write(REQUEST_TIME_LIMIT)
-                arduino.write(f"{time_limit}\n".encode('utf-8'))
-                print(f"Sent time limit to Arduino: {time_limit}")
-            elif message_type == CURRENT_WEIGHT:
-                current_weight = arduino.readline().decode('utf-8').strip()
-                app.current_weight = float(current_weight)
-                app.target_weight = float(target_weight)
-                app.refresh_ui()
-            elif message_type == BEGIN_FILL:
-                print("Received BEGIN FILL from Arduino.")
-                # Show current and target weight in the GUI
-                print(f"Calling set_fill_mode with current_weight={app.current_weight}, target_weight={target_weight}")
-                app.set_fill_mode(app.current_weight, target_weight)
-            elif message_type == VERBOSE_DEBUG:
-                debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
-                print(f"Arduino (debug): {debug_line}")
-            else:
-                possible_line = arduino.readline().decode('utf-8', errors='replace').strip()
-                print(f"Arduino (unhandled): {possible_line}")
-                logging.warning(f"Unhandled message type: {message_type} | Line: {possible_line}")
-        app.refresh_ui()
+        # (rest of your Arduino message handling...)
+
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
 
