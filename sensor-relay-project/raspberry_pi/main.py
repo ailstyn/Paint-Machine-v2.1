@@ -547,7 +547,7 @@ def set_time_limit(app):
     def update_display(value, *args, **kwargs):
         app.show_dialog_content(
             title=LANGUAGES[app.language]["SET_TIME_LIMIT_TITLE"],
-            message=f"{value} ms\n\n{LANGUAGES[app.language]["SET_TIME_LIMIT_MSG"]}",
+            message=f"{value} ms\n\n{LANGUAGES[app.language]['SET_TIME_LIMIT_MSG']}",
         )
 
     # Show the initial value immediately
