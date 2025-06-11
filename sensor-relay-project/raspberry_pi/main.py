@@ -106,6 +106,10 @@ def calibrate_scale(arduino_id, app):
         arduino = arduinos[arduino_id]
         print(f"[calibrate_scale] Starting calibration for Arduino {arduino_id}")
 
+        arduino.write(RESET_CALIBRATION)
+        arduino.flush()
+        print("[calibrate_scale] Sent RESET_CALIBRATION to Arduino")
+
         # Step 1: Remove all weight from the scale
         app.show_dialog_content(
             title="Calibration",

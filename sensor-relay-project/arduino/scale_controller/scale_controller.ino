@@ -41,9 +41,9 @@ void setup() {
     // Blink LED 3 times to indicate setup complete
     for (int i = 0; i < 3; i++) {
         digitalWrite(LED_PIN, HIGH);
-        delay(1000);
+        delay(500);
         digitalWrite(LED_PIN, LOW);
-        delay(1000);
+        delay(500);
     }
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
