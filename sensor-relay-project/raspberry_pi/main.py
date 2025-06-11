@@ -474,16 +474,29 @@ def set_target_weight(app):
     global target_weight
 
     def update_display(value, *args, **kwargs):
+        if getattr(app, "display_unit", "g") == "oz":
+            shown_value = value / 0.03527
+            unit = "oz"
+            shown_value = round(shown_value, 1)
+        else:
+            shown_value = value
+            unit = "g"
         app.show_dialog_content(
             title="SET TARGET WEIGHT",
-            message=f"{value} g\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+            message=f"{shown_value} {unit}\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
         )
 
-    # Show the initial value immediately
+    # Convert the initial value to the display unit for editing
+    if getattr(app, "display_unit", "g") == "oz":
+        initial_value = round(target_weight * 0.03527, 1)
+    else:
+        initial_value = target_weight
+
     update_display(target_weight)
 
-    target_weight = adjust_value_with_acceleration(
-        initial_value=target_weight,
+    # Adjust in the display unit, but always save in grams
+    adjusted_value = adjust_value_with_acceleration(
+        initial_value=initial_value,
         dialog=type('DialogStub', (), {
             'update_value': staticmethod(update_display),
             'accept': staticmethod(lambda *args, **kwargs: None),
@@ -496,6 +509,13 @@ def set_target_weight(app):
         up_callback=update_display,
         down_callback=update_display
     )
+
+    # Convert back to grams if needed
+    if getattr(app, "display_unit", "g") == "oz":
+        target_weight = adjusted_value / 0.03527
+    else:
+        target_weight = adjusted_value
+
     clear_serial_buffer(arduinos[0])
     app.clear_dialog_content()
 

@@ -300,14 +300,14 @@ class RelayControlApp(QWidget):
             self.current_weight_label.setText(f"{weight:.1f} g")
         else:
             ounces = weight * 0.03527
-            self.current_weight_label.setText(f"{ounces:.2f} oz")
+            self.current_weight_label.setText(f"{ounces:.1f} oz")  # Changed to .1f
 
     def set_target_weight_mode(self, target_weight):
         if self.display_unit == "g":
             self.target_weight_label.setText(f"{target_weight:.1f} g")
         else:
             ounces = target_weight * 0.03527
-            self.target_weight_label.setText(f"{ounces:.2f} oz")
+            self.target_weight_label.setText(f"{ounces:.1f} oz")  # Changed to .1f
 
     def set_fill_mode(self, current_weight, target_weight):
         self.current_weight_label.setText(f"{current_weight:.1f} g")
