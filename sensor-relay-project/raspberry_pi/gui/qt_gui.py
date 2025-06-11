@@ -10,7 +10,7 @@ import random
 import logging
 import sys
 from PyQt6.QtWidgets import QApplication
-from gui.languages import LANGUAGES
+from languages import LANGUAGES
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
