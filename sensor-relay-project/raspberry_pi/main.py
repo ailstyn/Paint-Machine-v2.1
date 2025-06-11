@@ -489,8 +489,10 @@ def set_target_weight(app):
     # Convert the initial value to the display unit for editing
     if getattr(app, "display_unit", "g") == "oz":
         initial_value = round(target_weight * 0.03527, 1)
+        unit_increment = 0.1
     else:
         initial_value = target_weight
+        unit_increment = 1
 
     update_display(target_weight)
 
@@ -504,7 +506,7 @@ def set_target_weight(app):
         })(),
         up_button_pin=UP_BUTTON_PIN,
         down_button_pin=DOWN_BUTTON_PIN,
-        unit_increment=1,
+        unit_increment=unit_increment,
         min_value=0,
         up_callback=update_display,
         down_callback=update_display
