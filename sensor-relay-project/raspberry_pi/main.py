@@ -475,9 +475,8 @@ def set_target_weight(app):
 
     def update_display(value, *args, **kwargs):
         if getattr(app, "display_unit", "g") == "oz":
-            shown_value = value / 0.03527
+            shown_value = round(value, 1)
             unit = "oz"
-            shown_value = round(shown_value, 1)
         else:
             shown_value = value
             unit = "g"
