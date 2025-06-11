@@ -249,9 +249,9 @@ void recalibrate() {
         }
         delay(200); // Adjust delay as needed for update rate
     }
-    tare();
-    set_scale();
-    tare();
+    scale.tare();
+    scale.set_scale();
+    scale.tare();
     long cWeight1 = scale.get_units(10);
     Serial.write(CALIBRATION_STEP_DONE);
 
