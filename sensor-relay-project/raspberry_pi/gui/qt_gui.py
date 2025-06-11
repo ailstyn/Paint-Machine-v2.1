@@ -255,8 +255,10 @@ class RelayControlApp(QWidget):
         elif self.selected_index == 2:
             self.cycle_color_scheme()
         elif self.selected_index == 3:
-            print("Language selected")
-            # Add your language selection logic here
+            # Language button: toggle between English and Spanish
+            self.language = "es" if self.language == "en" else "en"
+            print(f"Switched language to {self.language}")
+            self.refresh_ui()
         elif self.selected_index == 4:
             # Toggle between grams and ounces
             self.display_unit = "oz" if self.display_unit == "g" else "g"

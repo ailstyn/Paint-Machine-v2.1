@@ -89,6 +89,23 @@ LANGUAGES = {
         "SCALES_RESET_TITLE": "SCALES RESET",
         "SCALES_RESET_MSG": "",
         # Add more as needed...
+    },
+    "es": {
+        "SET_TARGET_WEIGHT_TITLE": "FIJAR PESO OBJETIVO",
+        "SET_TARGET_WEIGHT_MSG": "Usa los botones ARRIBA/ABAJO para ajustar.\nPulsa SELECT para confirmar.",
+        "SET_TIME_LIMIT_TITLE": "FIJAR LÍMITE DE TIEMPO",
+        "SET_TIME_LIMIT_MSG": "Usa los botones ARRIBA/ABAJO para ajustar.\nPulsa SELECT para confirmar.",
+        "CALIBRATION_TITLE": "Calibración",
+        "CALIBRATION_REMOVE_WEIGHT": "Retira todo el peso de la balanza\n\nPulsa SELECT cuando esté listo",
+        "CALIBRATION_COMPLETE_TITLE": "Calibración Completa",
+        "CALIBRATION_COMPLETE_MSG": "Nuevo valor de calibración guardado: {value}\n\nPulsa SELECT para finalizar",
+        "CALIBRATION_PLACE_WEIGHT": "Coloca un peso en la balanza y ajusta el valor\n\nPeso de calibración: {value} g\n\nUsa ARRIBA/ABAJO para ajustar.\nPulsa SELECT cuando esté listo.",
+        "CALIBRATION_CALCULATING": "Calculando relación...",
+        "CLEAR_SCALES_TITLE": "LIMPIAR BALANZAS",
+        "CLEAR_SCALES_MSG": "PULSA SELECT CUANDO ESTÉ LISTO",
+        "SCALES_RESET_TITLE": "BALANZAS REINICIADAS",
+        "SCALES_RESET_MSG": "",
+        # Add more as needed...
     }
 }
 
