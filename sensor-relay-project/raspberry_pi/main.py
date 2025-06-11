@@ -493,8 +493,8 @@ def set_target_weight(app):
         initial_value = target_weight
         unit_increment = 1
 
-    update_display(target_weight)
-
+    update_display(initial_value)
+    
     # Adjust in the display unit, but always save in grams
     adjusted_value = adjust_value_with_acceleration(
         initial_value=initial_value,
