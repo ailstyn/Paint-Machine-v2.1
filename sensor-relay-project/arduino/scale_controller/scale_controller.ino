@@ -233,7 +233,7 @@ void fill() {
 // Function to handle recalibration
 void recalibrate() {
     Serial.println("Starting recalibration...");
-
+    digitalWrite(LED_PIN, HIGH); // Turn LED ON during calibration
     // --- Step 1: Ask user to clear the scale ---
     while (true) {
         long weight = scale.get_units(3);
@@ -244,17 +244,11 @@ void recalibrate() {
         if (Serial.available() > 0) {
             byte msg = Serial.read();
             if (msg == CALIBRATION_CONTINUE) {
-                for (int i = 0; i < 3; i++) {
-                    digitalWrite(LED_PIN, HIGH);
-                    delay(500);
-                    digitalWrite(LED_PIN, LOW);
-                    delay(500);
-    }
                 break; // Proceed to next step
             }
         }
     }
-
+    digitalWrite(LED_PIN, LOW); // Turn LED OFF after clearing scale
     scale.tare();
     scale.set_scale();
     scale.tare();

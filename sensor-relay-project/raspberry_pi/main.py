@@ -139,6 +139,7 @@ def calibrate_scale(arduino_id, app):
                 # Send CALIBRATION_CONTINUE to Arduino
                 clear_serial_buffer(arduino)
                 arduino.write(CALIBRATION_CONTINUE)
+                arduino.flush()
                 print("[calibrate_scale] Sent CALIBRATION_CONTINUE to Arduino")
                 break
 
