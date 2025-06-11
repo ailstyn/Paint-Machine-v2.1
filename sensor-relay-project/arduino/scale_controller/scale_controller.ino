@@ -252,6 +252,7 @@ void recalibrate() {
     scale.set_scale();
     scale.tare();
     long cWeight1 = scale.get_units(10);
+    delay(500);
     Serial.write(CALIBRATION_STEP_DONE);
 
     // --- Step 2: Wait for user to place calibration weight ---
@@ -270,6 +271,7 @@ void recalibrate() {
         }
     }
     long cWeight2 = scale.get_units(10);
+    delay(500);
     Serial.write(CALIBRATION_STEP_DONE);
 
     // --- Step 3: Calculate and set new calibration value ---
