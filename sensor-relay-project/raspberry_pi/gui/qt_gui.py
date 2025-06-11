@@ -202,6 +202,8 @@ class RelayControlApp(QWidget):
 
     def refresh_ui(self):
         try:
+            self.set_current_weight_mode(self.current_weight)
+            self.set_target_weight_mode(self.target_weight)
             self.current_weight_label.setText(f"{self.current_weight:.1f} g")
             self.progress_bar.setValue(int(self.current_weight))
             # If you have a target weight, update that too:
@@ -260,9 +262,8 @@ class RelayControlApp(QWidget):
         elif self.selected_index == 4:
             # Toggle between grams and ounces
             self.display_unit = "oz" if self.display_unit == "g" else "g"
-            self.set_current_weight_mode(self.current_weight)
-            self.set_target_weight_mode(self.target_weight)
             print(f"Switched display unit to {self.display_unit}")
+            self.refresh_ui()  # <-- Add this line
         elif self.selected_index == 5:
             print("Calibrate selected")
             if self.set_calibrate_callback:
