@@ -4,6 +4,7 @@ import time
 import logging
 import RPi.GPIO as GPIO
 from gui.qt_gui import RelayControlApp
+from gui.languages import LANGUAGES
 from PyQt6.QtWidgets import QApplication, QSpinBox
 from PyQt6.QtCore import QTimer
 import sys
@@ -60,6 +61,7 @@ BEGIN_FILL = b'\x10'  # Choose an unused byte value for BEGIN_FILL
 CALIBRATION_STEP_DONE = b'\x12'
 CALIBRATION_CONTINUE = b'\x13'
 CALIBRATION_WEIGHT = b'\x14'  # New byte for calibration weight
+E_STOP_ACTIVATED = b'\xEE'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -71,48 +73,6 @@ BUZZER_PIN = 26  # Add this near your other pin definitions
 # Add a global flag for E-Stop
 E_STOP = False
 PREV_E_STOP_STATE = GPIO.HIGH
-
-# Language strings
-LANGUAGES = {
-    "en": {
-        "SET_TARGET_WEIGHT_TITLE": "SET TARGET WEIGHT",
-        "SET_TARGET_WEIGHT_MSG": "Use UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
-        "SET_TIME_LIMIT_TITLE": "SET TIME LIMIT",
-        "SET_TIME_LIMIT_MSG": "Use UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
-        "CALIBRATION_TITLE": "Calibration",
-        "CALIBRATION_REMOVE_WEIGHT": "Remove all weight from the scale\n\nPress SELECT when ready",
-        "CALIBRATION_COMPLETE_TITLE": "Calibration Complete",
-        "CALIBRATION_COMPLETE_MSG": "New calibration value saved: {value}\n\nPress SELECT to finish",
-        "CALIBRATION_PLACE_WEIGHT": "Place a weight on the scale and set the value\n\nCalibration Weight: {value} g\n\nUse UP/DOWN to adjust.\nPress SELECT when ready.",
-        "CALIBRATION_CALCULATING": "Calculating ratio...",
-        "CLEAR_SCALES_TITLE": "CLEAR SCALES",
-        "CLEAR_SCALES_MSG": "PRESS SELECT WHEN READY",
-        "SCALES_RESET_TITLE": "SCALES RESET",
-        "SCALES_RESET_MSG": "",
-        "ESTOP_TITLE": "E-STOP ACTIVATED",
-        "ESTOP_MSG": "Emergency stop has been triggered!\n\nPress RESET to continue.",
-        # Add more as needed...
-    },
-    "es": {
-        "SET_TARGET_WEIGHT_TITLE": "FIJAR PESO OBJETIVO",
-        "SET_TARGET_WEIGHT_MSG": "Usa los botones ARRIBA/ABAJO para ajustar.\nPulsa SELECT para confirmar.",
-        "SET_TIME_LIMIT_TITLE": "FIJAR LÍMITE DE TIEMPO",
-        "SET_TIME_LIMIT_MSG": "Usa los botones ARRIBA/ABAJO para ajustar.\nPulsa SELECT para confirmar.",
-        "CALIBRATION_TITLE": "Calibración",
-        "CALIBRATION_REMOVE_WEIGHT": "Retira todo el peso de la balanza\n\nPulsa SELECT cuando esté listo",
-        "CALIBRATION_COMPLETE_TITLE": "Calibración Completa",
-        "CALIBRATION_COMPLETE_MSG": "Nuevo valor de calibración guardado: {value}\n\nPulsa SELECT para finalizar",
-        "CALIBRATION_PLACE_WEIGHT": "Coloca un peso en la balanza y ajusta el valor\n\nPeso de calibración: {value} g\n\nUsa ARRIBA/ABAJO para ajustar.\nPulsa SELECT cuando esté listo.",
-        "CALIBRATION_CALCULATING": "Calculando relación...",
-        "CLEAR_SCALES_TITLE": "LIMPIAR BALANZAS",
-        "CLEAR_SCALES_MSG": "PULSA SELECT CUANDO ESTÉ LISTO",
-        "SCALES_RESET_TITLE": "BALANZAS REINICIADAS",
-        "SCALES_RESET_MSG": "",
-        "ESTOP_TITLE": "PARADA DE EMERGENCIA",
-        "ESTOP_MSG": "¡Se ha activado la parada de emergencia!\n\nPulsa RESET para continuar.",
-        # Add more as needed...
-    }
-}
 
 def load_scale_calibrations():
     # Load scale calibration values from the config file
@@ -598,11 +558,31 @@ def clear_serial_buffer(arduino):
         arduino.read(arduino.in_waiting)
 
 def poll_hardware(app):
+    global E_STOP
     try:
-        arduino = arduinos[0]  # Only use the first Arduino for now
+        arduino = arduinos[0]
+        estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
 
-        # --- E-Stop functionality removed for now ---
+        if estop_pressed:
+            if not E_STOP:
+                E_STOP = True
+                app.show_overlay(
+                    title=LANGUAGES[app.language]["ESTOP_TITLE"],
+                    message=LANGUAGES[app.language]["ESTOP_MSG"],
+                    color=app.splash
+                )
+            # Respond to every message with E-STOP ACTIVATED
+            while arduino.in_waiting > 0:
+                arduino.read(arduino.in_waiting)  # Optionally clear input
+                arduino.write(E_STOP_ACTIVATED)
+            return  # Skip GUI updates
 
+        # E-Stop released
+        if E_STOP:
+            E_STOP = False
+            app.hide_overlay()
+
+        # Normal operation
         handle_button_presses(app)
         while arduino.in_waiting > 0:
             message_type = arduino.read(1)

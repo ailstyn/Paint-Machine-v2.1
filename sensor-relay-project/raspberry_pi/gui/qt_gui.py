@@ -10,6 +10,7 @@ import random
 import logging
 import sys
 from PyQt6.QtWidgets import QApplication
+from gui.languages import LANGUAGES
 
 COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
@@ -470,7 +471,11 @@ if __name__ == "__main__":
 
     # Simulate overlay opening and closing
     def show_estop_overlay():
-        window.overlay_widget.show_overlay("E-STOP ACTIVATED", color=window.splash)
+        lang = window.language if hasattr(window, "language") else "en"
+        window.overlay_widget.show_overlay(
+            f"<b>{LANGUAGES[lang]['ESTOP_TITLE']}</b><br>{LANGUAGES[lang]['ESTOP_MSG'].replace(chr(10), '<br>')}",
+            color=window.splash
+        )
         QTimer.singleShot(2000, window.overlay_widget.hide_overlay)
         window.show_dialog_content(
             title="E-STOP ACTIVATED",
