@@ -602,7 +602,14 @@ def poll_hardware(app):
                 print(f"Sent time limit to Arduino: {time_limit}")
             elif message_type == CURRENT_WEIGHT:
                 current_weight = arduino.readline().decode('utf-8').strip()
-                app.current_weight = float(current_weight)
+                try:
+                    weight = float(current_weight)
+                    if weight < 0:
+                        weight = 0.0
+                    app.current_weight = weight
+                except Exception as e:
+                    logging.error(f"Invalid weight value: {current_weight} ({e})")
+                    app.current_weight = 0.0
                 app.target_weight = float(target_weight)
                 app.refresh_ui()
             elif message_type == BEGIN_FILL:
