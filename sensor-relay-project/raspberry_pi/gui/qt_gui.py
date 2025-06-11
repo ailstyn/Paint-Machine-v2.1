@@ -194,6 +194,7 @@ class RelayControlApp(QWidget):
         self.overlay_widget.hide()
 
         self.display_unit = "g"  # or "oz"
+        self.language = "en"
 
     def adjust_progress_bar_height(self):
         parent_height = self.progress_bar.parentWidget().height() if self.progress_bar.parentWidget() else self.height()

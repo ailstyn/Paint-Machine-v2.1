@@ -71,6 +71,27 @@ BUZZER_PIN = 26  # Add this near your other pin definitions
 # Add a global flag for E-Stop
 E_STOP = False
 
+# Language strings
+LANGUAGES = {
+    "en": {
+        "SET_TARGET_WEIGHT_TITLE": "SET TARGET WEIGHT",
+        "SET_TARGET_WEIGHT_MSG": "Use UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+        "SET_TIME_LIMIT_TITLE": "SET TIME LIMIT",
+        "SET_TIME_LIMIT_MSG": "Use UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+        "CALIBRATION_TITLE": "Calibration",
+        "CALIBRATION_REMOVE_WEIGHT": "Remove all weight from the scale\n\nPress SELECT when ready",
+        "CALIBRATION_COMPLETE_TITLE": "Calibration Complete",
+        "CALIBRATION_COMPLETE_MSG": "New calibration value saved: {value}\n\nPress SELECT to finish",
+        "CALIBRATION_PLACE_WEIGHT": "Place a weight on the scale and set the value\n\nCalibration Weight: {value} g\n\nUse UP/DOWN to adjust.\nPress SELECT when ready.",
+        "CALIBRATION_CALCULATING": "Calculating ratio...",
+        "CLEAR_SCALES_TITLE": "CLEAR SCALES",
+        "CLEAR_SCALES_MSG": "PRESS SELECT WHEN READY",
+        "SCALES_RESET_TITLE": "SCALES RESET",
+        "SCALES_RESET_MSG": "",
+        # Add more as needed...
+    }
+}
+
 def load_scale_calibrations():
     # Load scale calibration values from the config file
     global scale_calibrations
@@ -112,8 +133,8 @@ def calibrate_scale(arduino_id, app):
 
         # Step 1: Remove all weight from the scale
         app.show_dialog_content(
-            title="Calibration",
-            message="Remove all weight from the scale\n\nPress SELECT when ready"
+            title=LANGUAGES[app.language]["CALIBRATION_TITLE"],
+            message=LANGUAGES[app.language]["CALIBRATION_REMOVE_WEIGHT"]
         )
         print("[calibrate_scale] Step 1 dialog shown")
 
@@ -164,9 +185,7 @@ def calibrate_scale(arduino_id, app):
         def update_display(value, *args, **kwargs):
             app.show_dialog_content(
                 title=f"Calibration (Arduino {arduino_id+1})",
-                message=f"Place a weight on the scale and set the value\n\n"
-                        f"Calibration Weight: {value} g\n\n"
-                        f"Use UP/DOWN to adjust.\nPress SELECT when ready."
+                message=LANGUAGES[app.language]["CALIBRATION_PLACE_WEIGHT"].format(value=value)
             )
 
         print("[calibrate_scale] Step 2 dialog shown")
@@ -223,7 +242,7 @@ def calibrate_scale(arduino_id, app):
         # --- Step 3: Wait for calibration value from Arduino ---
         app.show_dialog_content(
             title=f"Calibration (Arduino {arduino_id+1})",
-            message="Calculating ratio..."
+            message=LANGUAGES[app.language]["CALIBRATION_CALCULATING"]
         )
         print("[calibrate_scale] Step 3 dialog shown, waiting for CALIBRATION_WEIGHT from Arduino")
 
@@ -251,8 +270,8 @@ def calibrate_scale(arduino_id, app):
 
         # Confirmation dialog
         app.show_dialog_content(
-            title="Calibration Complete",
-            message=f"New calibration value saved: {new_calibration:.6f}\n\nPress SELECT to finish"
+            title=LANGUAGES[app.language]["CALIBRATION_COMPLETE_TITLE"],
+            message=LANGUAGES[app.language]["CALIBRATION_COMPLETE_MSG"].format(value=new_calibration)
         )
         print("[calibrate_scale] Calibration complete dialog shown")
         # Wait for SELECT to finish
@@ -356,7 +375,7 @@ def handle_button_presses(app):
 
 def startup(app):
     # Display the "CLEAR SCALES" message
-    app.display_message("CLEAR SCALES", "PRESS SELECT WHEN READY")
+    app.display_message(LANGUAGES[app.language]["CLEAR_SCALES_TITLE"], LANGUAGES[app.language]["CLEAR_SCALES_MSG"])
 
     # Wait for the select button to be pressed
     print("Waiting for SELECT button to be pressed...")
@@ -374,7 +393,7 @@ def startup(app):
             logging.error(f"Error sending TARE_SCALE to Arduino {i} on port {arduino.port}: {e}")
 
     # Display the "SCALES RESET" message
-    app.display_message("SCALES RESET", "")
+    app.display_message(LANGUAGES[app.language]["SCALES_RESET_TITLE"], LANGUAGES[app.language]["SCALES_RESET_MSG"])
     time.sleep(3)  # Wait for 3 seconds
 
     # Reload the main screen
@@ -474,6 +493,7 @@ def set_target_weight(app):
     global target_weight
 
     def update_display(value, *args, **kwargs):
+        lang = getattr(app, "language", "en")
         if getattr(app, "display_unit", "g") == "oz":
             shown_value = round(value, 1)
             unit = "oz"
@@ -481,8 +501,8 @@ def set_target_weight(app):
             shown_value = value
             unit = "g"
         app.show_dialog_content(
-            title="SET TARGET WEIGHT",
-            message=f"{shown_value} {unit}\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+            title=LANGUAGES[app.language]["SET_TARGET_WEIGHT_TITLE"],
+            message=f"{shown_value} {unit}\n\n{LANGUAGES[app.language]['SET_TARGET_WEIGHT_MSG']}",
         )
 
     # Convert the initial value to the display unit for editing
@@ -526,8 +546,8 @@ def set_time_limit(app):
 
     def update_display(value, *args, **kwargs):
         app.show_dialog_content(
-            title="SET TIME LIMIT",
-            message=f"{value} ms\n\nUse UP/DOWN buttons to adjust.\nPress SELECT to confirm.",
+            title=LANGUAGES[app.language]["SET_TIME_LIMIT_TITLE"],
+            message=f"{value} ms\n\n{LANGUAGES[app.language]["SET_TIME_LIMIT_MSG"]}",
         )
 
     # Show the initial value immediately
