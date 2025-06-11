@@ -204,10 +204,7 @@ class RelayControlApp(QWidget):
         try:
             self.set_current_weight_mode(self.current_weight)
             self.set_target_weight_mode(self.target_weight)
-            self.current_weight_label.setText(f"{self.current_weight:.1f} g")
             self.progress_bar.setValue(int(self.current_weight))
-            # If you have a target weight, update that too:
-            self.target_weight_label.setText(f"{getattr(self, 'target_weight', 0):.1f} g")
             self.progress_bar.setMaximum(int(getattr(self, 'target_weight', 100)))
             # Update any other widgets as needed
         except Exception as e:
