@@ -244,16 +244,17 @@ void recalibrate() {
         if (Serial.available() > 0) {
             byte msg = Serial.read();
             if (msg == CALIBRATION_CONTINUE) {
+                for (int i = 0; i < 3; i++) {
+                    digitalWrite(LED_PIN, HIGH);
+                    delay(100);
+                    digitalWrite(LED_PIN, LOW);
+                    delay(100);
+    }
                 break; // Proceed to next step
             }
         }
     }
-    for (int i = 0; i < 3; i++) {
-        digitalWrite(LED_PIN, HIGH);
-        delay(100);
-        digitalWrite(LED_PIN, LOW);
-        delay(100);
-    }
+
     scale.tare();
     scale.set_scale();
     scale.tare();
