@@ -52,7 +52,7 @@ class RelayControlApp(QWidget):
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setOrientation(Qt.Orientation.Vertical)
-        self.progress_bar.setFixedSize(60, 350)  # Or another value that fits your display
+        self.progress_bar.setFixedSize(60, 500)  # Or another value that fits your display
         self.progress_bar.setStyleSheet(
             f"""
             QProgressBar {{
