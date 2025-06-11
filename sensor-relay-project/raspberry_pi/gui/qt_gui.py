@@ -413,7 +413,7 @@ class OverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.setStyleSheet("background: rgba(0,0,0,0%);")
+        self.setStyleSheet("background: transparent;")
         self.label = QLabel("", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setStyleSheet("color: white; font-size: 32px; background: transparent;")
@@ -427,7 +427,7 @@ class OverlayWidget(QWidget):
             if fg is None and hasattr(self.parent(), "fg"):
                 fg = self.parent().fg
         if fg is None:
-            fg = "#fff"
+            fg = "#ffffff"
         self.label.setText(message)
         self.label.setStyleSheet(f"color: {fg}; font-size: 32px; background: transparent;")
         self.setStyleSheet(f"color: {color};")
