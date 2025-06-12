@@ -9,12 +9,16 @@ from PyQt6.QtWidgets import QApplication, QSpinBox
 from PyQt6.QtCore import QTimer
 import sys
 import signal
+from datetime import datetime
 
 
 # Configure logging
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)  # Ensure log directory exists
+log_filename = os.path.join(LOG_DIR, f"error_log_{datetime.now().strftime('%Y-%m-%d')}.txt")
 logging.basicConfig(
-    filename="error_log.txt",  # Log file name
-    level=logging.ERROR,       # Log level (ERROR and above)
+    filename=log_filename,
+    level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 

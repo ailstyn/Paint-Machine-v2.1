@@ -419,6 +419,7 @@ class OverlayWidget(QWidget):
                 fg = self.parent().fg
         if fg is None:
             fg = "#ffffff"
+        print(f"[OverlayWidget] show_overlay called with color={color}, fg={fg}")  # <-- Add this line
         self.label.setText(message)
         self.label.setStyleSheet(
             f"color: {fg}; font-size: 64px; font-weight: bold; background: transparent; border: 6px solid {fg}; border-radius: 32px; padding: 32px;"
