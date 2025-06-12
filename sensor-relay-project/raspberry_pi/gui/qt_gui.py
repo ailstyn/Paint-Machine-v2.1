@@ -485,6 +485,11 @@ if __name__ == "__main__":
     window = RelayControlApp()
     window.show()
 
+    # Set initial colors
+    window.fg = "#000000"  # or whatever your new foreground color is
+    window.bg = "#ffffff"  # or whatever your new background color is
+    window.update_dialog_colors()
+
     def show_and_hide_overlay():
         lang = window.language if hasattr(window, "language") else "en"
         window.overlay_widget.show_overlay(
