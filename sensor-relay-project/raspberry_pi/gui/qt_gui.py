@@ -442,6 +442,13 @@ class OverlayWidget(QWidget):
     def hide_overlay(self):
         self.hide()
 
+    def paintEvent(self, event):
+        # Explicitly fill the background with the current color
+        p = QPainter(self)
+        bg = self.palette().color(self.backgroundRole())
+        p.fillRect(self.rect(), bg)
+        super().paintEvent(event)
+
 def create_message_dialog(self, title, message):
     return ValueInputDialog.message_only(
         title=title,
