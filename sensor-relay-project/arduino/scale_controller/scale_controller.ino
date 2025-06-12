@@ -24,6 +24,7 @@
 #define CALIBRATION_STEP_DONE 0x12
 #define CALIBRATION_CONTINUE  0x13
 #define CALIBRATION_WEIGHT 0x14
+#define FILL_TIME 0x15
 
 // Global variables
 HX711 scale;
@@ -214,6 +215,11 @@ void fill() {
             Serial.write(FINAL_WEIGHT);
             Serial.println(finalWeight);
 
+            // Report fill time
+            unsigned long fillTime = now - fillStartTime;
+            Serial.write(FILL_TIME);
+            Serial.println(fillTime);
+
             return;
         }
     }
@@ -228,6 +234,11 @@ void fill() {
     long finalWeight = scale.get_units(3);
     Serial.write(FINAL_WEIGHT);
     Serial.println(finalWeight);
+
+    // Report fill time
+    unsigned long fillTime = millis() - fillStartTime;
+    Serial.write(FILL_TIME);
+    Serial.println(fillTime);
 }
 
 // Function to handle recalibration

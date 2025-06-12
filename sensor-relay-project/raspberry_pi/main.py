@@ -66,6 +66,8 @@ CALIBRATION_STEP_DONE = b'\x12'
 CALIBRATION_CONTINUE = b'\x13'
 CALIBRATION_WEIGHT = b'\x14'  # New byte for calibration weight
 E_STOP_ACTIVATED = b'\xEE'
+FILL_TIME = b'\x15'
+FINAL_WEIGHT = b'\x11'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -77,6 +79,10 @@ BUZZER_PIN = 26  # Add this near your other pin definitions
 # Add a global flag for E-Stop
 E_STOP = False
 PREV_E_STOP_STATE = GPIO.HIGH
+
+last_fill_time = None
+last_final_weight = None
+fill_time_limit_reached = False
 
 def load_scale_calibrations():
     # Load scale calibration values from the config file
@@ -562,7 +568,7 @@ def clear_serial_buffer(arduino):
         arduino.read(arduino.in_waiting)
 
 def poll_hardware(app):
-    global E_STOP
+    global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED
     try:
         arduino = arduinos[0]
         estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
@@ -621,6 +627,41 @@ def poll_hardware(app):
                 print("Received BEGIN FILL from Arduino.")
                 print(f"Calling set_fill_mode with current_weight={app.current_weight}, target_weight={target_weight}")
                 app.set_fill_mode(app.current_weight, target_weight)
+            elif message_type == FINAL_WEIGHT:
+                # Read the final weight value
+                final_weight_line = arduino.readline().decode('utf-8').strip()
+                try:
+                    last_final_weight = float(final_weight_line)
+                except Exception as e:
+                    logging.error(f"Invalid final weight value: {final_weight_line} ({e})")
+                    last_final_weight = None
+
+            elif message_type == FILL_TIME:
+                # Read the fill time value
+                fill_time_line = arduino.readline().decode('utf-8').strip()
+                try:
+                    last_fill_time = int(fill_time_line)
+                except Exception as e:
+                    logging.error(f"Invalid fill time value: {fill_time_line} ({e})")
+                    last_fill_time = None
+
+                # Show the dialog if we have both time and weight
+                if last_final_weight is not None:
+                    if fill_time_limit_reached:
+                        app.show_dialog_content(
+                            "TIME LIMIT REACHED:",
+                            f"Time: {last_fill_time} ms\nWeight: {last_final_weight:.1f} g"
+                        )
+                    else:
+                        app.show_dialog_content(
+                            "FILL COMPLETE:",
+                            f"Time: {last_fill_time} ms\nWeight: {last_final_weight:.1f} g"
+                        )
+                    # Reset state for next fill
+                    last_final_weight = None
+                    last_fill_time = None
+                    fill_time_limit_reached = False
+
             elif message_type == VERBOSE_DEBUG:
                 debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
                 print(f"Arduino (debug): {debug_line}")
