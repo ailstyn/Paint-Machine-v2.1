@@ -25,6 +25,9 @@
 #define CALIBRATION_CONTINUE  0x13
 #define CALIBRATION_WEIGHT 0x14
 #define FILL_TIME 0x15
+#define MANUAL_FILL_START 0x20
+#define MANUAL_FILL_END 0x21
+
 
 // Global variables
 HX711 scale;
@@ -109,6 +112,11 @@ void loop() {
         // Handle recalibration request
         else if (messageType == RESET_CALIBRATION) {
             recalibrate();
+        }
+
+        else if (messageType == MANUAL_FILL_START) {
+            Serial.write(VERBOSE_DEBUG);
+            Serial.println("Manual fill started.");
         }
     }
 
@@ -299,4 +307,45 @@ void recalibrate() {
 
     // Optionally send step done and debug info
     Serial.write(CALIBRATION_STEP_DONE);
+}
+
+// Manual fill function: allows repeated press/release cycles without restarting the function
+void manual_fill() {
+    digitalWrite(RELAY_PIN, HIGH); // Ensure relay is OFF initially
+
+    while (true) {
+        // Wait for button press, send weight updates while waiting
+        while (digitalRead(BUTTON_PIN) == HIGH) {
+            long weight = scale.get_units(3);
+            Serial.write(CURRENT_WEIGHT);
+            Serial.println(weight);
+
+            if (Serial.available() > 0) {
+                byte msg = Serial.read();
+                if (msg == EXIT_MANUAL_END) return;
+            }
+        }
+
+        // Button pressed, open relay
+        digitalWrite(RELAY_PIN, LOW); // Relay ON (active low)
+
+        // Keep relay open while button is held, send weight updates
+        while (digitalRead(BUTTON_PIN) == LOW) {
+            long weight = scale.get_units(3);
+            Serial.write(CURRENT_WEIGHT);
+            Serial.println(weight);
+
+            if (Serial.available() > 0) {
+                // Example: exit manual fill if a specific byte is received
+                byte msg = Serial.read();
+                if (msg == MANUAL_FILL_END) {
+                    digitalWrite(RELAY_PIN, HIGH); // Relay OFF
+                    return;
+                }
+            }
+        }
+
+        // Button released, close relay
+        digitalWrite(RELAY_PIN, HIGH); // Relay OFF
+    }
 }

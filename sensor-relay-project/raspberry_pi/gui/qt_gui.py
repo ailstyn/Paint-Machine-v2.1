@@ -141,7 +141,7 @@ class RelayControlApp(QWidget):
             pixmap = QPixmap(icon_path)
             if not pixmap.isNull():
                 pixmap = pixmap.scaled(
-                    60, 60,  # Changed from 80x80 to 60x60
+                    60, 60,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation
                 )
@@ -149,21 +149,21 @@ class RelayControlApp(QWidget):
                 icon_label.setText("")
             else:
                 icon_label.setText(alt)
-                icon_label.setFont(QFont("Arial", 48))  # Adjust font size for smaller icon
+                icon_label.setFont(QFont("Arial", 48))
                 icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
             self.icon_labels.append(icon_label)
             icon_column.addWidget(icon_label)
             if i < len(self.icon_files) - 1:
-                icon_column.addSpacing(24)  # Optionally reduce spacing for more icons
+                icon_column.addSpacing(24)
         icon_column.addStretch(1)
 
         dot_icon_container = QWidget()
-        dot_icon_layout = QHBoxLayout(dot_icon_container)  # <-- Use QHBoxLayout here!
+        dot_icon_layout = QHBoxLayout(dot_icon_container)
         dot_icon_layout.setContentsMargins(0, 0, 0, 0)
         dot_icon_layout.setSpacing(0)
         dot_icon_layout.addLayout(dot_column)
         dot_icon_layout.addLayout(icon_column)
-        dot_icon_container.setFixedWidth(150)  # Adjust this value as needed (was likely 200 before)
+        dot_icon_container.setFixedWidth(150)
 
         # --- Main grid layout ---
         grid = QGridLayout(self)

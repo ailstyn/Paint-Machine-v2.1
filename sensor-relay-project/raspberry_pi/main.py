@@ -69,6 +69,7 @@ E_STOP_ACTIVATED = b'\xEE'
 FILL_TIME = b'\x15'
 FINAL_WEIGHT = b'\x11'
 
+
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
 DOWN_BUTTON_PIN = 6
