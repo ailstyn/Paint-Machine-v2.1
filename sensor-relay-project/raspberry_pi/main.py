@@ -571,7 +571,8 @@ def poll_hardware(app):
             if not E_STOP:
                 E_STOP = True
                 app.overlay_widget.show_overlay(
-                    f"<b>{LANGUAGES[app.language]['ESTOP_TITLE']}</b><br>{LANGUAGES[app.language]['ESTOP_MSG'].replace(chr(10), '<br>')}",
+                    f"<span style='font-size:80px; font-weight:bold;'>{LANGUAGES[app.language]['ESTOP_TITLE']}</span><br>"
+                    f"<span style='font-size:40px;'>{LANGUAGES[app.language]['ESTOP_MSG'].replace(chr(10), '<br>')}</span>",
                     color=app.splash
                 )
             # Respond to every message with E-STOP ACTIVATED
