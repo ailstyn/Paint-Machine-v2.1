@@ -352,11 +352,12 @@ class RelayControlApp(QWidget):
                 widget.setParent(None)
 
     def change_language(self):
-        # ... your existing language toggle logic ...
         if self.language == "en":
             self.show_dialog_content("Language", "English")
         elif self.language == "es":
             self.show_dialog_content("Idioma", "Español")
+        # Hide the dialog content after 2 seconds
+        QTimer.singleShot(2000, self.clear_dialog_content)
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
