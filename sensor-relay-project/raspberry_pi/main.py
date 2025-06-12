@@ -419,7 +419,7 @@ def adjust_value_with_acceleration(
                 elif elapsed >= 2:
                     interval = 1 / 8   # 8 times per second
                 else:
-                    interval = 0.25    # 4 times per second
+                    interval = 1 / 8   # Start at 8 times per second (no slow start)
 
                 value += unit_increment
                 if up_callback:
@@ -449,7 +449,7 @@ def adjust_value_with_acceleration(
                 elif elapsed >= 2:
                     interval = 1 / 8
                 else:
-                    interval = 0.25
+                    interval = 1 / 8   # Start at 8 times per second (no slow start)
 
                 if value - unit_increment >= min_value:
                     value -= unit_increment
