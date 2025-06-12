@@ -423,10 +423,10 @@ class OverlayWidget(QWidget):
         print(f"[OverlayWidget] show_overlay called with color={color}, fg={fg}")  # <-- Add this line
         self.label.setText(message)
         self.label.setStyleSheet(
-            f"color: {fg}; font-size: 64px; font-weight: bold; background: transparent; border: 6px solid {fg}; border-radius: 32px; padding: 32px;"
+            f"color: {fg}; font-size: 64px; font-weight: bold; background: transparent; padding: 32px;"
         )
         self.setStyleSheet(
-            f"background-color: {color}; border: 8px solid {fg}; border-radius: 40px;"
+            f"background-color: {color};"
         )
         self.show()
         self.raise_()
