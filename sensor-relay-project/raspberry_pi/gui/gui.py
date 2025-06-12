@@ -10,16 +10,17 @@ import os
 logging.basicConfig(level=logging.INFO)
 
 COLOR_SCHEMES = [
-    {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
-    {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61"},
-    {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020"},
-    {"name": "Green Alert", "bg": "#1B7B31", "fg": "#FFFFFF", "splash": "#B84E44"},
+    {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212", "highlight": "#FFFFFF"},
+    {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61", "highlight": "#FFFFFF"},
+    {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020", "highlight": "#FFFFFF"},
+    {"name": "Green Alert", "bg": "#1B7B31", "fg": "#FFFFFF", "splash": "#B84E44", "highlight": "#FFFFFF"},
 ]
 
 class StationWidget(QWidget):
-    def __init__(self, station_number, *args, **kwargs):
+    def __init__(self, station_number, color_scheme, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.station_number = station_number
+        self.color_scheme = color_scheme
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -28,37 +29,44 @@ class StationWidget(QWidget):
         self.number_label = QLabel(str(station_number))
         self.number_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.number_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
-        self.number_label.setStyleSheet("color: white; background: transparent;")
         layout.addWidget(self.number_label)
 
         # Weight display label (current / target)
         self.weight_label = QLabel("0.0 / 0.0 g")
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Normal))
-        self.weight_label.setStyleSheet("color: white; background: transparent;")
         layout.addWidget(self.weight_label)
 
-        self.setStyleSheet("border: 1px solid #fff; background: transparent;")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.update_colors(self.color_scheme)
 
     def set_weight(self, current_weight, target_weight, unit="g"):
         new_text = f"{current_weight:.1f} / {target_weight:.1f} {unit}"
         if self.weight_label.text() != new_text:
             self.weight_label.setText(new_text)
 
+    def update_colors(self, color_scheme):
+        self.color_scheme = color_scheme
+        fg = color_scheme["fg"]
+        self.setStyleSheet(f"border: 1px solid {fg}; background: transparent;")
+        self.number_label.setStyleSheet(f"color: {fg}; background: transparent;")
+        self.weight_label.setStyleSheet(f"color: {fg}; background: transparent;")
+
+
 class MenuDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, color_scheme, parent=None):
         super().__init__(parent)
         self.selected_index = 0
+        self.color_scheme = color_scheme
         self.setWindowTitle("Menu")
         self.setModal(True)
-        self.setStyleSheet("""
-            QDialog {
+        self.setStyleSheet(f"""
+            QDialog {{
                 background-color: #222;
-                color: #fff;
-                border: 6px solid #fff;
+                color: {color_scheme['fg']};
+                border: 6px solid {color_scheme['fg']};
                 border-radius: 24px;
-            }
+            }}
         """)
 
         # Icon files: (filename, alt text)
@@ -85,11 +93,11 @@ class MenuDialog(QDialog):
                 pixmap = pixmap.scaled(96, 96, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
                 icon_label.setPixmap(pixmap)
             icon_label.setFixedSize(112, 112)
-            icon_label.setStyleSheet("""
+            icon_label.setStyleSheet(f"""
                 border: 6px solid transparent;
                 border-radius: 24px;
                 background: transparent;
-                color: #fff;
+                color: {color_scheme['fg']};
             """)
             self.icon_labels.append(icon_label)
             layout.addWidget(icon_label)
@@ -100,18 +108,18 @@ class MenuDialog(QDialog):
     def update_selection_box(self):
         for i, label in enumerate(self.icon_labels):
             if i == self.selected_index:
-                label.setStyleSheet("""
-                    border: 6px solid #F6EB61;
+                label.setStyleSheet(f"""
+                    border: 6px solid {self.color_scheme['splash']};
                     border-radius: 24px;
                     background: transparent;
-                    color: #fff;
+                    color: {self.color_scheme['fg']};
                 """)
             else:
-                label.setStyleSheet("""
+                label.setStyleSheet(f"""
                     border: 6px solid transparent;
                     border-radius: 24px;
                     background: transparent;
-                    color: #fff;
+                    color: {self.color_scheme['fg']};
                 """)
 
     def select_next(self):
@@ -123,26 +131,29 @@ class MenuDialog(QDialog):
         self.update_selection_box()
 
     def activate_selected(self):
-        if self.selected_index == 0:
-            # Activate target weight function
-            print("Set Target Weight")
-        elif self.selected_index == 1:
-            # Activate time limit function
-            print("Set Time Limit")
-        elif self.selected_index == 2:
-            # Activate color scheme function
-            print("Change Color Scheme")
-        elif self.selected_index == 3:
-            # Activate language function
-            print("Change Language")
-        # ...and so on for other icons
-        self.accept()  # Close the dialog after activation
+        # ... your activation logic ...
+        self.accept()
+
+    def update_colors(self, color_scheme):
+        self.color_scheme = color_scheme
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: #222;
+                color: {color_scheme['fg']};
+                border: 6px solid {color_scheme['fg']};
+                border-radius: 24px;
+            }}
+        """)
+        self.update_selection_box()
+
 
 class RelayControlApp(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Four Station Control")
-        self.setStyleSheet("background-color: #2056C7;")  # Example blue background
+        self.color_scheme_index = 0
+        self.color_scheme = COLOR_SCHEMES[self.color_scheme_index]
+        self.setStyleSheet(f"background-color: {self.color_scheme['bg']};")
 
         # Main grid layout (2x2 for four stations)
         grid = QGridLayout()
@@ -152,14 +163,9 @@ class RelayControlApp(QWidget):
         # Create station widgets (1-4) with identifying numbers
         self.station_widgets = []
         for i in range(4):
-            station = StationWidget(i + 1)
+            station = StationWidget(i + 1, self.color_scheme)
             self.station_widgets.append(station)
-
-        # Add stations to grid
-        grid.addWidget(self.station_widgets[0], 0, 0)
-        grid.addWidget(self.station_widgets[1], 0, 1)
-        grid.addWidget(self.station_widgets[2], 1, 0)
-        grid.addWidget(self.station_widgets[3], 1, 1)
+            grid.addWidget(station, i // 2, i % 2)
 
         self.setLayout(grid)
         self.showMaximized()
@@ -167,11 +173,9 @@ class RelayControlApp(QWidget):
         self.target_weight = 0
         self.time_limit = 0
         self.language = "en"
-        self.color_scheme_index = 0
-
 
     def show_menu(self):
-        menu = MenuDialog(self)
+        menu = MenuDialog(self.color_scheme, self)
         menu.exec()
 
     def set_target_weight(self, value):
@@ -185,8 +189,12 @@ class RelayControlApp(QWidget):
 
     def set_color_scheme(self, index):
         self.color_scheme_index = index
-        scheme = COLOR_SCHEMES[self.color_scheme_index]
-        self.setStyleSheet(f"background-color: {scheme['bg']};")
+        self.color_scheme = COLOR_SCHEMES[self.color_scheme_index]
+        self.setStyleSheet(f"background-color: {self.color_scheme['bg']};")
+        # Update all station widgets
+        for station in self.station_widgets:
+            station.update_colors(self.color_scheme)
+        # Optionally update other dialogs/menus if open
 
     def show_info_dialog(self, title, message):
         dialog = InfoDialog(title, message, self)
