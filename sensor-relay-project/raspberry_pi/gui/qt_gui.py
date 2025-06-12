@@ -219,12 +219,13 @@ class RelayControlApp(QWidget):
         self.setStyleSheet(f"background-color: {self.bg};")
         self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
-        self.dialog_area.setStyleSheet(f"background-color: {self.bg}; border: 2px solid {self.fg};")
+        self.dialog_area.setStyleSheet(
+            f"#DialogArea {{ border: 2px solid {self.fg}; background-color: {self.bg}; }}"
+        )
         self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         for icon_label, (filename, alt) in zip(self.icon_labels, self.icon_files):
             if icon_label.pixmap() is None or icon_label.pixmap().isNull():
                 icon_label.setStyleSheet(f"color: {self.fg}; background-color: {self.bg};")
-            # If you want to update the pixmap for a different color scheme, reload it here
         for dot_label in self.dot_widgets:
             dot_label.setStyleSheet(f"background: transparent; border-radius: 8px; color: {self.fg};")
         # Update progress bar color
@@ -241,6 +242,8 @@ class RelayControlApp(QWidget):
             }}
             """
         )
+        # Update dialog label/button colors if dialog is open
+        self.update_dialog_colors()
 
     def handle_select(self):
         if self.selected_index == 0:
@@ -361,15 +364,15 @@ class RelayControlApp(QWidget):
         QTimer.singleShot(2000, self.clear_dialog_content)
 
     def update_dialog_colors(self):
-        # Update dialog area border
-        self.dialog_area.setStyleSheet(f"#DialogArea {{ border: 2px solid {self.fg}; }}")
-        # Update all labels/buttons in the dialog area
+        # Update all widgets in the dialog area to use the current color scheme
         for i in range(self.dialog_area_layout.count()):
             widget = self.dialog_area_layout.itemAt(i).widget()
             if isinstance(widget, QLabel):
                 widget.setStyleSheet(f"color: {self.fg}; background: transparent;")
             elif isinstance(widget, QPushButton):
                 widget.setStyleSheet(f"color: {self.fg}; background: {self.bg};")
+        # Update dialog area border if needed
+        self.dialog_area.setStyleSheet(f"#DialogArea {{ border: 2px solid {self.fg}; background-color: {self.bg}; }}")
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
