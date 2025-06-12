@@ -412,7 +412,7 @@ class OverlayWidget(QWidget):
 
     def show_overlay(self, message, color=None, fg=None):
         if self.parent():
-            self.resize(self.parent().size())
+            self.resize(self.parent().size())  # Ensure overlay fills the window
         if self.parent() and hasattr(self.parent(), "splash"):
             if color is None:
                 color = self.parent().splash
