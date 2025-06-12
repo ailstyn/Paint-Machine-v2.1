@@ -408,7 +408,7 @@ def adjust_value_with_acceleration(
         if GPIO.input(up_button_pin) == GPIO.LOW:
             start_time = time.time()
             repeats = 0
-            interval = 0.25  # Start at 4 times per second
+            interval = 0.125
             while GPIO.input(up_button_pin) == GPIO.LOW:
                 elapsed = time.time() - start_time
                 # Each interval lasts 1 second before jumping to the next
@@ -441,7 +441,7 @@ def adjust_value_with_acceleration(
         if GPIO.input(down_button_pin) == GPIO.LOW:
             start_time = time.time()
             repeats = 0
-            interval = 0.25  # Start at 4 times per second
+            interval = 0.125
             while GPIO.input(down_button_pin) == GPIO.LOW:
                 elapsed = time.time() - start_time
                 if elapsed >= 4:
