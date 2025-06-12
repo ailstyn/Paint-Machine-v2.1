@@ -16,6 +16,10 @@ LANGUAGES = {
         "SCALES_RESET_MSG": "",
         "ESTOP_TITLE": "E-STOP ACTIVATED",
         "ESTOP_MSG": "\n\nRESET to continue.",
+        "FILL_COMPLETE_TITLE": "FILL COMPLETE:",
+        "TIME_LIMIT_REACHED_TITLE": "TIME LIMIT REACHED:",
+        "TIME_LABEL": "Time",
+        "WEIGHT_LABEL": "Weight",
         # Add more as needed...
     },
     "es": {
@@ -35,5 +39,9 @@ LANGUAGES = {
         "SCALES_RESET_MSG": "",
         "ESTOP_TITLE": "PARADA DE EMERGENCIA",
         "ESTOP_MSG": "\n\nRESET para continuar.",
+        "FILL_COMPLETE_TITLE": "LLENADO COMPLETO:",
+        "TIME_LIMIT_REACHED_TITLE": "SE ALCANZÓ EL LÍMITE DE TIEMPO:",
+        "TIME_LABEL": "Tiempo",
+        "WEIGHT_LABEL": "Peso",
     }
 }

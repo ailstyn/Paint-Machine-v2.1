@@ -665,13 +665,15 @@ def poll_hardware(app):
 
                     if fill_time_limit_reached:
                         app.show_dialog_content(
-                            "TIME LIMIT REACHED:",
-                            f"Time: {shown_time:.1f} s\nWeight: {shown_weight:.1f} {unit}"
+                            LANGUAGES[app.language]["TIME_LIMIT_REACHED_TITLE"],
+                            f"{LANGUAGES[app.language]['TIME_LABEL']}: {shown_time:.1f} s\n"
+                            f"{LANGUAGES[app.language]['WEIGHT_LABEL']}: {shown_weight:.1f} {unit}"
                         )
                     else:
                         app.show_dialog_content(
-                            "FILL COMPLETE:",
-                            f"Time: {shown_time:.1f} s\nWeight: {shown_weight:.1f} {unit}"
+                            LANGUAGES[app.language]["FILL_COMPLETE_TITLE"],
+                            f"{LANGUAGES[app.language]['TIME_LABEL']}: {shown_time:.1f} s\n"
+                            f"{LANGUAGES[app.language]['WEIGHT_LABEL']}: {shown_weight:.1f} {unit}"
                         )
                     # Reset state for next fill
                     last_final_weight = None
