@@ -253,7 +253,7 @@ class RelayControlApp(QWidget):
             # Language button: toggle between English and Spanish
             self.language = "es" if self.language == "en" else "en"
             print(f"Switched language to {self.language}")
-            self.refresh_ui()
+            self.change_language()
         elif self.selected_index == 4:
             # Toggle between grams and ounces
             self.display_unit = "oz" if self.display_unit == "g" else "g"
@@ -349,6 +349,13 @@ class RelayControlApp(QWidget):
             widget = self.dialog_area_layout.itemAt(i).widget()
             if widget is not None:
                 widget.setParent(None)
+
+    def change_language(self):
+        # ... your existing language toggle logic ...
+        if self.language == "en":
+            self.show_dialog_content("Language", "English")
+        elif self.language == "es":
+            self.show_dialog_content("Idioma", "Español")
 
 class ValueInputDialog(QDialog):
     def __init__(self, title, initial_value, unit, color_scheme, parent=None):
