@@ -411,15 +411,17 @@ def adjust_value_with_acceleration(
             interval = 0.25  # Start at 4 times per second
             while GPIO.input(up_button_pin) == GPIO.LOW:
                 elapsed = time.time() - start_time
-                # Acceleration logic: decrease interval as button is held
-                if elapsed >= 6:
+                # Each interval lasts 1 second before jumping to the next
+                if elapsed >= 4:
                     interval = 1 / 64  # 64 times per second
                 elif elapsed >= 3:
                     interval = 1 / 32  # 32 times per second
-                elif elapsed >= 1:
+                elif elapsed >= 2:
                     interval = 1 / 16  # 16 times per second
-                else:
+                elif elapsed >= 1:
                     interval = 1 / 8   # 8 times per second
+                else:
+                    interval = 1 / 8   # Start at 8 times per second
 
                 value += unit_increment
                 if up_callback:
@@ -442,15 +444,16 @@ def adjust_value_with_acceleration(
             interval = 0.25  # Start at 4 times per second
             while GPIO.input(down_button_pin) == GPIO.LOW:
                 elapsed = time.time() - start_time
-                if elapsed >= 6:
+                if elapsed >= 4:
                     interval = 1 / 64
                 elif elapsed >= 3:
                     interval = 1 / 32
-                elif elapsed >= 1:
+                elif elapsed >= 2:
                     interval = 1 / 16
+                elif elapsed >= 1:
+                    interval = 1 / 8
                 else:
-                    interval = 1 / 8   # Start at 8 times per second (no slow start)
-
+                    interval = 1 / 8
                 if value - unit_increment >= min_value:
                     value -= unit_increment
                     if down_callback:
