@@ -15,7 +15,7 @@ LANGUAGES = {
         "SCALES_RESET_TITLE": "SCALES RESET",
         "SCALES_RESET_MSG": "",
         "ESTOP_TITLE": "E-STOP ACTIVATED",
-        "ESTOP_MSG": "Press RESET to continue.",
+        "ESTOP_MSG": "\n\nRESET to continue.",
         # Add more as needed...
     },
     "es": {
@@ -34,6 +34,6 @@ LANGUAGES = {
         "SCALES_RESET_TITLE": "BALANZAS REINICIADAS",
         "SCALES_RESET_MSG": "",
         "ESTOP_TITLE": "PARADA DE EMERGENCIA",
-        "ESTOP_MSG": "Pulsa RESET para continuar.",
+        "ESTOP_MSG": "\n\nRESET para continuar.",
     }
 }
