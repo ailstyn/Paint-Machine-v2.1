@@ -537,9 +537,10 @@ def set_time_limit(app):
     global time_limit
 
     def update_display(value, *args, **kwargs):
+        seconds = value / 1000.0
         app.show_dialog_content(
             title=LANGUAGES[app.language]["SET_TIME_LIMIT_TITLE"],
-            message=f"{value} ms\n\n{LANGUAGES[app.language]['SET_TIME_LIMIT_MSG']}",
+            message=f"{seconds:.1f} s\n\n{LANGUAGES[app.language]['SET_TIME_LIMIT_MSG']}",
         )
 
     # Show the initial value immediately
@@ -656,15 +657,18 @@ def poll_hardware(app):
                         shown_weight = last_final_weight
                         unit = "g"
 
+                    # Convert ms to seconds with one decimal place
+                    shown_time = last_fill_time / 1000.0
+
                     if fill_time_limit_reached:
                         app.show_dialog_content(
                             "TIME LIMIT REACHED:",
-                            f"Time: {last_fill_time} ms\nWeight: {shown_weight:.1f} {unit}"
+                            f"Time: {shown_time:.1f} s\nWeight: {shown_weight:.1f} {unit}"
                         )
                     else:
                         app.show_dialog_content(
                             "FILL COMPLETE:",
-                            f"Time: {last_fill_time} ms\nWeight: {shown_weight:.1f} {unit}"
+                            f"Time: {shown_time:.1f} s\nWeight: {shown_weight:.1f} {unit}"
                         )
                     # Reset state for next fill
                     last_final_weight = None
