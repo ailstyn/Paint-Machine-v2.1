@@ -406,7 +406,7 @@ class OverlayWidget(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
         self.label = QLabel("", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # Set initial style, but will be overridden in show_overlay
+        self.label.setWordWrap(True)
         self.label.setStyleSheet("color: white; font-size: 48px; background: transparent;")
         self.hide()
 
@@ -420,7 +420,6 @@ class OverlayWidget(QWidget):
                 fg = self.parent().fg
         if fg is None:
             fg = "#ffffff"
-        print(f"[OverlayWidget] show_overlay called with color={color}, fg={fg}")  # <-- Add this line
         self.label.setText(message)
         self.label.setStyleSheet(
             f"color: {fg}; font-size: 64px; font-weight: bold; background: transparent; padding: 32px;"
