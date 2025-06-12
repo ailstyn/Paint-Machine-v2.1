@@ -16,7 +16,7 @@ COLOR_SCHEMES = [
     {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212"},
     {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61"},
     {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020"},
-    {"name": "Green Alert", "bg": "#1B9E3A", "fg": "#FFFFFF", "splash": "#FF6F61"},
+    {"name": "Green Alert", "bg": "#1B7B31", "fg": "#FFFFFF", "splash": "#B84E44"},
 ]
 
 class RelayControlApp(QWidget):
