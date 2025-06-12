@@ -627,6 +627,7 @@ def poll_hardware(app):
                 print("Received BEGIN FILL from Arduino.")
                 print(f"Calling set_fill_mode with current_weight={app.current_weight}, target_weight={target_weight}")
                 app.set_fill_mode(app.current_weight, target_weight)
+                app.clear_dialog_content()
             elif message_type == FINAL_WEIGHT:
                 # Read the final weight value
                 final_weight_line = arduino.readline().decode('utf-8').strip()
@@ -647,15 +648,23 @@ def poll_hardware(app):
 
                 # Show the dialog if we have both time and weight
                 if last_final_weight is not None:
+                    # Determine units and format weight
+                    if getattr(app, "display_unit", "g") == "oz":
+                        shown_weight = last_final_weight * 0.03527
+                        unit = "oz"
+                    else:
+                        shown_weight = last_final_weight
+                        unit = "g"
+
                     if fill_time_limit_reached:
                         app.show_dialog_content(
                             "TIME LIMIT REACHED:",
-                            f"Time: {last_fill_time} ms\nWeight: {last_final_weight:.1f} g"
+                            f"Time: {last_fill_time} ms\nWeight: {shown_weight:.1f} {unit}"
                         )
                     else:
                         app.show_dialog_content(
                             "FILL COMPLETE:",
-                            f"Time: {last_fill_time} ms\nWeight: {last_final_weight:.1f} g"
+                            f"Time: {last_fill_time} ms\nWeight: {shown_weight:.1f} {unit}"
                         )
                     # Reset state for next fill
                     last_final_weight = None
