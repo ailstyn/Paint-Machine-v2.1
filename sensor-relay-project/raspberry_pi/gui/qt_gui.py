@@ -325,7 +325,7 @@ class RelayControlApp(QWidget):
         message_label.setFont(QFont("Cascadia Code", 24))
         fg = self.fg
         if bg_color:
-            message_label.setStyleSheet(f"color: fg}; background: {bg_color}; border-radius: 12px;")
+            message_label.setStyleSheet(f"color: {fg}; background: {bg_color}; border-radius: 12px;")
         else:
             message_label.setStyleSheet(f"color: {fg}; background: transparent;")
         message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
