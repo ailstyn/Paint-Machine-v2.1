@@ -104,9 +104,10 @@ class RelayControlApp(QWidget):
 
         # --- Section 3: Dialog/message area (center) ---
         self.dialog_area = QWidget()
+        self.dialog_area.setObjectName("DialogArea")
         self.dialog_area_layout = QVBoxLayout(self.dialog_area)
         self.dialog_area_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.dialog_area.setStyleSheet("border: 2px solid white;")  # <-- Added border style here
+        self.dialog_area.setStyleSheet("#DialogArea { border: 2px solid white; }")
         self.dialog_area.setMaximumWidth(700)  # Adjust as needed
 
         # --- Section 4: Selection dot and icon columns (right) ---
@@ -324,7 +325,7 @@ class RelayControlApp(QWidget):
         message_label.setFont(QFont("Cascadia Code", 24))
         fg = self.fg
         if bg_color:
-            message_label.setStyleSheet(f"color: {fg}; background: {bg_color}; border-radius: 12px;")
+            message_label.setStyleSheet(f"color: fg}; background: {bg_color}; border-radius: 12px;")
         else:
             message_label.setStyleSheet(f"color: {fg}; background: transparent;")
         message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
