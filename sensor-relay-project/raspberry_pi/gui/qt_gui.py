@@ -219,6 +219,7 @@ class RelayControlApp(QWidget):
         self.setStyleSheet(f"background-color: {self.bg};")
         self.current_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         self.target_weight_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
+        self.dialog_area.setStyleSheet(f"background-color: {self.bg}; border: 2px solid {self.fg};")
         self.slash_label.setStyleSheet(f"color: {self.fg}; background: transparent;")
         for icon_label, (filename, alt) in zip(self.icon_labels, self.icon_files):
             if icon_label.pixmap() is None or icon_label.pixmap().isNull():
