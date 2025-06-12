@@ -107,7 +107,7 @@ class RelayControlApp(QWidget):
         self.dialog_area.setObjectName("DialogArea")
         self.dialog_area_layout = QVBoxLayout(self.dialog_area)
         self.dialog_area_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.dialog_area.setStyleSheet("#DialogArea { border: 2px solid white; }")
+        self.dialog_area.setStyleSheet(f"#DialogArea {{ border: 2px solid {self.fg}; }}")
         self.dialog_area.setMaximumWidth(700)  # Adjust as needed
 
         # --- Section 4: Selection dot and icon columns (right) ---
