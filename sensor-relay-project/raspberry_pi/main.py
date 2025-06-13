@@ -42,18 +42,18 @@ REQUEST_CALIBRATION = b'\x02'
 REQUEST_TIME_LIMIT = b'\x03'
 CURRENT_WEIGHT = b'\x04'
 RESET_CALIBRATION = b'\x05'
-TARE_SCALE = b'\x09'  # New byte for tare command
+TARE_SCALE = b'\x09'
 RELAY_DEACTIVATED = b'\xFA'
 TARGET_WEIGHT = b'\x08'
 VERBOSE_DEBUG = b'\xFE'
-BEGIN_FILL = b'\x10'  # Choose an unused byte value for BEGIN_FILL
+BEGIN_FILL = b'\x10'
 CALIBRATION_STEP_DONE = b'\x12'
 CALIBRATION_CONTINUE = b'\x13'
-CALIBRATION_WEIGHT = b'\x14'  # New byte for calibration weight
+CALIBRATION_WEIGHT = b'\x14'
 E_STOP_ACTIVATED = b'\xEE'
 FILL_TIME = b'\x15'
 FINAL_WEIGHT = b'\x11'
-GET_ID = b'\xA0'  # New byte to request station ID
+GET_ID = b'\xA0'
 
 
 # GPIO pin assignments for buttons
@@ -80,7 +80,7 @@ for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
         # Ask for station ID
-        arduino.write(bytes([GET_ID]))
+        arduino.write(GET_ID)
         time.sleep(0.2)
         if arduino.in_waiting > 0:
             station_id = int(arduino.readline().decode().strip())
