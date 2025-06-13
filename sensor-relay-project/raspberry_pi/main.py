@@ -663,11 +663,10 @@ def main():
         global station_enabled
         station_enabled = load_station_enabled_flags()
         setup_gpio()
-        app = RelayControlApp(
-            set_target_weight_callback=set_target_weight,
-            set_time_limit_callback=set_time_limit,
-            set_calibrate_callback=calibrate_scale
-        )
+        app = RelayControlApp()
+        app.set_target_weight = set_target_weight
+        app.set_time_limit = set_time_limit
+        app.set_calibrate = calibrate_scale
         print('app initialized, contacting arduinos')
 
         for arduino in arduinos:
