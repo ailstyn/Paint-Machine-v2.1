@@ -398,6 +398,57 @@ class SetTimeLimitDialog(QDialog):
     def activate_selected(self):
         self.accept()
 
+class SelectionDialog(QDialog):
+    def __init__(self, options, parent=None, title="", label_text="", outlined=True):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.selected_index = 0
+        self.options = options  # List of (value, display_text) tuples
+        layout = QVBoxLayout(self)
+        if label_text:
+            label = QLabel(label_text)
+            layout.addWidget(label)
+        self.labels = []
+        for _, display_text in self.options:
+            if outlined:
+                item_label = OutlinedLabel(display_text)
+            else:
+                item_label = QLabel(display_text)
+            item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_label.setFixedSize(320, 64)
+            self.labels.append(item_label)
+            layout.addWidget(item_label)
+        self.setLayout(layout)
+        self.update_selection_box()
+        self.setModal(True)
+
+    def update_selection_box(self):
+        for i, label in enumerate(self.labels):
+            if i == self.selected_index:
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid #F6EB61; border-radius: 16px; background: transparent;"
+                )
+            else:
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid transparent; border-radius: 16px; background: transparent;"
+                )
+
+    def select_next(self):
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
+        self.update_selection_box()
+
+    def select_prev(self):
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
+        self.update_selection_box()
+
+    def activate_selected(self):
+        self.on_select(self.options[self.selected_index][0])
+        self.accept()
+
+    def on_select(self, value):
+        """Override this in subclasses to handle selection."""
+        pass
+
 class SetLanguageDialog(SelectionDialog):
     def __init__(self, parent=None):
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
@@ -457,57 +508,6 @@ class ChangeUnitsDialog(QDialog):
         if self.parent():
             self.parent().set_units(units)
         self.accept()
-
-class SelectionDialog(QDialog):
-    def __init__(self, options, parent=None, title="", label_text="", outlined=True):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.selected_index = 0
-        self.options = options  # List of (value, display_text) tuples
-        layout = QVBoxLayout(self)
-        if label_text:
-            label = QLabel(label_text)
-            layout.addWidget(label)
-        self.labels = []
-        for _, display_text in self.options:
-            if outlined:
-                item_label = OutlinedLabel(display_text)
-            else:
-                item_label = QLabel(display_text)
-            item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            item_label.setFixedSize(320, 64)
-            self.labels.append(item_label)
-            layout.addWidget(item_label)
-        self.setLayout(layout)
-        self.update_selection_box()
-        self.setModal(True)
-
-    def update_selection_box(self):
-        for i, label in enumerate(self.labels):
-            if i == self.selected_index:
-                label.setStyleSheet(
-                    "font-size: 24px; border: 4px solid #F6EB61; border-radius: 16px; background: transparent;"
-                )
-            else:
-                label.setStyleSheet(
-                    "font-size: 24px; border: 4px solid transparent; border-radius: 16px; background: transparent;"
-                )
-
-    def select_next(self):
-        self.selected_index = (self.selected_index + 1) % len(self.labels)
-        self.update_selection_box()
-
-    def select_prev(self):
-        self.selected_index = (self.selected_index - 1) % len(self.labels)
-        self.update_selection_box()
-
-    def activate_selected(self):
-        self.on_select(self.options[self.selected_index][0])
-        self.accept()
-
-    def on_select(self, value):
-        """Override this in subclasses to handle selection."""
-        pass
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
