@@ -618,7 +618,7 @@ def load_station_enabled_flags():
     return enabled
 
 def poll_hardware(app):
-    global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED
+    global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED, target_weight
     try:
         for station_index, arduino in enumerate(arduinos):
             if arduino is None:
