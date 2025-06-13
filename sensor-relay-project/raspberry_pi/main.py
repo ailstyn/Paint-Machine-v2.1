@@ -619,9 +619,9 @@ def poll_hardware(app):
                 continue
             if not station_enabled[station_index]:
                 continue  # Skip disabled stations
-            print(f"Polling station {station_index+1} (enabled, Arduino connected)")
+            # print(f"Polling station {station_index+1} (enabled, Arduino connected)")
 
-            print(f"Station {station_index+1}: Arduino in_waiting = {arduino.in_waiting}")
+            # print(f"Station {station_index+1}: Arduino in_waiting = {arduino.in_waiting}")
             estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
             if estop_pressed:
                 print(f"Station {station_index+1}: E-STOP pressed")
@@ -645,11 +645,11 @@ def poll_hardware(app):
 
             # Normal operation for this station
             while arduino.in_waiting > 0:
-                print(f"Station {station_index+1}: Reading message type...")
+                # print(f"Station {station_index+1}: Reading message type...")
                 message_type = arduino.read(1)
-                print(f"Station {station_index+1}: Received message_type: {message_type}")
+                # print(f"Station {station_index+1}: Received message_type: {message_type}")
                 if message_type == REQUEST_TARGET_WEIGHT:
-                    print(f"Station {station_index+1}: REQUEST_TARGET_WEIGHT")
+                    rint(f"Station {station_index+1}: REQUEST_TARGET_WEIGHT")
                     arduino.write(TARGET_WEIGHT)
                     arduino.write(f"{target_weight}\n".encode('utf-8'))
                 elif message_type == REQUEST_CALIBRATION:
@@ -661,9 +661,9 @@ def poll_hardware(app):
                     arduino.write(REQUEST_TIME_LIMIT)
                     arduino.write(f"{time_limit}\n".encode('utf-8'))
                 elif message_type == CURRENT_WEIGHT:
-                    print(f"Station {station_index+1}: CURRENT_WEIGHT")
+                    #print(f"Station {station_index+1}: CURRENT_WEIGHT")
                     current_weight = arduino.readline().decode('utf-8').strip()
-                    print(f"Station {station_index+1} CURRENT_WEIGHT raw: '{current_weight}'")
+                    #print(f"Station {station_index+1} CURRENT_WEIGHT raw: '{current_weight}'")
                     try:
                         weight = float(current_weight)
                         if weight < 0:
