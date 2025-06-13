@@ -709,6 +709,10 @@ def main():
         app.set_target_weight = set_target_weight
         app.set_time_limit = set_time_limit
         app.set_calibrate = calibrate_scale
+
+        # Set the GUI's target weight to match your default
+        app.target_weight = target_weight  # <-- Add this line
+
         print('app initialized, contacting arduinos')
 
         # Set offline state for disabled stations
