@@ -3,7 +3,7 @@ import serial
 import time
 import logging
 import RPi.GPIO as GPIO
-from gui.gui import RelayControlApp
+from gui.gui import RelayControlApp, MenuDialog
 from gui.languages import LANGUAGES
 import sys
 import signal
@@ -432,7 +432,7 @@ def handle_button_presses(app):
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             print('select button pressed on main screen, opening menu')
             if not app.menu_dialog or not app.menu_dialog.isVisible():
-                app.menu_dialog = app.menu_dialog or app.create_menu_dialog()
+                app.menu_dialog = MenuDialog(app)
                 app.menu_dialog.show()
             return
 
