@@ -711,6 +711,12 @@ def main():
         app.set_calibrate = calibrate_scale
         print('app initialized, contacting arduinos')
 
+        # Set offline state for disabled stations
+        bg_colors_deactivated = ["#6c2222", "#22305a", "#2b4d2b", "#b1a93a"]
+        for i, widget in enumerate(app.station_widgets):
+            if not station_enabled[i]:
+                widget.set_offline(bg_colors_deactivated[i])
+
         for arduino in arduinos:
             if arduino is not None:
                 arduino.reset_input_buffer()
@@ -745,8 +751,4 @@ def log_uncaught_exceptions(exctype, value, tb):
 sys.excepthook = log_uncaught_exceptions
 
 if __name__ == "__main__":
-    bg_colors_deactivated = ["#6c2222", "#22305a", "#2b4d2b", "#b1a93a"]
-    for i, widget in enumerate(app.station_widgets):
-        if not station_enabled[i]:
-            widget.set_offline(bg_colors_deactivated[i])
     main()
