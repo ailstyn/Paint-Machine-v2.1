@@ -102,10 +102,10 @@ class MenuDialog(QDialog):
         print("MenuDialog: __init__ called")
         self.selected_index = 0
         self.menu_keys = [
-            "SET_TARGET_WEIGHT",
-            "SET_TIME_LIMIT",
-            "SET_LANGUAGE",
-            "CHANGE_UNITS",
+            "SET TARGET WEIGHT",
+            "SET TIME LIMIT",
+            "SET LANGUAGE",
+            "CHANGE UNITS",
             "EXIT"
         ]
         self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
@@ -150,22 +150,24 @@ class MenuDialog(QDialog):
         self.update_selection_box()
 
     def activate_selected(self):
-        selected = self.menu_items[self.selected_index]
-        if selected == "EXIT":
+        selected_key = self.menu_keys[self.selected_index]
+        selected_label = self.menu_items[self.selected_index]
+        print(f"Menu item selected: {selected_key} ({selected_label})")
+        if selected_key == "EXIT":
             self.accept()
-        elif selected == "SET TARGET WEIGHT":
+        elif selected_key == "SET TARGET WEIGHT":
             dialog = SetTargetWeightDialog(self)
             dialog.exec()
             self.accept()
-        elif selected == "SET TIME LIMIT":
+        elif selected_key == "SET TIME LIMIT":
             dialog = SetTimeLimitDialog(self)
             dialog.exec()
             self.accept()
-        elif selected == "SET LANGUAGE":
+        elif selected_key == "SET LANGUAGE":
             dialog = SetLanguageDialog(self)
             dialog.exec()
             self.accept()
-        elif selected == "CHANGE UNITS":
+        elif selected_key == "CHANGE UNITS":
             dialog = ChangeUnitsDialog(self)
             dialog.exec()
             self.accept()
