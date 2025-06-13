@@ -6,6 +6,7 @@ from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap  # 
 import sys
 import logging
 import os
+from language import LANGUAGES
 
 logging.basicConfig(level=logging.INFO)
 
@@ -100,13 +101,14 @@ class MenuDialog(QDialog):
         super().__init__(parent)
         print("MenuDialog: __init__ called")
         self.selected_index = 0
-        self.menu_items = [
-            "SET TARGET WEIGHT",
-            "SET TIME LIMIT",
-            "SET LANGUAGE",
-            "CHANGE UNITS",
+        self.menu_keys = [
+            "SET_TARGET_WEIGHT",
+            "SET_TIME_LIMIT",
+            "SET_LANGUAGE",
+            "CHANGE_UNITS",
             "EXIT"
         ]
+        self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
         layout = QVBoxLayout(self)
         self.labels = []
         for item in self.menu_items:
@@ -150,11 +152,23 @@ class MenuDialog(QDialog):
     def activate_selected(self):
         selected = self.menu_items[self.selected_index]
         if selected == "EXIT":
-            self.accept()  # Just close the menu
-        else:
-            # Handle other menu actions here
-            print(f"Selected: {selected}")
-            self.accept()  # Optionally close the menu after other actions
+            self.accept()
+        elif selected == "SET TARGET WEIGHT":
+            dialog = SetTargetWeightDialog(self)
+            dialog.exec()
+            self.accept()
+        elif selected == "SET TIME LIMIT":
+            dialog = SetTimeLimitDialog(self)
+            dialog.exec()
+            self.accept()
+        elif selected == "SET LANGUAGE":
+            dialog = SetLanguageDialog(self)
+            dialog.exec()
+            self.accept()
+        elif selected == "CHANGE UNITS":
+            dialog = ChangeUnitsDialog(self)
+            dialog.exec()
+            self.accept()
 
     def update_colors(self, color_scheme):
         self.color_scheme = color_scheme
@@ -295,6 +309,91 @@ class VerticalProgressBar(QWidget):
         bar_rect = rect.adjusted(4, rect.height() - bar_height + 4, -4, -4)
         painter.setBrush(QColor(self.bar_color))
         painter.drawRect(bar_rect)
+
+class SetTargetWeightDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
+        self.setWindowTitle(tr("SET_TARGET_WEIGHT"))
+        layout = QVBoxLayout(self)
+        label = QLabel(tr("ENTER_NEW_TARGET_WEIGHT"))
+        layout.addWidget(label)
+        # Add input widgets as needed (QLineEdit, buttons, etc.)
+        self.setModal(True)
+
+class SetTimeLimitDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
+        self.setWindowTitle(tr("SET_TIME_LIMIT"))
+        layout = QVBoxLayout(self)
+        label = QLabel(tr("ENTER_NEW_TIME_LIMIT"))
+        layout.addWidget(label)
+        # Add input widgets as needed
+        self.setModal(True)
+
+class SetLanguageDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent_app = parent
+        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
+        self.languages = [("en", "English"), ("es", "Español")]
+        self.selected_index = 0
+
+        self.setWindowTitle(tr("SET_LANGUAGE_TITLE"))
+        layout = QVBoxLayout(self)
+        label = QLabel(tr("CHOOSE_LANGUAGE"))
+        layout.addWidget(label)
+
+        self.labels = []
+        for code, name in self.languages:
+            lang_label = OutlinedLabel(name)
+            lang_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lang_label.setFixedSize(320, 64)
+            self.labels.append(lang_label)
+            layout.addWidget(lang_label)
+        self.setLayout(layout)
+        self.update_selection_box()
+        self.setModal(True)
+
+    def update_selection_box(self):
+        for i, label in enumerate(self.labels):
+            if i == self.selected_index:
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid #F6EB61; border-radius: 16px; background: transparent;"
+                )
+            else:
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid transparent; border-radius: 16px; background: transparent;"
+                )
+
+    def select_next(self):
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
+        self.update_selection_box()
+
+    def select_prev(self):
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
+        self.update_selection_box()
+
+    def activate_selected(self):
+        lang_code = self.languages[self.selected_index][0]
+        if self.parent_app:
+            self.parent_app.set_language(lang_code)
+        self.accept()
+
+class ChangeUnitsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
+        self.setWindowTitle(tr("CHANGE_UNITS"))
+        layout = QVBoxLayout(self)
+        label = QLabel(tr("CHOOSE_UNITS"))
+        layout.addWidget(label)
+        # Add unit selection widgets
+        self.setModal(True)
+
+    def tr(self, key):
+        return LANGUAGES.get(self.language, LANGUAGES["en"]).get(key, key)
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
