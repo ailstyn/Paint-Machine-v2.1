@@ -368,6 +368,7 @@ def ping_buzzer_invalid():
 def handle_button_presses(app):
     try:
         # Check the topmost dialog first (order matters: most recently opened first)
+        print('Polling buttons...')
         if app.language_dialog and app.language_dialog.isVisible():
             if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 app.language_dialog.select_prev()

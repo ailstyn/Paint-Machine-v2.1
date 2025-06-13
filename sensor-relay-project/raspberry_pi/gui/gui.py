@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap  # <-- Add QPixmap here
+from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor  # <-- Add QPixmap here
 import sys
 import logging
 import os
@@ -258,6 +258,7 @@ class RelayControlApp(QWidget):
                 QApplication.primaryScreen().availableGeometry()
             )
         )
+        self.setCursor(QCursor(Qt.CursorShape.BlankCursor))
 
     def show_menu(self):
         print("RelayControlApp: show_menu() called")
