@@ -30,7 +30,8 @@
 #define EXIT_MANUAL_END 0x22
 #define SMART_FILL_START 0x30
 #define SMART_FILL_END   0x31
-
+#define GET_ID 0xA0
+#define STATION_ID 3
 
 // Global variables
 HX711 scale;
@@ -38,6 +39,7 @@ float scaleCalibration = 427.530059; // Default calibration value
 float calibWeight = 61.0;     // Calibration weight in grams
 float cWeight1 = 0.0; // Variable to store the calibration value
 float cWeight2 = 0.0; // Variable to store the calibration value
+
 
 void setup() {
     pinMode(RELAY_PIN, OUTPUT);
@@ -127,6 +129,14 @@ void loop() {
     long weight = scale.get_units(3);
     Serial.write(CURRENT_WEIGHT);
     Serial.println(weight);
+
+    if (Serial.available() > 0) {
+        byte cmd = Serial.read();
+        if (cmd == GET_ID) {
+            Serial.println(STATION_ID); // Respond with the station ID
+        }
+        // ... other commands ...
+    }
 }
 
 // Function to handle the fill process

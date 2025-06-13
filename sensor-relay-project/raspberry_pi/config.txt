@@ -1,4 +1,17 @@
-427.530059
-1.0
-1.0
-1.0
+# Station mapping: stationN_id=ID
+station1_id=1
+station2_id=2
+station3_id=3
+station4_id=4
+
+# Calibration values
+station1_calibration=427.530059
+station2_calibration=1.0
+station3_calibration=1.0
+station4_calibration=1.0
+
+# Enable/disable stations
+station1_enabled=false
+station2_enabled=false
+station3_enabled=true
+station4_enabled=false

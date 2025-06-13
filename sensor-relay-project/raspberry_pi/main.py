@@ -3,13 +3,12 @@ import serial
 import time
 import logging
 import RPi.GPIO as GPIO
-from gui.qt_gui import RelayControlApp
+from gui.gui import RelayControlApp
 from gui.languages import LANGUAGES
-from PyQt6.QtWidgets import QApplication, QSpinBox
-from PyQt6.QtCore import QTimer
 import sys
 import signal
 from datetime import datetime
+import atexit
 
 
 # Configure logging
@@ -75,7 +74,7 @@ UP_BUTTON_PIN = 5
 DOWN_BUTTON_PIN = 6
 SELECT_BUTTON_PIN = 16
 E_STOP_PIN = 23
-BUZZER_PIN = 26  # Add this near your other pin definitions
+BUZZER_PIN = 26
 
 # Add a global flag for E-Stop
 E_STOP = False
@@ -85,35 +84,50 @@ last_fill_time = None
 last_final_weight = None
 fill_time_limit_reached = False
 
+# Usage example:
+NUM_STATIONS = 4  # Set this to however many stations you have
+
+# Replace your old load/write functions with these:
 def load_scale_calibrations():
-    # Load scale calibration values from the config file
+    """Load scale calibration values from config.txt into the global scale_calibrations list."""
     global scale_calibrations
-    print("Loading scale calibration values...")
-
-    # Get the full path to config.txt in the same directory as main.py
+    calibrations = [1.0] * NUM_STATIONS
     config_path = os.path.join(os.path.dirname(__file__), config_file)
+    try:
+        with open(config_path, "r") as file:
+            for line in file:
+                if line.startswith("station") and "_calibration=" in line:
+                    key, value = line.strip().split("=")
+                    # Extract station number (1-based)
+                    station_num = int(key.replace("station", "").replace("_calibration", ""))
+                    if 1 <= station_num <= NUM_STATIONS:
+                        calibrations[station_num - 1] = float(value)
+    except FileNotFoundError:
+        logging.error(f"{config_file} not found. Using default calibration values.")
+    except Exception as e:
+        logging.error(f"Error reading {config_file}: {e}")
+    scale_calibrations = calibrations
+    print(f"Loaded scale calibration values: {scale_calibrations}")
 
+def write_scale_calibrations():
+    config_path = os.path.join(os.path.dirname(__file__), config_file)
+    # Read existing config
     try:
         with open(config_path, "r") as file:
             lines = file.readlines()
-            scale_calibrations = [float(line.strip()) for line in lines]
-        print(f"Loaded scale calibration values: {scale_calibrations}")
     except FileNotFoundError:
-        logging.error(f"{config_path} not found. Using default calibration values.")
-        scale_calibrations = [1.0, 1.0, 1.0, 1.0]  # Default calibration values
-    except ValueError as e:
-        logging.error(f"Error reading {config_path}: {e}")
-        scale_calibrations = [1.0, 1.0, 1.0, 1.0]  # Default calibration values
+        lines = []
 
+    # Remove old calibration lines
+    lines = [line for line in lines if not (line.startswith("station") and "_calibration=" in line)]
 
-def write_scale_calibrations():
-    # Write scale calibration values to the config file
-    try:
-        with open(config_file, "w") as file:
-            for value in scale_calibrations:
-                file.write(f"{value}\n")
-    except Exception as e:
-        logging.error(f"Error writing to {config_file}: {e}")
+    # Add new calibration lines
+    for idx, value in enumerate(scale_calibrations):
+        lines.append(f"station{idx+1}_calibration={value}\n")
+
+    # Write back to config
+    with open(config_path, "w") as file:
+        file.writelines(lines)
 
 def calibrate_scale(arduino_id, app):
     try:
@@ -143,8 +157,6 @@ def calibrate_scale(arduino_id, app):
                     except Exception as e:
                         logging.error(f"[calibrate_scale] Error parsing weight: {e}")
                         print(f"[calibrate_scale] Error parsing weight: {e}")
-
-            QApplication.processEvents()
 
             # Check for SELECT button press
             if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
@@ -572,167 +584,105 @@ def clear_serial_buffer(arduino):
     while arduino.in_waiting > 0:
         arduino.read(arduino.in_waiting)
 
+def load_station_enabled_flags():
+    """Load enabled/disabled flags for each station from config.txt."""
+    enabled = [False] * NUM_STATIONS
+    config_path = os.path.join(os.path.dirname(__file__), config_file)
+    try:
+        with open(config_path, "r") as file:
+            for line in file:
+                if line.startswith("station") and "_enabled=" in line:
+                    key, value = line.strip().split("=")
+                    station_num = int(key.replace("station", "").replace("_enabled", ""))
+                    if 1 <= station_num <= NUM_STATIONS:
+                        enabled[station_num - 1] = value.lower() == "true"
+    except Exception as e:
+        logging.error(f"Error reading enabled flags: {e}")
+    return enabled
+
 def poll_hardware(app):
     global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED
     try:
-        arduino = arduinos[0]
-        estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
+        for station_index, arduino in enumerate(arduinos):
+            if not station_enabled[station_index]:
+                continue  # Skip disabled stations
 
-        if estop_pressed:
-            if not E_STOP:
-                E_STOP = True
-                app.overlay_widget.show_overlay(
-                    f"<span style='font-size:80px; font-weight:bold;'>{LANGUAGES[app.language]['ESTOP_TITLE']}</span><br>"
-                    f"<span style='font-size:40px;'>{LANGUAGES[app.language]['ESTOP_MSG'].replace(chr(10), '<br>')}</span>",
-                    color=app.splash
-                )
-            # Respond to every message with E-STOP ACTIVATED
+            estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
+            if estop_pressed:
+                if not E_STOP:
+                    E_STOP = True
+                    app.overlay_widget.show_overlay(
+                        f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
+                        f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
+                        color="#CD0A0A"
+                    )
+                while arduino.in_waiting > 0:
+                    arduino.read(arduino.in_waiting)
+                    arduino.write(E_STOP_ACTIVATED)
+                continue
+
+            if E_STOP:
+                E_STOP = False
+                app.overlay_widget.hide_overlay()
+
+            # Normal operation for this station
             while arduino.in_waiting > 0:
-                arduino.read(arduino.in_waiting)  # Optionally clear input
-                arduino.write(E_STOP_ACTIVATED)
-            return  # Skip GUI updates
-
-        # E-Stop released
-        if E_STOP:
-            E_STOP = False
-            app.overlay_widget.hide_overlay()
-
-        # Normal operation
-        handle_button_presses(app)
-        while arduino.in_waiting > 0:
-            message_type = arduino.read(1)
-            if message_type == REQUEST_TARGET_WEIGHT:
-                print("Arduino requested target weight.")
-                arduino.write(TARGET_WEIGHT)
-                arduino.write(f"{target_weight}\n".encode('utf-8'))
-                print(f"Sent target weight to Arduino: {target_weight}")
-            elif message_type == REQUEST_CALIBRATION:
-                print("Arduino requested calibration value.")
-                arduino.write(REQUEST_CALIBRATION)
-                arduino.write(f"{scale_calibrations[0]}\n".encode('utf-8'))
-                print(f"Sent calibration value to Arduino: {scale_calibrations[0]}")
-            elif message_type == REQUEST_TIME_LIMIT:
-                print("Arduino requested time limit.")
-                arduino.write(REQUEST_TIME_LIMIT)
-                arduino.write(f"{time_limit}\n".encode('utf-8'))
-                print(f"Sent time limit to Arduino: {time_limit}")
-            elif message_type == CURRENT_WEIGHT:
-                current_weight = arduino.readline().decode('utf-8').strip()
-                try:
-                    weight = float(current_weight)
-                    if weight < 0:
-                        weight = 0.0
-                    app.current_weight = weight
-                except Exception as e:
-                    logging.error(f"Invalid weight value: {current_weight} ({e})")
-                    app.current_weight = 0.0
-                app.target_weight = float(target_weight)
-                app.refresh_ui()
-            elif message_type == BEGIN_FILL:
-                print("Received BEGIN FILL from Arduino.")
-                print(f"Calling set_fill_mode with current_weight={app.current_weight}, target_weight={target_weight}")
-                app.set_fill_mode(app.current_weight, target_weight)
-                app.clear_dialog_content()
-            elif message_type == FINAL_WEIGHT:
-                # Read the final weight value
-                final_weight_line = arduino.readline().decode('utf-8').strip()
-                try:
-                    last_final_weight = float(final_weight_line)
-                except Exception as e:
-                    logging.error(f"Invalid final weight value: {final_weight_line} ({e})")
-                    last_final_weight = None
-
-            elif message_type == FILL_TIME:
-                # Read the fill time value
-                fill_time_line = arduino.readline().decode('utf-8').strip()
-                try:
-                    last_fill_time = int(fill_time_line)
-                except Exception as e:
-                    logging.error(f"Invalid fill time value: {fill_time_line} ({e})")
-                    last_fill_time = None
-
-                # Show the dialog if we have both time and weight
-                if last_final_weight is not None:
-                    # Determine units and format weight
-                    if getattr(app, "display_unit", "g") == "oz":
-                        shown_weight = last_final_weight * 0.03527
-                        unit = "oz"
-                    else:
-                        shown_weight = last_final_weight
-                        unit = "g"
-
-                    # Convert ms to seconds with one decimal place
-                    shown_time = last_fill_time / 1000.0
-
-                    if fill_time_limit_reached:
-                        app.show_dialog_content(
-                            LANGUAGES[app.language]["TIME_LIMIT_REACHED_TITLE"],
-                            f"{LANGUAGES[app.language]['TIME_LABEL']}: {shown_time:.1f} s\n"
-                            f"{LANGUAGES[app.language]['WEIGHT_LABEL']}: {shown_weight:.1f} {unit}"
-                        )
-                    else:
-                        app.show_dialog_content(
-                            LANGUAGES[app.language]["FILL_COMPLETE_TITLE"],
-                            f"{LANGUAGES[app.language]['TIME_LABEL']}: {shown_time:.1f} s\n"
-                            f"{LANGUAGES[app.language]['WEIGHT_LABEL']}: {shown_weight:.1f} {unit}"
-                        )
-                    # Reset state for next fill
-                    last_final_weight = None
-                    last_fill_time = None
-                    fill_time_limit_reached = False
-
-            elif message_type == VERBOSE_DEBUG:
-                debug_line = arduino.readline().decode('utf-8', errors='replace').strip()
-                print(f"Arduino (debug): {debug_line}")
-            else:
-                possible_line = arduino.readline().decode('utf-8', errors='replace').strip()
-                print(f"Arduino (unhandled): {possible_line}")
-                logging.warning(f"Unhandled message type: {message_type} | Line: {possible_line}")
-        app.refresh_ui()
+                message_type = arduino.read(1)
+                if message_type == REQUEST_TARGET_WEIGHT:
+                    arduino.write(TARGET_WEIGHT)
+                    arduino.write(f"{target_weight}\n".encode('utf-8'))
+                elif message_type == REQUEST_CALIBRATION:
+                    arduino.write(REQUEST_CALIBRATION)
+                    arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
+                elif message_type == REQUEST_TIME_LIMIT:
+                    arduino.write(REQUEST_TIME_LIMIT)
+                    arduino.write(f"{time_limit}\n".encode('utf-8'))
+                elif message_type == CURRENT_WEIGHT:
+                    current_weight = arduino.readline().decode('utf-8').strip()
+                    try:
+                        weight = float(current_weight)
+                        if weight < 0:
+                            weight = 0.0
+                        app.update_station_weight(station_index, weight)
+                    except Exception as e:
+                        logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
+                        app.update_station_weight(station_index, 0.0)
+                # ...handle other message types as needed...
+            app.refresh_ui()
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
 
-def handle_exit(signum, frame):
-    print("Caught exit signal, cleaning up GPIO...")
-    GPIO.cleanup()
-    sys.exit(0)
+# At startup, load enabled flags:
+station_enabled = load_station_enabled_flags()
 
-signal.signal(signal.SIGINT, handle_exit)
-signal.signal(signal.SIGTERM, handle_exit)
-
+# In your main loop, poll all stations:
 def main():
     try:
         logging.info("Starting main application.")
         load_scale_calibrations()
+        global station_enabled
+        station_enabled = load_station_enabled_flags()
         setup_gpio()
-        app_qt = QApplication(sys.argv)
         app = RelayControlApp(
             set_target_weight_callback=set_target_weight,
             set_time_limit_callback=set_time_limit,
             set_calibrate_callback=calibrate_scale
         )
-        # app.show()
         print('app initialized, contacting arduinos')
 
-        # Clear serial buffers before starting communication
         for arduino in arduinos:
             arduino.reset_input_buffer()
             arduino.reset_output_buffer()
-
-        # Send 'P' (PI READY) to all connected Arduinos after GUI is ready
-        for arduino in arduinos:
             try:
                 arduino.write(b'P')
                 print(f"Sent 'P' (PI READY) to Arduino on {arduino.port}")
             except Exception as e:
                 logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
-        # Start polling loop using QTimer instead of root.after
-        poll_timer = QTimer()
-        poll_timer.timeout.connect(lambda: poll_hardware(app))
-        poll_timer.start(35)  # Match sensor update rate: 35ms ≈ 28.57Hz
+        while True:
+            poll_hardware(app)
+            time.sleep(0.035)
 
-        sys.exit(app_qt.exec())
     except KeyboardInterrupt:
         print("Program interrupted by user.")
         logging.info("Program interrupted by user.")
@@ -742,6 +692,17 @@ def main():
         print("Shutting down...")
         logging.info("Shutting down and cleaning up GPIO.")
         GPIO.cleanup()
+
+def handle_exit(signum=None, frame=None):
+    print("Shutting down...")
+    logging.info("Shutting down and cleaning up GPIO.")
+    GPIO.cleanup()
+    sys.exit(0)
+
+# Register cleanup for normal exit and signals
+atexit.register(handle_exit)
+signal.signal(signal.SIGINT, handle_exit)
+signal.signal(signal.SIGTERM, handle_exit)
 
 if __name__ == "__main__":
     main()
