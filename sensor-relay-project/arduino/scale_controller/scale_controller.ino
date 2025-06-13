@@ -40,6 +40,44 @@ float calibWeight = 61.0;     // Calibration weight in grams
 float cWeight1 = 0.0; // Variable to store the calibration value
 float cWeight2 = 0.0; // Variable to store the calibration value
 
+void handshake_and_calibrate() {
+    // Wait for GET_ID
+    while (true) {
+        if (Serial.available() > 0) {
+            byte cmd = Serial.read();
+            if (cmd == GET_ID) {
+                Serial.println(STATION_ID);
+                break;
+            }
+        }
+        delay(10);
+    }
+
+    // Request calibration from Pi
+    while (true) {
+        Serial.write(REQUEST_CALIBRATION);
+        unsigned long start = millis();
+        bool received = false;
+        while (millis() - start < 500) {
+            if (Serial.available() > 0) {
+                byte messageType = Serial.read();
+                if (messageType == REQUEST_CALIBRATION) {
+                    String receivedData = Serial.readStringUntil('\n');
+                    scaleCalibration = receivedData.toFloat();
+                    scale.set_scale(scaleCalibration);
+                    received = true;
+                    break;
+                }
+            }
+        }
+        if (received) break;
+    }
+
+    // Print the received calibration value for debugging
+    Serial.write(VERBOSE_DEBUG);
+    Serial.print("Calibration value received and applied: ");
+    Serial.println(scaleCalibration);
+}
 
 void setup() {
     pinMode(RELAY_PIN, OUTPUT);
@@ -60,42 +98,7 @@ void setup() {
     scale.set_scale(scaleCalibration); // Set the initial calibration value
     scale.tare(); // Tare the scale
 
-    // Wait for "PI READY" message
-    while (true) {
-        if (Serial.available() > 0) {
-            byte cmd = Serial.read();
-            if (cmd == GET_ID) {
-                Serial.println(STATION_ID);
-                break; // Exit loop and continue setup
-            }
-        }
-        delay(10); // Small delay to avoid busy-waiting
-    }
-
-    // Now Pi is ready, repeatedly request calibration until received
-    while (true) {
-        Serial.write(REQUEST_CALIBRATION); // Request calibration
-        unsigned long start = millis();
-        bool received = false;
-        while (millis() - start < 500) { // Wait up to 500ms for a response
-            if (Serial.available() > 0) {
-                byte messageType = Serial.read(); // Read the message type
-                if (messageType == REQUEST_CALIBRATION) {
-                    String receivedData = Serial.readStringUntil('\n'); // Read the calibration value
-                    scaleCalibration = receivedData.toFloat(); // Convert to float
-                    scale.set_scale(scaleCalibration); // Apply the calibration value
-                    received = true;
-                    break; // Exit the inner wait loop
-                }
-            }
-        }
-        if (received) break; // Exit the outer request loop if calibration received
-    }
-
-    // Print the received calibration value for debugging
-    Serial.write(VERBOSE_DEBUG);
-    Serial.print("Calibration value received and applied: ");
-    Serial.println(scaleCalibration);
+    handshake_and_calibrate();
 }
 
 void loop() {
@@ -107,6 +110,10 @@ void loop() {
     if (Serial.available() > 0) {
         byte messageType = Serial.read();
 
+        if (messageType == GET_ID) {
+            handshake_and_calibrate(); // Re-run handshake and calibration
+        }
+
         // Handle tare command
         if (messageType == TARE_SCALE) {
             Serial.write(VERBOSE_DEBUG);
@@ -115,12 +122,10 @@ void loop() {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Scale tared.");
         }
-
         // Handle recalibration request
         else if (messageType == RESET_CALIBRATION) {
             recalibrate();
         }
-
         else if (messageType == MANUAL_FILL_START) {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Manual fill started.");
@@ -467,4 +472,44 @@ void smart_fill() {
     Serial.write(VERBOSE_DEBUG);
     Serial.print("Final weight: ");
     Serial.println(endWeight);
+}
+
+// Function to handle the handshake and initial calibration with the Raspberry Pi
+void handshake_and_calibrate() {
+    // Wait for GET_ID
+    while (true) {
+        if (Serial.available() > 0) {
+            byte cmd = Serial.read();
+            if (cmd == GET_ID) {
+                Serial.println(STATION_ID);
+                break;
+            }
+        }
+        delay(10);
+    }
+
+    // Request calibration from Pi
+    while (true) {
+        Serial.write(REQUEST_CALIBRATION);
+        unsigned long start = millis();
+        bool received = false;
+        while (millis() - start < 500) {
+            if (Serial.available() > 0) {
+                byte messageType = Serial.read();
+                if (messageType == REQUEST_CALIBRATION) {
+                    String receivedData = Serial.readStringUntil('\n');
+                    scaleCalibration = receivedData.toFloat();
+                    scale.set_scale(scaleCalibration);
+                    received = true;
+                    break;
+                }
+            }
+        }
+        if (received) break;
+    }
+
+    // Print the received calibration value for debugging
+    Serial.write(VERBOSE_DEBUG);
+    Serial.print("Calibration value received and applied: ");
+    Serial.println(scaleCalibration);
 }

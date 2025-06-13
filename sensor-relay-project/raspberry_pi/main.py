@@ -80,15 +80,21 @@ for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
         # Ask for station ID
+        arduino.reset_input_buffer()
         arduino.write(GET_ID)
         time.sleep(0.2)
         if arduino.in_waiting > 0:
-            station_id = int(arduino.readline().decode().strip())
-            print(f"Arduino on {port} reports station ID {station_id}")
-            if 1 <= station_id <= NUM_STATIONS:
-                arduinos[station_id - 1] = arduino
-            else:
-                print(f"Invalid station ID {station_id} from {port}")
+            response = arduino.readline().decode(errors='replace').strip()
+            print(f"Raw station ID response from {port}: {repr(response)}")
+            try:
+                station_id = int(response)
+                print(f"Arduino on {port} reports station ID {station_id}")
+                if 1 <= station_id <= NUM_STATIONS:
+                    arduinos[station_id - 1] = arduino
+                else:
+                    print(f"Invalid station ID {station_id} from {port}")
+            except ValueError:
+                print(f"Could not parse station ID from {port}: {repr(response)}")
         else:
             print(f"No station ID response from {port}")
     except Exception as e:
@@ -649,7 +655,7 @@ def poll_hardware(app):
                 message_type = arduino.read(1)
                 # print(f"Station {station_index+1}: Received message_type: {message_type}")
                 if message_type == REQUEST_TARGET_WEIGHT:
-                    rint(f"Station {station_index+1}: REQUEST_TARGET_WEIGHT")
+                    #print(f"Station {station_index+1}: REQUEST_TARGET_WEIGHT")
                     arduino.write(TARGET_WEIGHT)
                     arduino.write(f"{target_weight}\n".encode('utf-8'))
                 elif message_type == REQUEST_CALIBRATION:

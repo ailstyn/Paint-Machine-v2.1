@@ -170,7 +170,7 @@ class RelayControlApp(QWidget):
         self.setStyleSheet("background-color: #222222;")
 
         # Define station colors
-        bg_colors = ["#CB1212", "#1B7B31", "#2e3192", "#F6EB61"]  # Red, Green, Blue, Yellow
+        bg_colors = ["#CB1212", "#A82E2E", "#2e3192", "#EDE021"]  # Red, Green, Blue, Yellow
 
         # Main grid layout (2x2 for four stations)
         grid = QGridLayout()
