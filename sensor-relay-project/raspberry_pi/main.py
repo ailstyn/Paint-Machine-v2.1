@@ -9,6 +9,7 @@ import sys
 import signal
 from datetime import datetime
 import atexit
+from PyQt6.QtWidgets import QApplication
 
 
 # Configure logging
@@ -663,6 +664,10 @@ def main():
         global station_enabled
         station_enabled = load_station_enabled_flags()
         setup_gpio()
+
+        # Create QApplication before any QWidget
+        app_qt = QApplication(sys.argv)
+
         app = RelayControlApp()
         app.set_target_weight = set_target_weight
         app.set_time_limit = set_time_limit
