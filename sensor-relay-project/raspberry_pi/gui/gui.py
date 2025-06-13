@@ -6,7 +6,7 @@ from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap  # 
 import sys
 import logging
 import os
-from languages import LANGUAGES
+from gui.languages import LANGUAGES
 
 logging.basicConfig(level=logging.INFO)
 
