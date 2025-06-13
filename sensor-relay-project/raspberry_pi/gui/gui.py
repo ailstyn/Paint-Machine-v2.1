@@ -98,6 +98,7 @@ class StationWidget(QWidget):
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        print("MenuDialog: __init__ called")
         self.selected_index = 0
         self.menu_items = [
             "SET TARGET WEIGHT",
@@ -168,6 +169,10 @@ class MenuDialog(QDialog):
         self.update_selection_box()
 
 
+    def show(self):
+        print("MenuDialog: show() called")
+        super().show()
+
 class RelayControlApp(QWidget):
     def __init__(self):
         super().__init__()
@@ -208,6 +213,7 @@ class RelayControlApp(QWidget):
         self.menu_dialog = None  # Track the menu dialog instance
 
     def show_menu(self):
+        print("RelayControlApp: show_menu() called")
         if self.menu_dialog is None or not self.menu_dialog.isVisible():
             self.menu_dialog = MenuDialog(self)
             self.menu_dialog.show()

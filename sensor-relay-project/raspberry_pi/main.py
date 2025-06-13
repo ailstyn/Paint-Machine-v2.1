@@ -377,8 +377,7 @@ def handle_button_presses(app):
                     ping_buzzer()
                 else:
                     ping_buzzer_invalid()
-            # Replace blocking sleep with a short polling debounce
-            for _ in range(20):  # ~0.2s if DEBOUNCE=0.01
+            for _ in range(20):
                 QApplication.processEvents()
                 time.sleep(0.01)
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
@@ -400,16 +399,18 @@ def handle_button_presses(app):
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
-            # If menu is open, activate selected item
             if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
+                print("Menu is open, activating selected item.")
                 app.menu_dialog.activate_selected()
                 print("Menu item activated")
             else:
+                print("Menu is not open, calling show_menu()")
                 app.show_menu()
-                print("Menu opened")
+                print("Menu opened (show_menu called)")
             time.sleep(0.1)
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")
+        print(f"Error in handle_button_presses: {e}")
 
 def startup(app):
     # Display the "CLEAR SCALES" message
