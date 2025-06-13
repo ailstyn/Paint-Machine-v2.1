@@ -633,7 +633,7 @@ def poll_hardware(app):
                     arduino.write(TARGET_WEIGHT)
                     arduino.write(f"{target_weight}\n".encode('utf-8'))
                 elif message_type == REQUEST_CALIBRATION:
-                    print(f"Station {station_index+1} REQUEST_CALIBRATION received")
+                    print(f"Station {station_index+1} REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     arduino.write(REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                 elif message_type == REQUEST_TIME_LIMIT:
