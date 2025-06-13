@@ -428,7 +428,14 @@ def handle_button_presses(app):
                 app.menu_dialog.activate_selected()
             return
 
-        # If no dialog is open, handle main screen buttons (if any)
+        # If no dialog or menu is open, open the menu on SELECT
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            print('select button pressed on main screen, opening menu')
+            if not app.menu_dialog or not app.menu_dialog.isVisible():
+                app.menu_dialog = app.menu_dialog or app.create_menu_dialog()
+                app.menu_dialog.show()
+            return
+
         # (You can add main screen button logic here if needed)
 
     except Exception as e:

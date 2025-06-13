@@ -77,7 +77,10 @@ class StationWidget(QWidget):
         self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
 
     def set_weight(self, current_weight, target_weight, unit="g"):
-        new_text = f"{current_weight:.1f} / {target_weight:.1f} {unit}"
+        if unit == "g":
+            new_text = f"{int(round(current_weight))} / {int(round(target_weight))} g"
+        else:  # "oz"
+            new_text = f"{current_weight:.1f} / {target_weight:.1f} oz"
         if self.weight_label.text() != new_text:
             self.weight_label.setText(new_text)
         self.progress_bar.set_max(target_weight)
@@ -243,6 +246,7 @@ class RelayControlApp(QWidget):
         self.target_weight = 0
         self.time_limit = 0
         self.language = "en"
+        self.units = "g"  # "g" for grams, "oz" for ounces (default "g")
 
         self.menu_dialog = None
         self.language_dialog = None
@@ -268,13 +272,10 @@ class RelayControlApp(QWidget):
 
     def set_target_weight(self, value):
         self.target_weight = value
-        # Update all enabled stations with the new target weight
         for i, widget in enumerate(self.station_widgets):
-            # Only update if not offline
             if widget.weight_label.text() != "OFFLINE":
-                # You may want to keep the current weight, or set to 0 if you don't track it
-                current_weight = 0  # Or use the actual current weight if you have it
-                widget.set_weight(current_weight, self.target_weight)
+                current_weight = 0  # Or use actual current weight if available
+                widget.set_weight(current_weight, self.target_weight, self.units)
 
     def set_time_limit(self, value):
         self.time_limit = value
@@ -287,7 +288,7 @@ class RelayControlApp(QWidget):
         dialog.exec()
 
     def update_station_weight(self, station_index, weight):
-        self.station_widgets[station_index].set_weight(weight, self.target_weight)
+        self.station_widgets[station_index].set_weight(weight, self.target_weight, self.units)
 
     def refresh_ui(self):
         QApplication.processEvents()
@@ -298,6 +299,14 @@ class RelayControlApp(QWidget):
                 widget.set_active(True, self.bg_colors[i], self.bg_colors_deactivated[i])
             else:
                 widget.set_active(False, self.bg_colors[i], self.bg_colors_deactivated[i])
+
+    def set_units(self, units):
+        self.units = units
+        # Refresh all station widgets to update display
+        for i, widget in enumerate(self.station_widgets):
+            # Use actual current weight if available, else 0
+            current_weight = 0
+            widget.set_weight(current_weight, self.target_weight, self.units)
 
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
@@ -427,11 +436,22 @@ class ChangeUnitsDialog(QDialog):
         layout = QVBoxLayout(self)
         label = QLabel(tr("CHOOSE_UNITS"))
         layout.addWidget(label)
-        # Add unit selection widgets
+
+        btn_g = QPushButton("g")
+        btn_oz = QPushButton("oz")
+        layout.addWidget(btn_g)
+        layout.addWidget(btn_oz)
+
+        btn_g.clicked.connect(lambda: self.set_units_and_close("g"))
+        btn_oz.clicked.connect(lambda: self.set_units_and_close("oz"))
+
+        self.setLayout(layout)
         self.setModal(True)
 
-    def tr(self, key):
-        return LANGUAGES.get(self.language, LANGUAGES["en"]).get(key, key)
+    def set_units_and_close(self, units):
+        if self.parent():
+            self.parent().set_units(units)
+        self.accept()
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
