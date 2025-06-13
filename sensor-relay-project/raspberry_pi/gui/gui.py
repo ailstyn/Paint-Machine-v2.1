@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout
+    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap  # <-- Add QPixmap here

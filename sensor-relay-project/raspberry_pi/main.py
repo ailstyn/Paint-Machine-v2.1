@@ -80,25 +80,33 @@ arduinos = [None] * NUM_STATIONS
 for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
-        for attempt in range(5):
+        for attempt in range(10):  # Increase attempts for robustness
             arduino.reset_input_buffer()
             arduino.write(GET_ID)
             time.sleep(0.2)
-            if arduino.in_waiting > 0:
-                response = arduino.readline().decode(errors='replace').strip()
-                print(f"Raw station ID response from {port}: {repr(response)}")
-                try:
-                    station_id = int(response)
-                    print(f"Arduino on {port} reports station ID {station_id}")
-                    if 1 <= station_id <= NUM_STATIONS:
-                        arduinos[station_id - 1] = arduino
-                        break  # Success!
-                    else:
-                        print(f"Invalid station ID {station_id} from {port}")
-                except ValueError:
-                    print(f"Could not parse station ID from {port}: {repr(response)}")
+            found_id = False
+            # Try to read lines until a valid station ID is found
+            for _ in range(10):  # Try up to 10 lines per attempt
+                if arduino.in_waiting > 0:
+                    response = arduino.readline().decode(errors='replace').strip()
+                    print(f"Raw station ID response from {port}: {repr(response)}")
+                    try:
+                        station_id = int(response)
+                        print(f"Arduino on {port} reports station ID {station_id}")
+                        if 1 <= station_id <= NUM_STATIONS:
+                            arduinos[station_id - 1] = arduino
+                            found_id = True
+                            break  # Success!
+                        else:
+                            print(f"Invalid station ID {station_id} from {port}")
+                    except ValueError:
+                        print(f"Ignoring non-integer response from {port}: {repr(response)}")
+                else:
+                    time.sleep(0.1)
+            if found_id:
+                break  # Exit the attempt loop if ID found
             else:
-                print(f"No station ID response from {port}, retrying...")
+                print(f"No valid station ID from {port}, retrying...")
                 time.sleep(0.5)
         else:
             print(f"Failed to get station ID from {port} after retries.")
