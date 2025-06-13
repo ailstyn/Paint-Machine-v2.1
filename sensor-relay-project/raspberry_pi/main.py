@@ -30,30 +30,6 @@ arduino_ports = [
     '/dev/ttyACM3'
 ]
 
-# Create a list of active serial connections
-arduinos = [None] * NUM_STATIONS
-for port in arduino_ports:
-    try:
-        arduino = serial.Serial(port, 9600, timeout=1)
-        # Ask for station ID
-        arduino.write(b'I')  # Suppose 'I' requests station ID
-        time.sleep(0.2)
-        if arduino.in_waiting > 0:
-            station_id = int(arduino.readline().decode().strip())
-            print(f"Arduino on {port} reports station ID {station_id}")
-            if 1 <= station_id <= NUM_STATIONS:
-                arduinos[station_id - 1] = arduino
-            else:
-                print(f"Invalid station ID {station_id} from {port}")
-        else:
-            print(f"No station ID response from {port}")
-    except Exception as e:
-        print(f"Port {port} not available or failed: {e}")
-
-if not arduinos:
-    print("No Arduinos connected. Exiting program.")
-    exit(1)  # Exit if no Arduinos are connected
-
 # Shared variables
 target_weight = 500.0  # Example target weight in grams
 time_limit = 3000  # Example time limit in milliseconds
@@ -96,6 +72,30 @@ fill_time_limit_reached = False
 
 # Usage example:
 NUM_STATIONS = 4  # Set this to however many stations you have
+
+# Create a list of active serial connections
+arduinos = [None] * NUM_STATIONS
+for port in arduino_ports:
+    try:
+        arduino = serial.Serial(port, 9600, timeout=1)
+        # Ask for station ID
+        arduino.write(b'I')  # Suppose 'I' requests station ID
+        time.sleep(0.2)
+        if arduino.in_waiting > 0:
+            station_id = int(arduino.readline().decode().strip())
+            print(f"Arduino on {port} reports station ID {station_id}")
+            if 1 <= station_id <= NUM_STATIONS:
+                arduinos[station_id - 1] = arduino
+            else:
+                print(f"Invalid station ID {station_id} from {port}")
+        else:
+            print(f"No station ID response from {port}")
+    except Exception as e:
+        print(f"Port {port} not available or failed: {e}")
+
+if not arduinos:
+    print("No Arduinos connected. Exiting program.")
+    exit(1)  # Exit if no Arduinos are connected
 
 # Replace your old load/write functions with these:
 def load_scale_calibrations():
