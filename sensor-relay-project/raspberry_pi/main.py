@@ -368,23 +368,29 @@ def ping_buzzer_invalid():
 def handle_button_presses(app):
     try:
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-            print("UP button pressed")
-            if app.selected_index > 0:
-                app.update_selection_dot(app.selected_index - 1)  # Move dot first
-                ping_buzzer()
+            if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
+                app.menu_dialog.select_prev()
             else:
-                ping_buzzer_invalid()
+                print("UP button pressed")
+                if app.selected_index > 0:
+                    app.update_selection_dot(app.selected_index - 1)  # Move dot first
+                    ping_buzzer()
+                else:
+                    ping_buzzer_invalid()
             # Replace blocking sleep with a short polling debounce
             for _ in range(20):  # ~0.2s if DEBOUNCE=0.01
                 QApplication.processEvents()
                 time.sleep(0.01)
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            print("DOWN button pressed")
-            if app.selected_index < len(app.dot_widgets) - 1:
-                app.update_selection_dot(app.selected_index + 1)
-                ping_buzzer()
+            if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
+                app.menu_dialog.select_next()
             else:
-                ping_buzzer_invalid()
+                print("DOWN button pressed")
+                if app.selected_index < len(app.dot_widgets) - 1:
+                    app.update_selection_dot(app.selected_index + 1)
+                    ping_buzzer()
+                else:
+                    ping_buzzer_invalid()
             for _ in range(20):
                 QApplication.processEvents()
                 time.sleep(0.01)
@@ -394,8 +400,13 @@ def handle_button_presses(app):
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
-            app.handle_select()
-            print("handle_select() called")
+            # If menu is open, activate selected item
+            if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
+                app.menu_dialog.activate_selected()
+                print("Menu item activated")
+            else:
+                app.show_menu()
+                print("Menu opened")
             time.sleep(0.1)
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")

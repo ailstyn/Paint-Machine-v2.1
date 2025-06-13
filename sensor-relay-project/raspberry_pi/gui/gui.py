@@ -99,86 +99,61 @@ class MenuDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.selected_index = 0
-        self.setWindowTitle("Menu")
-        self.setModal(True)
-        # Use hardcoded colors
-        fg = "#fff"
-        splash = "#F6EB61"
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: #222;
-                color: {fg};
-                border: 6px solid {fg};
-                border-radius: 24px;
-            }}
-        """)
-
-        # Icon files: (filename, alt text)
-        icon_files = [
-            ("dumbell.png", "Dumbbell"),
-            ("stopwatch.png", "Stopwatch"),
-            ("color.png", "Color"),
-            ("language.png", "Language"),
-            ("ruler.png", "Ruler"),
-            ("geometric-tool.png", "Calibrate"),
+        self.menu_items = [
+            "SET TARGET WEIGHT",
+            "SET TIME LIMIT",
+            "SET LANGUAGE",
+            "CHANGE UNITS",
+            "EXIT"
         ]
-
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(32, 32, 32, 32)
-        layout.setSpacing(32)
-
-        self.icon_labels = []
-        for filename, alt in icon_files:
-            icon_label = QLabel()
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            icon_path = os.path.join(os.path.dirname(__file__), filename)
-            pixmap = QPixmap(icon_path)
-            if not pixmap.isNull():
-                pixmap = pixmap.scaled(96, 96, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-                icon_label.setPixmap(pixmap)
-            icon_label.setFixedSize(112, 112)
-            icon_label.setStyleSheet(f"""
-                border: 6px solid transparent;
-                border-radius: 24px;
-                background: transparent;
-                color: {fg};
-            """)
-            self.icon_labels.append(icon_label)
-            layout.addWidget(icon_label)
+        self.labels = []
+        for item in self.menu_items:
+            label = OutlinedLabel(item)  # Use OutlinedLabel for outlined text
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setFixedSize(160, 80)
+            self.labels.append(label)
+            layout.addWidget(label)
+        self.setLayout(layout)
         self.update_selection_box()
 
-        self.setFixedSize((112 + 32) * len(icon_files) + 32, 176)  # Width: icon+spacing, Height: icon+padding
+        # Make the dialog borderless and add a white border around the widget
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #222;
+                border: 6px solid white;
+                border-radius: 24px;
+            }
+        """)
 
     def update_selection_box(self):
-        fg = "#fff"
-        splash = "#F6EB61"
-        for i, label in enumerate(self.icon_labels):
+        for i, label in enumerate(self.labels):
             if i == self.selected_index:
-                label.setStyleSheet(f"""
-                    border: 6px solid {splash};
-                    border-radius: 24px;
-                    background: transparent;
-                    color: {fg};
-                """)
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid #F6EB61; border-radius: 16px; background: transparent;"
+                )
             else:
-                label.setStyleSheet(f"""
-                    border: 6px solid transparent;
-                    border-radius: 24px;
-                    background: transparent;
-                    color: {fg};
-                """)
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid transparent; border-radius: 16px; background: transparent;"
+                )
 
     def select_next(self):
-        self.selected_index = (self.selected_index + 1) % len(self.icon_labels)
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
         self.update_selection_box()
 
     def select_prev(self):
-        self.selected_index = (self.selected_index - 1) % len(self.icon_labels)
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
         self.update_selection_box()
 
     def activate_selected(self):
-        # ... your activation logic ...
-        self.accept()
+        selected = self.menu_items[self.selected_index]
+        if selected == "EXIT":
+            self.accept()  # Just close the menu
+        else:
+            # Handle other menu actions here
+            print(f"Selected: {selected}")
+            self.accept()  # Optionally close the menu after other actions
 
     def update_colors(self, color_scheme):
         self.color_scheme = color_scheme
@@ -230,9 +205,12 @@ class RelayControlApp(QWidget):
         self.time_limit = 0
         self.language = "en"
 
+        self.menu_dialog = None  # Track the menu dialog instance
+
     def show_menu(self):
-        menu = MenuDialog(self)
-        menu.exec()
+        if self.menu_dialog is None or not self.menu_dialog.isVisible():
+            self.menu_dialog = MenuDialog(self)
+            self.menu_dialog.show()
 
     def set_target_weight(self, value):
         self.target_weight = value
