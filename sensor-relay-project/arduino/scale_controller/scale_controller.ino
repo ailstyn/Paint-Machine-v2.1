@@ -62,6 +62,12 @@ void setup() {
 
     // Wait for "PI READY" message
     while (true) {
+        // Blink LED rapidly while waiting for 'P'
+        digitalWrite(LED_PIN, HIGH);
+        delay(100);
+        digitalWrite(LED_PIN, LOW);
+        delay(100);
+
         if (Serial.available() > 0) {
             byte msg = Serial.read();
             if (msg == 'P') {
