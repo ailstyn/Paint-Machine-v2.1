@@ -27,6 +27,9 @@
 #define FILL_TIME 0x15
 #define MANUAL_FILL_START 0x20
 #define MANUAL_FILL_END 0x21
+#define EXIT_MANUAL_END 0x22
+#define SMART_FILL_START 0x30
+#define SMART_FILL_END   0x31
 
 
 // Global variables
@@ -143,12 +146,12 @@ void fill() {
     // Wait to receive the target weight from the Raspberry Pi
     while (true) {
         if (Serial.available() > 0) {
-            byte messageType = Serial.read(); // Read the message type
-            if (messageType == TARGET_WEIGHT) { // Check for the TARGET_WEIGHT response
-                receivedData = Serial.readStringUntil('\n'); // Read the target weight
-                targetWeight = receivedData.toFloat(); // Convert to float
-                break; // Exit the loop once the target weight is received
-            } else if (messageType == RELAY_DEACTIVATED) { // Check for the RELAY_DEACTIVATED message
+            byte messageType = Serial.read();
+            if (messageType == TARGET_WEIGHT) {
+                receivedData = Serial.readStringUntil('\n');
+                targetWeight = receivedData.toFloat();
+                break;
+            } else if (messageType == RELAY_DEACTIVATED) {
                 Serial.println("E-Stop activated. Aborting fill process.");
                 digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
@@ -352,6 +355,29 @@ void manual_fill() {
 
 void smart_fill() {
     scale.tare();
+
+    // Request target weight from Raspberry Pi
+    Serial.write(REQUEST_TARGET_WEIGHT);
+
+    String receivedData = "";
+    float targetWeight = 0.0;
+
+    // Wait to receive the target weight from the Raspberry Pi
+    while (true) {
+        if (Serial.available() > 0) {
+            byte messageType = Serial.read();
+            if (messageType == TARGET_WEIGHT) {
+                receivedData = Serial.readStringUntil('\n');
+                targetWeight = receivedData.toFloat();
+                break;
+            } else if (messageType == RELAY_DEACTIVATED) {
+                Serial.println("E-Stop activated. Aborting smart fill.");
+                digitalWrite(LED_PIN, LOW);
+                return;
+            }
+        }
+    }
+
     digitalWrite(RELAY_PIN, HIGH); // Turn relay ON
     Serial.write(SMART_FILL_START);
 
