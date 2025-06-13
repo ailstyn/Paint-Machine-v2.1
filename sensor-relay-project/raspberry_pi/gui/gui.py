@@ -9,13 +9,6 @@ import os
 
 logging.basicConfig(level=logging.INFO)
 
-COLOR_SCHEMES = [
-    {"name": "Classic Blue", "bg": "#2e3192", "fg": "#FFFFFF", "splash": "#CB1212", "highlight": "#FFFFFF"},
-    {"name": "Dark Mode", "bg": "#333333", "fg": "#FFFFFF", "splash": "#F6EB61", "highlight": "#FFFFFF"},
-    {"name": "Light Mode", "bg": "#F5FFFA", "fg": "#000000", "splash": "#800020", "highlight": "#FFFFFF"},
-    {"name": "Green Alert", "bg": "#1B7B31", "fg": "#FFFFFF", "splash": "#B84E44", "highlight": "#FFFFFF"},
-]
-
 class OutlinedLabel(QLabel):
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)

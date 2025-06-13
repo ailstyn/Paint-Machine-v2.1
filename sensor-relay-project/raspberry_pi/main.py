@@ -8,7 +8,6 @@ from gui.languages import LANGUAGES
 import sys
 import signal
 from datetime import datetime
-import atexit
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 
@@ -690,7 +689,6 @@ def main():
         timer.start(35)  # 35 ms interval
 
         sys.exit(app_qt.exec())
-
     except KeyboardInterrupt:
         print("Program interrupted by user.")
         logging.info("Program interrupted by user.")
@@ -700,17 +698,6 @@ def main():
         print("Shutting down...")
         logging.info("Shutting down and cleaning up GPIO.")
         GPIO.cleanup()
-
-def handle_exit(signum=None, frame=None):
-    print("Shutting down...")
-    logging.info("Shutting down and cleaning up GPIO.")
-    GPIO.cleanup()
-    sys.exit(0)
-
-# Register cleanup for normal exit and signals
-atexit.register(handle_exit)
-signal.signal(signal.SIGINT, handle_exit)
-signal.signal(signal.SIGTERM, handle_exit)
 
 # Uncaught exception logging
 def log_uncaught_exceptions(exctype, value, tb):
