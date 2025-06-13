@@ -716,6 +716,8 @@ def main():
         for i, widget in enumerate(app.station_widgets):
             if not station_enabled[i]:
                 widget.set_offline(bg_colors_deactivated[i])
+            if station_enabled[i]:
+                widget.set_weight(0, target_weight)
 
         for arduino in arduinos:
             if arduino is not None:

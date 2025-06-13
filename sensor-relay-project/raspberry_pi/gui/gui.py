@@ -233,6 +233,13 @@ class RelayControlApp(QWidget):
 
     def set_target_weight(self, value):
         self.target_weight = value
+        # Update all enabled stations with the new target weight
+        for i, widget in enumerate(self.station_widgets):
+            # Only update if not offline
+            if widget.weight_label.text() != "OFFLINE":
+                # You may want to keep the current weight, or set to 0 if you don't track it
+                current_weight = 0  # Or use the actual current weight if you have it
+                widget.set_weight(current_weight, self.target_weight)
 
     def set_time_limit(self, value):
         self.time_limit = value
@@ -245,7 +252,7 @@ class RelayControlApp(QWidget):
         dialog.exec()
 
     def update_station_weight(self, station_index, weight):
-        self.station_widgets[station_index].set_weight(weight, self.target_weight)
+        self.station_widgets[station_index].set_weight(weight, target_weight)
 
     def refresh_ui(self):
         QApplication.processEvents()
