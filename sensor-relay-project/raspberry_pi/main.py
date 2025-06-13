@@ -761,6 +761,11 @@ def main():
         timer.timeout.connect(lambda: poll_hardware(app))
         timer.start(35)  # 35 ms interval
 
+        # Use QTimer for polling GPIO buttons
+        button_timer = QTimer()
+        button_timer.timeout.connect(lambda: handle_button_presses(app))
+        button_timer.start(50)  # 50 ms interval
+
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
         print("Program interrupted by user.")
