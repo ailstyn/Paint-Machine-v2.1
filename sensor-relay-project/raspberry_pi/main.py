@@ -10,6 +10,7 @@ import signal
 from datetime import datetime
 import atexit
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QTimer
 
 
 # Configure logging
@@ -683,9 +684,12 @@ def main():
             except Exception as e:
                 logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
-        while True:
-            poll_hardware(app)
-            time.sleep(0.035)
+        # Use QTimer for polling instead of while True
+        timer = QTimer()
+        timer.timeout.connect(lambda: poll_hardware(app))
+        timer.start(35)  # 35 ms interval
+
+        sys.exit(app_qt.exec())
 
     except KeyboardInterrupt:
         print("Program interrupted by user.")
