@@ -371,12 +371,8 @@ def handle_button_presses(app):
             if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
                 app.menu_dialog.select_prev()
             else:
-                print("UP button pressed")
-                if app.selected_index > 0:
-                    app.update_selection_dot(app.selected_index - 1)  # Move dot first
-                    ping_buzzer()
-                else:
-                    ping_buzzer_invalid()
+                print("UP button pressed (no action on main screen)")
+                ping_buzzer_invalid()
             for _ in range(20):
                 QApplication.processEvents()
                 time.sleep(0.01)
@@ -384,17 +380,13 @@ def handle_button_presses(app):
             if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
                 app.menu_dialog.select_next()
             else:
-                print("DOWN button pressed")
-                if app.selected_index < len(app.dot_widgets) - 1:
-                    app.update_selection_dot(app.selected_index + 1)
-                    ping_buzzer()
-                else:
-                    ping_buzzer_invalid()
+                print("DOWN button pressed (no action on main screen)")
+                ping_buzzer_invalid()
             for _ in range(20):
                 QApplication.processEvents()
                 time.sleep(0.01)
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            print(f"SELECT button pressed at index {app.selected_index}")
+            print("SELECT button pressed")
             ping_buzzer()
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
@@ -406,8 +398,6 @@ def handle_button_presses(app):
             else:
                 print("Menu is not open, calling show_menu()")
                 app.show_menu()
-                print("Menu opened (show_menu called)")
-            time.sleep(0.1)
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")
         print(f"Error in handle_button_presses: {e}")
