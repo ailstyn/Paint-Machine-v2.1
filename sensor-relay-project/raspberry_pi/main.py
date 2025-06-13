@@ -604,12 +604,16 @@ def load_station_enabled_flags():
 def poll_hardware(app):
     global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED
     try:
+        print("Polling hardware...")  # Top-level poll
         for station_index, arduino in enumerate(arduinos):
+            print(f"Checking station {station_index+1} (enabled={station_enabled[station_index]})")
             if not station_enabled[station_index]:
                 continue  # Skip disabled stations
 
+            print(f"Station {station_index+1}: Arduino in_waiting = {arduino.in_waiting}")
             estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
             if estop_pressed:
+                print(f"Station {station_index+1}: E-STOP pressed")
                 if not E_STOP:
                     E_STOP = True
                     app.overlay_widget.show_overlay(
@@ -618,30 +622,37 @@ def poll_hardware(app):
                         color="#CD0A0A"
                     )
                 while arduino.in_waiting > 0:
+                    print(f"Station {station_index+1}: Flushing serial buffer due to E-STOP")
                     arduino.read(arduino.in_waiting)
                     arduino.write(E_STOP_ACTIVATED)
                 continue
 
             if E_STOP:
+                print("E-STOP cleared")
                 E_STOP = False
                 app.overlay_widget.hide_overlay()
 
             # Normal operation for this station
             while arduino.in_waiting > 0:
+                print(f"Station {station_index+1}: Reading message type...")
                 message_type = arduino.read(1)
+                print(f"Station {station_index+1}: Received message_type: {message_type}")
                 if message_type == REQUEST_TARGET_WEIGHT:
+                    print(f"Station {station_index+1}: REQUEST_TARGET_WEIGHT")
                     arduino.write(TARGET_WEIGHT)
                     arduino.write(f"{target_weight}\n".encode('utf-8'))
                 elif message_type == REQUEST_CALIBRATION:
-                    print(f"Station {station_index+1} REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                    print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     arduino.write(REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                 elif message_type == REQUEST_TIME_LIMIT:
+                    print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
                     arduino.write(REQUEST_TIME_LIMIT)
                     arduino.write(f"{time_limit}\n".encode('utf-8'))
                 elif message_type == CURRENT_WEIGHT:
+                    print(f"Station {station_index+1}: CURRENT_WEIGHT")
                     current_weight = arduino.readline().decode('utf-8').strip()
-                    print(f"Station {station_index+1} CURRENT_WEIGHT raw: '{current_weight}'")  # <-- Add this line
+                    print(f"Station {station_index+1} CURRENT_WEIGHT raw: '{current_weight}'")
                     try:
                         weight = float(current_weight)
                         if weight < 0:
@@ -650,10 +661,12 @@ def poll_hardware(app):
                     except Exception as e:
                         logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
                         app.update_station_weight(station_index, 0.0)
-                # ...handle other message types as needed...
+                else:
+                    print(f"Station {station_index+1}: Unknown message_type: {message_type}")
             app.refresh_ui()
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
+        print(f"Error in poll_hardware: {e}")
 
 # At startup, load enabled flags:
 station_enabled = load_station_enabled_flags()
