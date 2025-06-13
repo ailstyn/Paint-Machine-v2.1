@@ -53,6 +53,7 @@ CALIBRATION_WEIGHT = b'\x14'  # New byte for calibration weight
 E_STOP_ACTIVATED = b'\xEE'
 FILL_TIME = b'\x15'
 FINAL_WEIGHT = b'\x11'
+GET_ID = b'\xA0'  # New byte to request station ID
 
 
 # GPIO pin assignments for buttons
@@ -79,7 +80,7 @@ for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
         # Ask for station ID
-        arduino.write(b'I')  # Suppose 'I' requests station ID
+        arduino.write(bytes([GET_ID]))
         time.sleep(0.2)
         if arduino.in_waiting > 0:
             station_id = int(arduino.readline().decode().strip())

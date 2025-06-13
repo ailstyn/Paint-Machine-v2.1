@@ -62,18 +62,14 @@ void setup() {
 
     // Wait for "PI READY" message
     while (true) {
-        // Blink LED rapidly while waiting for 'P'
-        digitalWrite(LED_PIN, HIGH);
-        delay(100);
-        digitalWrite(LED_PIN, LOW);
-        delay(100);
-
         if (Serial.available() > 0) {
-            byte msg = Serial.read();
-            if (msg == 'P') {
-                break;
+            byte cmd = Serial.read();
+            if (cmd == GET_ID) {
+                Serial.println(STATION_ID);
+                break; // Exit loop and continue setup
             }
         }
+        delay(10); // Small delay to avoid busy-waiting
     }
 
     // Now Pi is ready, repeatedly request calibration until received
@@ -135,14 +131,6 @@ void loop() {
     long weight = scale.get_units(3);
     Serial.write(CURRENT_WEIGHT);
     Serial.println(weight);
-
-    if (Serial.available() > 0) {
-        byte cmd = Serial.read();
-        if (cmd == GET_ID) {
-            Serial.println(STATION_ID); // Respond with the station ID
-        }
-        // ... other commands ...
-    }
 }
 
 // Function to handle the fill process
