@@ -367,37 +367,55 @@ def ping_buzzer_invalid():
 
 def handle_button_presses(app):
     try:
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-            if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
+        # Check the topmost dialog first (order matters: most recently opened first)
+        if app.language_dialog and app.language_dialog.isVisible():
+            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                app.language_dialog.select_prev()
+            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                app.language_dialog.select_next()
+            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                app.language_dialog.activate_selected()
+            return
+
+        elif app.target_weight_dialog and app.target_weight_dialog.isVisible():
+            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                app.target_weight_dialog.select_prev()
+            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                app.target_weight_dialog.select_next()
+            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                app.target_weight_dialog.activate_selected()
+            return
+
+        elif app.time_limit_dialog and app.time_limit_dialog.isVisible():
+            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                app.time_limit_dialog.select_prev()
+            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                app.time_limit_dialog.select_next()
+            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                app.time_limit_dialog.activate_selected()
+            return
+
+        elif app.change_units_dialog and app.change_units_dialog.isVisible():
+            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                app.change_units_dialog.select_prev()
+            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                app.change_units_dialog.select_next()
+            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                app.change_units_dialog.activate_selected()
+            return
+
+        elif app.menu_dialog and app.menu_dialog.isVisible():
+            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 app.menu_dialog.select_prev()
-            else:
-                print("UP button pressed (no action on main screen)")
-                ping_buzzer_invalid()
-            for _ in range(20):
-                QApplication.processEvents()
-                time.sleep(0.01)
-        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
+            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 app.menu_dialog.select_next()
-            else:
-                print("DOWN button pressed (no action on main screen)")
-                ping_buzzer_invalid()
-            for _ in range(20):
-                QApplication.processEvents()
-                time.sleep(0.01)
-        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            print("SELECT button pressed")
-            ping_buzzer()
-            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                QApplication.processEvents()
-                time.sleep(0.01)
-            if hasattr(app, "menu_dialog") and app.menu_dialog and app.menu_dialog.isVisible():
-                print("Menu is open, activating selected item.")
+            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 app.menu_dialog.activate_selected()
-                print("Menu item activated")
-            else:
-                print("Menu is not open, calling show_menu()")
-                app.show_menu()
+            return
+
+        # If no dialog is open, handle main screen buttons (if any)
+        # (You can add main screen button logic here if needed)
+
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")
         print(f"Error in handle_button_presses: {e}")

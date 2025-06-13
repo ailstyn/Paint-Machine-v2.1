@@ -153,24 +153,42 @@ class MenuDialog(QDialog):
         selected_key = self.menu_keys[self.selected_index]
         selected_label = self.menu_items[self.selected_index]
         print(f"Menu item selected: {selected_key} ({selected_label})")
+        parent = self.parent()
         if selected_key == "EXIT":
             self.accept()
         elif selected_key == "SET TARGET WEIGHT":
-            dialog = SetTargetWeightDialog(self)
-            dialog.exec()
-            self.accept()
+            self.hide()
+            parent.target_weight_dialog = SetTargetWeightDialog(parent)
+            parent.target_weight_dialog.finished.connect(self.show_again)
+            parent.target_weight_dialog.show()
         elif selected_key == "SET TIME LIMIT":
-            dialog = SetTimeLimitDialog(self)
-            dialog.exec()
-            self.accept()
+            self.hide()
+            parent.time_limit_dialog = SetTimeLimitDialog(parent)
+            parent.time_limit_dialog.finished.connect(self.show_again)
+            parent.time_limit_dialog.show()
         elif selected_key == "SET LANGUAGE":
-            dialog = SetLanguageDialog(self)
-            dialog.exec()
-            self.accept()
+            self.hide()
+            parent.language_dialog = SetLanguageDialog(parent)
+            parent.language_dialog.finished.connect(self.show_again)
+            parent.language_dialog.show()
         elif selected_key == "CHANGE UNITS":
-            dialog = ChangeUnitsDialog(self)
-            dialog.exec()
-            self.accept()
+            self.hide()
+            parent.change_units_dialog = ChangeUnitsDialog(parent)
+            parent.change_units_dialog.finished.connect(self.show_again)
+            parent.change_units_dialog.show()
+
+    def show_again(self):
+        self.show()
+        # Optionally clear dialog references in parent
+        parent = self.parent()
+        if hasattr(parent, "target_weight_dialog"):
+            parent.target_weight_dialog = None
+        if hasattr(parent, "time_limit_dialog"):
+            parent.time_limit_dialog = None
+        if hasattr(parent, "language_dialog"):
+            parent.language_dialog = None
+        if hasattr(parent, "change_units_dialog"):
+            parent.change_units_dialog = None
 
     def update_colors(self, color_scheme):
         self.color_scheme = color_scheme
@@ -226,7 +244,20 @@ class RelayControlApp(QWidget):
         self.time_limit = 0
         self.language = "en"
 
-        self.menu_dialog = None  # Track the menu dialog instance
+        self.menu_dialog = None
+        self.language_dialog = None
+        self.target_weight_dialog = None
+        self.time_limit_dialog = None
+        self.change_units_dialog = None
+
+        self.setGeometry(
+            QStyle.alignedRect(
+                Qt.LayoutDirection.LeftToRight,
+                Qt.AlignmentFlag.AlignCenter,
+                self.size(),
+                QApplication.primaryScreen().availableGeometry()
+            )
+        )
 
     def show_menu(self):
         print("RelayControlApp: show_menu() called")
@@ -315,6 +346,7 @@ class VerticalProgressBar(QWidget):
 class SetTargetWeightDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
         self.setWindowTitle(tr("SET_TARGET_WEIGHT"))
         layout = QVBoxLayout(self)
@@ -326,6 +358,7 @@ class SetTargetWeightDialog(QDialog):
 class SetTimeLimitDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
         self.setWindowTitle(tr("SET_TIME_LIMIT"))
         layout = QVBoxLayout(self)
@@ -337,6 +370,7 @@ class SetTimeLimitDialog(QDialog):
 class SetLanguageDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.parent_app = parent
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
         self.languages = [("en", "English"), ("es", "Español")]
@@ -386,6 +420,7 @@ class SetLanguageDialog(QDialog):
 class ChangeUnitsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
         self.setWindowTitle(tr("CHANGE_UNITS"))
         layout = QVBoxLayout(self)
