@@ -48,14 +48,29 @@ class StationWidget(QWidget):
         super().__init__(*args, **kwargs)
         self.station_number = station_number
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
-        # Weight display label (current / target)
+        # Decide bar position: left for 0/1, right for 2/3
+        bar_on_left = station_number in (1, 2)
+        self.progress_bar = VerticalProgressBar(max_value=100, value=0, bar_color="#F6EB61")
+        self.progress_bar.setFixedWidth(24)
+
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
         self.weight_label = OutlinedLabel("0.0 / 0.0 g")
         self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
-        layout.addWidget(self.weight_label)
+        content_layout.addWidget(self.weight_label)
+
+        if bar_on_left:
+            main_layout.addWidget(self.progress_bar)
+            main_layout.addLayout(content_layout)
+        else:
+            main_layout.addLayout(content_layout)
+            main_layout.addWidget(self.progress_bar)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
@@ -64,6 +79,21 @@ class StationWidget(QWidget):
         new_text = f"{current_weight:.1f} / {target_weight:.1f} {unit}"
         if self.weight_label.text() != new_text:
             self.weight_label.setText(new_text)
+        self.progress_bar.set_max(target_weight)
+        self.progress_bar.set_value(current_weight)
+
+    def set_active(self, active, bg_color=None, bg_color_deactivated=None):
+        if active:
+            color = bg_color if bg_color else "#FFFFFF"
+        else:
+            color = bg_color_deactivated if bg_color_deactivated else "#444444"
+        self.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
+
+    def set_offline(self, bg_color_deactivated="#444444"):
+        self.weight_label.setText("OFFLINE")
+        self.progress_bar.set_value(0)
+        self.progress_bar.set_max(1)
+        self.setStyleSheet(f"background-color: {bg_color_deactivated}; border: 2px solid #222;")
 
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
@@ -170,7 +200,8 @@ class RelayControlApp(QWidget):
         self.setStyleSheet("background-color: #222222;")
 
         # Define station colors
-        bg_colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]  # Red, Green, Blue, Yellow
+        self.bg_colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]  # Active: Red, Blue, Green, Yellow
+        self.bg_colors_deactivated = ["#6c2222", "#22305a", "#2b4d2b", "#b1a93a"]  # Deactivated: darker shades
 
         # Main grid layout (2x2 for four stations)
         grid = QGridLayout()
@@ -179,10 +210,10 @@ class RelayControlApp(QWidget):
 
         # Explicitly assign widgets to grid positions with color
         self.station_widgets = [None] * 4
-        self.station_widgets[0] = StationWidget(1, bg_colors[0])  # Station 1
-        self.station_widgets[1] = StationWidget(2, bg_colors[1])  # Station 2
-        self.station_widgets[2] = StationWidget(3, bg_colors[2])  # Station 3
-        self.station_widgets[3] = StationWidget(4, bg_colors[3])  # Station 4
+        self.station_widgets[0] = StationWidget(1, self.bg_colors[0])  # Station 1
+        self.station_widgets[1] = StationWidget(2, self.bg_colors[1])  # Station 2
+        self.station_widgets[2] = StationWidget(3, self.bg_colors[2])  # Station 3
+        self.station_widgets[3] = StationWidget(4, self.bg_colors[3])  # Station 4
 
         grid.addWidget(self.station_widgets[0], 0, 0)  # Top left
         grid.addWidget(self.station_widgets[1], 1, 0)  # Bottom left
@@ -219,6 +250,13 @@ class RelayControlApp(QWidget):
     def refresh_ui(self):
         QApplication.processEvents()
 
+    def update_station_states(self, station_enabled):
+        for i, widget in enumerate(self.station_widgets):
+            if station_enabled[i]:
+                widget.set_active(True, self.bg_colors[i], self.bg_colors_deactivated[i])
+            else:
+                widget.set_active(False, self.bg_colors[i], self.bg_colors_deactivated[i])
+
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
         super().__init__(parent)
@@ -231,6 +269,38 @@ class InfoDialog(QDialog):
         self.ok_button.clicked.connect(self.accept)
         layout.addWidget(self.ok_button)
         self.setModal(True)
+
+class VerticalProgressBar(QWidget):
+    def __init__(self, max_value=100, value=0, bar_color="#F6EB61", parent=None):
+        super().__init__(parent)
+        self.max_value = max_value
+        self.value = value
+        self.bar_color = bar_color
+
+    def set_value(self, value):
+        self.value = value
+        self.update()
+
+    def set_max(self, max_value):
+        self.max_value = max_value
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        rect = self.rect()
+        # Draw background
+        painter.setBrush(QColor("#333"))
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(rect)
+        # Draw bar
+        if self.max_value > 0:
+            fill_ratio = min(max(self.value / self.max_value, 0), 1)
+        else:
+            fill_ratio = 0
+        bar_height = int(rect.height() * fill_ratio)
+        bar_rect = rect.adjusted(4, rect.height() - bar_height + 4, -4, -4)
+        painter.setBrush(QColor(self.bar_color))
+        painter.drawRect(bar_rect)
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):

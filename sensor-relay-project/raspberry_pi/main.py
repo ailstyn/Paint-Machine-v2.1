@@ -679,7 +679,12 @@ def poll_hardware(app):
                         logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
                         app.update_station_weight(station_index, 0.0)
                 else:
-                    print(f"Station {station_index+1}: Unknown message_type: {message_type}")
+                    # Try to read the rest of the line for context
+                    if arduino.in_waiting > 0:
+                        extra = arduino.readline().decode('utf-8', errors='replace').strip()
+                        print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
+                    else:
+                        print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
             app.refresh_ui()
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
@@ -740,4 +745,8 @@ def log_uncaught_exceptions(exctype, value, tb):
 sys.excepthook = log_uncaught_exceptions
 
 if __name__ == "__main__":
+    bg_colors_deactivated = ["#6c2222", "#22305a", "#2b4d2b", "#b1a93a"]
+    for i, widget in enumerate(app.station_widgets):
+        if not station_enabled[i]:
+            widget.set_offline(bg_colors_deactivated[i])
     main()
