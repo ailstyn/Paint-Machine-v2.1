@@ -640,6 +640,7 @@ def poll_hardware(app):
                     arduino.write(f"{time_limit}\n".encode('utf-8'))
                 elif message_type == CURRENT_WEIGHT:
                     current_weight = arduino.readline().decode('utf-8').strip()
+                    print(f"Station {station_index+1} CURRENT_WEIGHT raw: '{current_weight}'")  # <-- Add this line
                     try:
                         weight = float(current_weight)
                         if weight < 0:
