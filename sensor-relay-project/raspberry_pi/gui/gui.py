@@ -365,6 +365,18 @@ class SetTargetWeightDialog(QDialog):
         # Add input widgets as needed (QLineEdit, buttons, etc.)
         self.setModal(True)
 
+    def select_prev(self):
+        # Implement logic to decrease value or move selection, if needed
+        pass
+
+    def select_next(self):
+        # Implement logic to increase value or move selection, if needed
+        pass
+
+    def activate_selected(self):
+        # Implement logic to confirm selection, or just close dialog
+        self.accept()
+
 class SetTimeLimitDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -377,27 +389,46 @@ class SetTimeLimitDialog(QDialog):
         # Add input widgets as needed
         self.setModal(True)
 
-class SetLanguageDialog(QDialog):
+    def select_prev(self):
+        pass
+
+    def select_next(self):
+        pass
+
+    def activate_selected(self):
+        self.accept()
+
+class SetLanguageDialog(SelectionDialog):
+    def __init__(self, parent=None):
+        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
+        options = [("en", "English"), ("es", "Español")]
+        super().__init__(options, parent, title=tr("SET_LANGUAGE_TITLE"), label_text=tr("CHOOSE_LANGUAGE"))
+        self.parent_app = parent
+
+    def on_select(self, lang_code):
+        if self.parent_app:
+            self.parent_app.set_language(lang_code)
+
+class ChangeUnitsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.parent_app = parent
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        self.languages = [("en", "English"), ("es", "Español")]
-        self.selected_index = 0
-
-        self.setWindowTitle(tr("SET_LANGUAGE_TITLE"))
+        self.setWindowTitle(tr("CHANGE_UNITS"))
         layout = QVBoxLayout(self)
-        label = QLabel(tr("CHOOSE_LANGUAGE"))
+        label = QLabel(tr("CHOOSE_UNITS"))
         layout.addWidget(label)
 
+        self.units_options = ["g", "oz"]
+        self.selected_index = 0
+
         self.labels = []
-        for code, name in self.languages:
-            lang_label = OutlinedLabel(name)
-            lang_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lang_label.setFixedSize(320, 64)
-            self.labels.append(lang_label)
-            layout.addWidget(lang_label)
+        for unit in self.units_options:
+            unit_label = OutlinedLabel(unit)
+            unit_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            unit_label.setFixedSize(320, 64)
+            self.labels.append(unit_label)
+            layout.addWidget(unit_label)
         self.setLayout(layout)
         self.update_selection_box()
         self.setModal(True)
@@ -422,36 +453,61 @@ class SetLanguageDialog(QDialog):
         self.update_selection_box()
 
     def activate_selected(self):
-        lang_code = self.languages[self.selected_index][0]
-        if self.parent_app:
-            self.parent_app.set_language(lang_code)
-        self.accept()
-
-class ChangeUnitsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        self.setWindowTitle(tr("CHANGE_UNITS"))
-        layout = QVBoxLayout(self)
-        label = QLabel(tr("CHOOSE_UNITS"))
-        layout.addWidget(label)
-
-        btn_g = QPushButton("g")
-        btn_oz = QPushButton("oz")
-        layout.addWidget(btn_g)
-        layout.addWidget(btn_oz)
-
-        btn_g.clicked.connect(lambda: self.set_units_and_close("g"))
-        btn_oz.clicked.connect(lambda: self.set_units_and_close("oz"))
-
-        self.setLayout(layout)
-        self.setModal(True)
-
-    def set_units_and_close(self, units):
+        units = self.units_options[self.selected_index]
         if self.parent():
             self.parent().set_units(units)
         self.accept()
+
+class SelectionDialog(QDialog):
+    def __init__(self, options, parent=None, title="", label_text="", outlined=True):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.selected_index = 0
+        self.options = options  # List of (value, display_text) tuples
+        layout = QVBoxLayout(self)
+        if label_text:
+            label = QLabel(label_text)
+            layout.addWidget(label)
+        self.labels = []
+        for _, display_text in self.options:
+            if outlined:
+                item_label = OutlinedLabel(display_text)
+            else:
+                item_label = QLabel(display_text)
+            item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_label.setFixedSize(320, 64)
+            self.labels.append(item_label)
+            layout.addWidget(item_label)
+        self.setLayout(layout)
+        self.update_selection_box()
+        self.setModal(True)
+
+    def update_selection_box(self):
+        for i, label in enumerate(self.labels):
+            if i == self.selected_index:
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid #F6EB61; border-radius: 16px; background: transparent;"
+                )
+            else:
+                label.setStyleSheet(
+                    "font-size: 24px; border: 4px solid transparent; border-radius: 16px; background: transparent;"
+                )
+
+    def select_next(self):
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
+        self.update_selection_box()
+
+    def select_prev(self):
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
+        self.update_selection_box()
+
+    def activate_selected(self):
+        self.on_select(self.options[self.selected_index][0])
+        self.accept()
+
+    def on_select(self, value):
+        """Override this in subclasses to handle selection."""
+        pass
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
