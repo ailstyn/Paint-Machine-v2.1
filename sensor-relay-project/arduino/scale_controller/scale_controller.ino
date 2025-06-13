@@ -349,3 +349,92 @@ void manual_fill() {
         digitalWrite(RELAY_PIN, HIGH); // Relay OFF
     }
 }
+
+void smart_fill() {
+    scale.tare();
+    digitalWrite(RELAY_PIN, HIGH); // Turn relay ON
+    Serial.write(SMART_FILL_START);
+
+    // Wait for weight to start increasing (paint arrives)
+    long baselineWeight = scale.get_units(3);
+    long startWeight = baselineWeight;
+    unsigned long startTime = millis();
+    const long threshold = 2; // grams, adjust as needed
+    const unsigned long maxWait = 3000; // ms, timeout to avoid infinite wait
+
+    unsigned long waitStart = millis();
+    while (true) {
+        long currentWeight = scale.get_units(3);
+        if (currentWeight - baselineWeight >= threshold) {
+            startWeight = currentWeight;
+            startTime = millis();
+            break;
+        }
+        if (millis() - waitStart > maxWait) {
+            startWeight = baselineWeight;
+            startTime = waitStart;
+            break;
+        }
+        delay(10);
+    }
+
+    unsigned long fillStartTime = startTime;
+    long halfWeight = startWeight;
+    unsigned long halfTime = startTime;
+    long endWeight = startWeight;
+    unsigned long endTime = startTime;
+
+    // 1. Fill until 50% of target weight
+    while (true) {
+        long weight = scale.get_units(3);
+        Serial.write(CURRENT_WEIGHT);
+        Serial.println(weight);
+
+        if (weight >= (targetWeight * 0.5)) {
+            halfWeight = weight;
+            halfTime = millis();
+            break;
+        }
+
+        // Optional: timeout check here if needed
+    }
+
+    // 2. Calculate flow rate (g/ms) using start and halfway point
+    float deltaWeight = halfWeight - startWeight;
+    unsigned long deltaTime = halfTime - startTime;
+    float flowRate = 0.0;
+    if (deltaTime > 0) {
+        flowRate = deltaWeight / (float)deltaTime; // g/ms
+    }
+
+    // 3. Predict remaining time to reach target weight
+    float remainingWeight = targetWeight - halfWeight;
+    unsigned long predictedTime = 0;
+    if (flowRate > 0) {
+        predictedTime = (unsigned long)(remainingWeight / flowRate);
+    }
+
+    // 4. Continue filling for the predicted time
+    unsigned long predictedEnd = millis() + predictedTime;
+    while (millis() < predictedEnd) {
+        long weight = scale.get_units(3);
+        Serial.write(CURRENT_WEIGHT);
+        Serial.println(weight);
+        delay(10); // Don't hammer the scale
+    }
+
+    // 5. Stop filling
+    digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+    Serial.write(SMART_FILL_END);
+
+    // 6. Final weight and flow rate reporting
+    endWeight = scale.get_units(3);
+    endTime = millis();
+
+    Serial.write(VERBOSE_DEBUG);
+    Serial.print("Flow rate (g/ms): ");
+    Serial.println(flowRate, 6);
+    Serial.write(VERBOSE_DEBUG);
+    Serial.print("Final weight: ");
+    Serial.println(endWeight);
+}

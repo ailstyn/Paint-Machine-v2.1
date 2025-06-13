@@ -42,7 +42,6 @@ class RelayControlApp(QWidget):
             ("color.png", "Color"),
             ("language.png", "Language"),
             ("ruler.png", "Ruler"),
-            ("geometric-tool.png", "Calibrate"),
         ]
 
         # --- Section 1: Progress Bar (left) ---
@@ -263,12 +262,7 @@ class RelayControlApp(QWidget):
             # Toggle between grams and ounces
             self.display_unit = "oz" if self.display_unit == "g" else "g"
             print(f"Switched display unit to {self.display_unit}")
-            self.refresh_ui()  # <-- Add this line
-        elif self.selected_index == 5:
-            print("Calibrate selected")
-            if self.set_calibrate_callback:
-                self.set_calibrate_callback(0, self)
-
+            self.refresh_ui()
 
     def keyPressEvent(self, event):
         try:
