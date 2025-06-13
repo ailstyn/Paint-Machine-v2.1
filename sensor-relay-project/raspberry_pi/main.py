@@ -613,13 +613,12 @@ def load_station_enabled_flags():
 def poll_hardware(app):
     global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED
     try:
-        print("Polling hardware...")  # Top-level poll
         for station_index, arduino in enumerate(arduinos):
             if arduino is None:
                 continue
-            print(f"Checking station {station_index+1} (enabled={station_enabled[station_index]})")
             if not station_enabled[station_index]:
                 continue  # Skip disabled stations
+            print(f"Polling station {station_index+1} (enabled, Arduino connected)")
 
             print(f"Station {station_index+1}: Arduino in_waiting = {arduino.in_waiting}")
             estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
