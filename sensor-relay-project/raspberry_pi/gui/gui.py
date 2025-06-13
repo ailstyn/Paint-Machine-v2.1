@@ -221,7 +221,10 @@ class RelayControlApp(QWidget):
         grid.addWidget(self.station_widgets[3], 1, 1)  # Bottom right
 
         self.setLayout(grid)
-        self.showMaximized()
+
+        # Borderless fullscreen for kiosk mode
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.showFullScreen()
 
         self.target_weight = 0
         self.time_limit = 0
