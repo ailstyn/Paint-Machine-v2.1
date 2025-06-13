@@ -54,7 +54,7 @@ E_STOP_ACTIVATED = b'\xEE'
 FILL_TIME = b'\x15'
 FINAL_WEIGHT = b'\x11'
 GET_ID = b'\xA0'
-
+STOP = b'\xFD'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -66,6 +66,7 @@ BUZZER_PIN = 26
 # Add a global flag for E-Stop
 E_STOP = False
 PREV_E_STOP_STATE = GPIO.HIGH
+FILL_LOCKED = False
 
 last_fill_time = None
 last_final_weight = None
@@ -79,24 +80,28 @@ arduinos = [None] * NUM_STATIONS
 for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
-        # Ask for station ID
-        arduino.reset_input_buffer()
-        arduino.write(GET_ID)
-        time.sleep(0.2)
-        if arduino.in_waiting > 0:
-            response = arduino.readline().decode(errors='replace').strip()
-            print(f"Raw station ID response from {port}: {repr(response)}")
-            try:
-                station_id = int(response)
-                print(f"Arduino on {port} reports station ID {station_id}")
-                if 1 <= station_id <= NUM_STATIONS:
-                    arduinos[station_id - 1] = arduino
-                else:
-                    print(f"Invalid station ID {station_id} from {port}")
-            except ValueError:
-                print(f"Could not parse station ID from {port}: {repr(response)}")
+        for attempt in range(5):
+            arduino.reset_input_buffer()
+            arduino.write(GET_ID)
+            time.sleep(0.2)
+            if arduino.in_waiting > 0:
+                response = arduino.readline().decode(errors='replace').strip()
+                print(f"Raw station ID response from {port}: {repr(response)}")
+                try:
+                    station_id = int(response)
+                    print(f"Arduino on {port} reports station ID {station_id}")
+                    if 1 <= station_id <= NUM_STATIONS:
+                        arduinos[station_id - 1] = arduino
+                        break  # Success!
+                    else:
+                        print(f"Invalid station ID {station_id} from {port}")
+                except ValueError:
+                    print(f"Could not parse station ID from {port}: {repr(response)}")
+            else:
+                print(f"No station ID response from {port}, retrying...")
+                time.sleep(0.5)
         else:
-            print(f"No station ID response from {port}")
+            print(f"Failed to get station ID from {port} after retries.")
     except Exception as e:
         print(f"Port {port} not available or failed: {e}")
 
@@ -655,9 +660,12 @@ def poll_hardware(app):
                 message_type = arduino.read(1)
                 # print(f"Station {station_index+1}: Received message_type: {message_type}")
                 if message_type == REQUEST_TARGET_WEIGHT:
-                    #print(f"Station {station_index+1}: REQUEST_TARGET_WEIGHT")
-                    arduino.write(TARGET_WEIGHT)
-                    arduino.write(f"{target_weight}\n".encode('utf-8'))
+                    if FILL_LOCKED:
+                        print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
+                        arduino.write(STOP)
+                    else:
+                        arduino.write(TARGET_WEIGHT)
+                        arduino.write(f"{target_weight}\n".encode('utf-8'))
                 elif message_type == REQUEST_CALIBRATION:
                     print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     arduino.write(REQUEST_CALIBRATION)

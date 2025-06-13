@@ -32,6 +32,7 @@
 #define SMART_FILL_END   0x31
 #define GET_ID 0xA0
 #define STATION_ID 3
+#define STOP 0xFD
 
 // Global variables
 HX711 scale;
@@ -160,7 +161,7 @@ void fill() {
                 receivedData = Serial.readStringUntil('\n');
                 targetWeight = receivedData.toFloat();
                 break;
-            } else if (messageType == RELAY_DEACTIVATED) {
+            } else if (messageType == STOP) {
                 Serial.println("E-Stop activated. Aborting fill process.");
                 digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
                 return; // Abort the fill function
