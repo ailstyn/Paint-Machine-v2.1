@@ -708,5 +708,12 @@ atexit.register(handle_exit)
 signal.signal(signal.SIGINT, handle_exit)
 signal.signal(signal.SIGTERM, handle_exit)
 
+# Uncaught exception logging
+def log_uncaught_exceptions(exctype, value, tb):
+    logging.error("Uncaught exception", exc_info=(exctype, value, tb))
+    print("Uncaught exception:", value)
+
+sys.excepthook = log_uncaught_exceptions
+
 if __name__ == "__main__":
     main()
