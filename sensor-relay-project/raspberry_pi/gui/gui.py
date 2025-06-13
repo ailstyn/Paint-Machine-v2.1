@@ -221,7 +221,7 @@ class RelayControlApp(QWidget):
         dialog.exec()
 
     def update_station_weight(self, station_index, weight):
-        self.station_widgets[station_index].set_weight(weight, target_weight)
+        self.station_widgets[station_index].set_weight(weight, self.target_weight)
 
     def refresh_ui(self):
         QApplication.processEvents()
