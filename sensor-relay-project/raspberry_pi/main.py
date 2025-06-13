@@ -31,15 +31,24 @@ arduino_ports = [
 ]
 
 # Create a list of active serial connections
-arduinos = []
+arduinos = [None] * NUM_STATIONS
 for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
-        arduinos.append(arduino)
-        print(f"Connected to Arduino on {port}")
-    except serial.SerialException as e:
-        print(f"Port {port} not available. Skipping.")
-        logging.error(f"SerialException on port {port}: {e}")
+        # Ask for station ID
+        arduino.write(b'I')  # Suppose 'I' requests station ID
+        time.sleep(0.2)
+        if arduino.in_waiting > 0:
+            station_id = int(arduino.readline().decode().strip())
+            print(f"Arduino on {port} reports station ID {station_id}")
+            if 1 <= station_id <= NUM_STATIONS:
+                arduinos[station_id - 1] = arduino
+            else:
+                print(f"Invalid station ID {station_id} from {port}")
+        else:
+            print(f"No station ID response from {port}")
+    except Exception as e:
+        print(f"Port {port} not available or failed: {e}")
 
 if not arduinos:
     print("No Arduinos connected. Exiting program.")
@@ -606,6 +615,8 @@ def poll_hardware(app):
     try:
         print("Polling hardware...")  # Top-level poll
         for station_index, arduino in enumerate(arduinos):
+            if arduino is None:
+                continue
             print(f"Checking station {station_index+1} (enabled={station_enabled[station_index]})")
             if not station_enabled[station_index]:
                 continue  # Skip disabled stations
