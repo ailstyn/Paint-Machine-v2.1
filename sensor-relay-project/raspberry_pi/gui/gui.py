@@ -107,12 +107,12 @@ class MenuDialog(QDialog):
             "CHANGE UNITS",
             "EXIT"
         ]
-        layout = QHBoxLayout(self)
+        layout = QVBoxLayout(self)
         self.labels = []
         for item in self.menu_items:
-            label = OutlinedLabel(item)  # Use OutlinedLabel for outlined text
+            label = OutlinedLabel(item)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setFixedSize(160, 80)
+            label.setFixedSize(320, 64)
             self.labels.append(label)
             layout.addWidget(label)
         self.setLayout(layout)
