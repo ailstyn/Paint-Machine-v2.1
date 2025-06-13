@@ -741,6 +741,9 @@ def main():
                 except Exception as e:
                     logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
+        # Make Ctrl+C work with PyQt event loop
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+
         # Use QTimer for polling instead of while True
         timer = QTimer()
         timer.timeout.connect(lambda: poll_hardware(app))
