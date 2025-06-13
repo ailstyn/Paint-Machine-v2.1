@@ -701,13 +701,14 @@ def main():
         print('app initialized, contacting arduinos')
 
         for arduino in arduinos:
-            arduino.reset_input_buffer()
-            arduino.reset_output_buffer()
-            try:
-                arduino.write(b'P')
-                print(f"Sent 'P' (PI READY) to Arduino on {arduino.port}")
-            except Exception as e:
-                logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
+            if arduino is not None:
+                arduino.reset_input_buffer()
+                arduino.reset_output_buffer()
+                try:
+                    arduino.write(b'P')
+                    print(f"Sent 'P' (PI READY) to Arduino on {arduino.port}")
+                except Exception as e:
+                    logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
         # Use QTimer for polling instead of while True
         timer = QTimer()
