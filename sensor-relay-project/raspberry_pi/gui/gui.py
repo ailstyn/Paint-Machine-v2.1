@@ -423,7 +423,7 @@ class SetTargetWeightDialog(QDialog):
         # Start with parent's target_weight or 500, clamp to 5 digits
         initial = parent.target_weight if parent else 500
         initial = max(0, min(initial, 99999))
-        digits = f"{initial:05d}"[-5:]  # Always 5 digits
+        digits = f"{int(initial):05d}"[-5:]  # Always 5 digits, initial as int
 
         self.digits = [int(d) for d in digits]
         self.current_digit = 0  # Start editing the leftmost digit
