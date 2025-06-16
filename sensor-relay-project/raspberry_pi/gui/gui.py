@@ -508,17 +508,26 @@ class SetTimeLimitDialog(QDialog):
             self.down_labels[i].setStyleSheet("color: #fff;")
 
     def activate_selected(self):
+        print(f"[SetTimeLimitDialog] activate_selected called. current_digit={self.current_digit}, digits={self.digits}")
         if self.current_digit < 3:
             self.current_digit += 1
+            print(f"[SetTimeLimitDialog] Moving to next digit: {self.current_digit}")
             self.update_display()
         else:
             value = int("".join(str(d) for d in self.digits))
+            print(f"[SetTimeLimitDialog] Final value to set: {value}")
             parent = self.parent()
+            print(f"[SetTimeLimitDialog] parent: {parent}")
             if parent and hasattr(parent, "set_time_limit"):
-                parent.set_time_limit(value)
+                print(f"[SetTimeLimitDialog] Calling parent.set_time_limit({value})")
+                result = parent.set_time_limit(value)
+                print(f"[SetTimeLimitDialog] parent.set_time_limit returned: {result}")
+            else:
+                print("[SetTimeLimitDialog] Parent missing or has no set_time_limit method!")
             self.accept()
             # Optionally, also close the menu dialog if you want to return to main screen:
             if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
+                print("[SetTimeLimitDialog] Closing parent.menu_dialog")
                 parent.menu_dialog.accept()
 
 class SelectionDialog(QDialog):
