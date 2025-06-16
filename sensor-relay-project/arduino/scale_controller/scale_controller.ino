@@ -47,8 +47,10 @@ void handshake_and_calibrate() {
         if (Serial.available() > 0) {
             byte cmd = Serial.read();
             if (cmd == GET_ID) {
-                Serial.println(STATION_ID);
+                Serial.println("<ID:" + String(STATION_ID) + ">");
                 break;
+            } else {
+                Serial.println("<ERR:Unexpected command during handshake>");
             }
         }
         delay(10);
@@ -131,6 +133,9 @@ void loop() {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Manual fill started.");
         }
+        else {
+            Serial.println("<ERR:Unknown message type received: " + String(messageType) + ">");
+        }
     }
 
     // Read and send current weight to Raspberry Pi
@@ -189,8 +194,7 @@ void fill() {
             return;
         }
     } else {
-        Serial.write(VERBOSE_DEBUG);
-        Serial.println("No time limit received from Pi.");
+        Serial.println("<ERR:No time limit received from Pi>");
         digitalWrite(LED_PIN, LOW);
         return;
     }
@@ -208,9 +212,9 @@ void fill() {
 
     // If the current weight is greater than 20% of the target weight, abort the fill process
     if (currentWeight > 0.2 * targetWeight) {
-        Serial.println("ERROR: CLEAR SCALE"); // Send error message to the Raspberry Pi
-        digitalWrite(LED_PIN, LOW);  // Turn LED OFF at end of fill
-        return; // Exit the function without starting the fill process
+        Serial.println("<ERR:CLEAR SCALE>");
+        digitalWrite(LED_PIN, LOW);
+        return;
     }
 
     // Start filling process
@@ -312,6 +316,8 @@ void recalibrate() {
     if (calibWeight != 0) {
         scaleCalibration = delta / calibWeight;
         scale.set_scale(scaleCalibration);
+    } else {
+        Serial.println("<ERR:Calibration weight is zero>");
     }
 
     // Send the new calibration value to the Pi

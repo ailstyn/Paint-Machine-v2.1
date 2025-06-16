@@ -10,6 +10,7 @@ import signal
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
+import re
 
 
 # Configure logging
@@ -85,26 +86,38 @@ for port in arduino_ports:
             arduino.reset_input_buffer()
             arduino.write(GET_ID)
             time.sleep(0.2)
-            if arduino.in_waiting > 0:
-                response = arduino.readline().decode(errors='replace').strip()
-                print(f"Raw station ID response from {port}: {repr(response)}")
+            for _ in range(10):
                 try:
-                    station_id = int(response)
-                    print(f"Arduino on {port} reports station ID {station_id}")
-                    if 1 <= station_id <= NUM_STATIONS:
-                        arduinos[station_id - 1] = arduino
-                        break  # Success!
+                    if arduino.in_waiting > 0:
+                        response = arduino.readline().decode(errors='replace').strip()
+                        print(f"Raw station ID response: {repr(response)}")
+                        match = re.match(r"<ID:(\d+)>", response)
+                        if match:
+                            station_id = int(match.group(1))
+                            print(f"Arduino reports station ID {station_id}")
+                            if 1 <= station_id <= NUM_STATIONS:
+                                arduinos[station_id - 1] = arduino
+                                break  # Success!
+                            else:
+                                msg = f"Invalid station ID {station_id} from {port}"
+                                print(msg)
+                                logging.error(msg)
+                        else:
+                            msg = f"Could not parse station ID from {port}: {repr(response)}"
+                            print(msg)
+                            logging.error(msg)
                     else:
-                        print(f"Invalid station ID {station_id} from {port}")
-                except ValueError:
-                    print(f"Could not parse station ID from {port}: {repr(response)}")
+                        time.sleep(0.1)
+                except Exception as e:
+                    logging.error(f"Error parsing station ID from {port}: {e}")
             else:
-                print(f"No station ID response from {port}, retrying...")
-                time.sleep(0.5)
-        else:
-            print(f"Failed to get station ID from {port} after retries.")
+                msg = f"Failed to get station ID from {port} after retries."
+                print(msg)
+                logging.error(msg)
     except Exception as e:
-        print(f"Port {port} not available or failed: {e}")
+        msg = f"Port {port} not available or failed: {e}"
+        print(msg)
+        logging.error(msg)
 
 if not arduinos:
     print("No Arduinos connected. Exiting program.")
