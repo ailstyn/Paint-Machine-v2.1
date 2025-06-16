@@ -187,7 +187,8 @@ class MenuDialog(QDialog):
         elif selected_key == "SET TIME LIMIT":
             self.hide()
             parent.time_limit_dialog = SetTimeLimitDialog(parent)
-            parent.time_limit_dialog.finished.connect(self.show_again)
+            parent.active_dialog = parent.time_limit_dialog
+            parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
             parent.time_limit_dialog.show()
         elif selected_key == "SET LANGUAGE":
             self.hide()
@@ -433,6 +434,19 @@ class SetTimeLimitDialog(QDialog):
         self.digits = [int(d) for d in digits]
         self.current_digit = 0  # Start editing the leftmost digit
 
+        # --- Add up arrows ---
+        up_arrows_layout = QHBoxLayout()
+        self.up_labels = []
+        for i in range(4):
+            up = QLabel("▲")
+            up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            up.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            up.setFixedWidth(48)
+            self.up_labels.append(up)
+            up_arrows_layout.addWidget(up)
+        layout.addLayout(up_arrows_layout)
+
+        # --- Digits ---
         self.digit_labels = []
         digits_layout = QHBoxLayout()
         for i in range(4):
@@ -443,6 +457,19 @@ class SetTimeLimitDialog(QDialog):
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
         layout.addLayout(digits_layout)
+
+        # --- Add down arrows ---
+        down_arrows_layout = QHBoxLayout()
+        self.down_labels = []
+        for i in range(4):
+            down = QLabel("▼")
+            down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            down.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            down.setFixedWidth(48)
+            self.down_labels.append(down)
+            down_arrows_layout.addWidget(down)
+        layout.addLayout(down_arrows_layout)
+
         self.setLayout(layout)
         self.setModal(True)
         self.update_display()
@@ -451,27 +478,27 @@ class SetTimeLimitDialog(QDialog):
         for i, lbl in enumerate(self.digit_labels):
             if i == self.current_digit:
                 lbl.setStyleSheet("color: #F6EB61; border: 2px solid #F6EB61; border-radius: 8px; background: #222;")
+                self.up_labels[i].setStyleSheet("color: #F6EB61;")
+                self.down_labels[i].setStyleSheet("color: #F6EB61;")
             else:
                 lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
+                self.up_labels[i].setStyleSheet("color: #555;")
+                self.down_labels[i].setStyleSheet("color: #555;")
             lbl.setText(str(self.digits[i]))
 
     def select_prev(self):
-        # Decrement current digit (wrap 0->9)
         self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
         self.update_display()
 
     def select_next(self):
-        # Increment current digit (wrap 9->0)
         self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
         self.update_display()
 
     def activate_selected(self):
-        # Move to next digit, or save if at last
         if self.current_digit < 3:
             self.current_digit += 1
             self.update_display()
         else:
-            # Save value and exit
             value = int("".join(str(d) for d in self.digits))
             if self.parent():
                 self.parent().set_time_limit(value)
