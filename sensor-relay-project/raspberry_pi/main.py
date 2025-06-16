@@ -729,7 +729,6 @@ def main():
 
         app = RelayControlApp()
         app.set_target_weight = set_target_weight
-        app.set_time_limit = set_time_limit
         app.set_calibrate = calibrate_scale
 
         # Set the GUI's target weight to match your default

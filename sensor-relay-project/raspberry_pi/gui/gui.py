@@ -306,7 +306,7 @@ class RelayControlApp(QWidget):
     def set_time_limit(self, value):
         self.time_limit = value
         print(f"[RelayControlApp] Time limit set to {value} ms")
-        # Optionally update any UI elements or widgets here
+        # Optionally update UI here
 
     def set_language(self, lang_code):
         self.language = lang_code
@@ -335,6 +335,12 @@ class RelayControlApp(QWidget):
             # Use actual current weight if available, else 0
             current_weight = 0
             widget.set_weight(current_weight, self.target_weight, self.units)
+
+    def show_timed_info(self, title, message, timeout_ms=2000):
+        dialog = InfoDialog(title, message, self)
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        dialog.show()
+        QTimer.singleShot(timeout_ms, dialog.accept)
 
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
@@ -523,7 +529,9 @@ class SetTimeLimitDialog(QDialog):
             if parent and hasattr(parent, "set_time_limit"):
                 print(f"[SetTimeLimitDialog] Calling parent.set_time_limit({value})")
                 parent.set_time_limit(value)
-                print(f"[SetTimeLimitDialog] parent.set_time_limit returned: {result}")
+                # Show info dialog for 2 seconds
+                if hasattr(parent, "show_timed_info"):
+                    parent.show_timed_info("NEW TIME LIMIT SAVED:", f"{value} ms", timeout_ms=2000)
             else:
                 print("[SetTimeLimitDialog] Parent missing or has no set_time_limit method!")
             self.accept()
