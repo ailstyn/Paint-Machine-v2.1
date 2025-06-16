@@ -353,6 +353,8 @@ def tare_scale(arduino_id):
 
 def setup_gpio():
     try:
+        GPIO.setwarnings(False)
+        GPIO.cleanup()  # Reset any previous state
         print('setting up GPIO')
         GPIO.setmode(GPIO.BCM)
         print('set mode BCM')
