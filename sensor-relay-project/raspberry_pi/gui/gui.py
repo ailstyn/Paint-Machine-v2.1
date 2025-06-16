@@ -419,33 +419,104 @@ class SetTargetWeightDialog(QDialog):
         layout = QVBoxLayout(self)
         label = QLabel(tr("ENTER_NEW_TARGET_WEIGHT"))
         layout.addWidget(label)
-        # Example: simple numeric value with up/down
-        self.value = parent.target_weight if parent else 500
-        self.min_value = 1
-        self.max_value = 10000
-        self.step = 10
-        self.value_label = QLabel(str(self.value))
-        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.value_label.setFont(QFont("Arial", 32))
-        layout.addWidget(self.value_label)
+
+        # Start with parent's target_weight or 500, clamp to 5 digits
+        initial = parent.target_weight if parent else 500
+        initial = max(0, min(initial, 99999))
+        digits = f"{initial:05d}"[-5:]  # Always 5 digits
+
+        self.digits = [int(d) for d in digits]
+        self.current_digit = 0  # Start editing the leftmost digit
+
+        # --- Add up arrows ---
+        up_arrows_layout = QHBoxLayout()
+        self.up_labels = []
+        for i in range(5):
+            up = QLabel("▲")
+            up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            up.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            up.setFixedWidth(48)
+            self.up_labels.append(up)
+            up_arrows_layout.addWidget(up)
+        layout.addLayout(up_arrows_layout)
+
+        # --- Digits ---
+        self.digit_labels = []
+        digits_layout = QHBoxLayout()
+        for i in range(5):
+            lbl = QLabel(str(self.digits[i]))
+            lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setFixedWidth(48)
+            self.digit_labels.append(lbl)
+            digits_layout.addWidget(lbl)
+        layout.addLayout(digits_layout)
+
+        # --- Add down arrows ---
+        down_arrows_layout = QHBoxLayout()
+        self.down_labels = []
+        for i in range(5):
+            down = QLabel("▼")
+            down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            down.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            down.setFixedWidth(48)
+            self.down_labels.append(down)
+            down_arrows_layout.addWidget(down)
+        layout.addLayout(down_arrows_layout)
+
         self.setLayout(layout)
         self.setModal(True)
+        self.update_display()
 
-    def update_display(self):
-        self.value_label.setText(str(self.value))
+    def flash_arrow(self, direction):
+        """Flash the current up or down arrow green briefly."""
+        if direction == "up":
+            self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QTimer.singleShot(100, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
+        elif direction == "down":
+            self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
-        self.value = max(self.min_value, self.value - self.step)
+        # UP button should increment
+        self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
+        self.flash_arrow("up")
         self.update_display()
 
     def select_next(self):
-        self.value = min(self.max_value, self.value + self.step)
+        # DOWN button should decrement
+        self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
+        self.flash_arrow("down")
         self.update_display()
 
+    def update_display(self):
+        for i, lbl in enumerate(self.digit_labels):
+            if i == self.current_digit:
+                lbl.setStyleSheet("color: #F6EB61; border: 2px solid #F6EB61; border-radius: 8px; background: #222;")
+            else:
+                lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
+            lbl.setText(str(self.digits[i]))
+        # Set all arrows to white by default
+        for i in range(5):
+            self.up_labels[i].setStyleSheet("color: #fff;")
+            self.down_labels[i].setStyleSheet("color: #fff;")
+
     def activate_selected(self):
-        if self.parent():
-            self.parent().set_target_weight(self.value)
-        self.accept()
+        if self.current_digit < 4:  # 5 digits, so index 0-4
+            self.current_digit += 1
+            self.update_display()
+        else:
+            value = int("".join(str(d) for d in self.digits))
+            parent = self.parent()
+            if parent and hasattr(parent, "set_target_weight"):
+                parent.set_target_weight(value)
+                # Show info dialog for 2 seconds
+                if hasattr(parent, "show_timed_info"):
+                    parent.show_timed_info("TARGET WEIGHT SAVED:", f"{value} g", timeout_ms=2000)
+            self.accept()
+            # Optionally, also close the menu dialog if you want to return to main screen:
+            if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
+                parent.menu_dialog.accept()
 
 class SetTimeLimitDialog(QDialog):
     def __init__(self, parent=None):

@@ -549,58 +549,6 @@ def adjust_value_with_acceleration(
     dialog.close()
     return value
 
-# Usage in set_target_weight:
-def set_target_weight(app):
-    global target_weight
-
-    def update_display(value, *args, **kwargs):
-        lang = getattr(app, "language", "en")
-        if getattr(app, "display_unit", "g") == "oz":
-            shown_value = round(value, 1)
-            unit = "oz"
-        else:
-            shown_value = value
-            unit = "g"
-        app.show_dialog_content(
-            title=LANGUAGES[app.language]["SET_TARGET_WEIGHT_TITLE"],
-            message=f"{shown_value} {unit}\n\n{LANGUAGES[app.language]['SET_TARGET_WEIGHT_MSG']}",
-        )
-
-    # Convert the initial value to the display unit for editing
-    if getattr(app, "display_unit", "g") == "oz":
-        initial_value = round(target_weight * 0.03527, 1)
-        unit_increment = 0.1
-    else:
-        initial_value = target_weight
-        unit_increment = 1
-
-    update_display(initial_value)
-    
-    # Adjust in the display unit, but always save in grams
-    adjusted_value = adjust_value_with_acceleration(
-        initial_value=initial_value,
-        dialog=type('DialogStub', (), {
-            'update_value': staticmethod(update_display),
-            'accept': staticmethod(lambda *args, **kwargs: None),
-            'close': staticmethod(lambda *args, **kwargs: None)
-        })(),
-        up_button_pin=UP_BUTTON_PIN,
-        down_button_pin=DOWN_BUTTON_PIN,
-        unit_increment=unit_increment,
-        min_value=0,
-        up_callback=update_display,
-        down_callback=update_display
-    )
-
-    # Convert back to grams if needed
-    if getattr(app, "display_unit", "g") == "oz":
-        target_weight = adjusted_value / 0.03527
-    else:
-        target_weight = adjusted_value
-
-    clear_serial_buffer(arduinos[0])
-    app.clear_dialog_content()
-
 def clear_serial_buffer(arduino):
     """Read and discard all available bytes from the Arduino serial buffer."""
     while arduino.in_waiting > 0:
@@ -728,7 +676,6 @@ def main():
         app_qt = QApplication(sys.argv)
 
         app = RelayControlApp()
-        app.set_target_weight = set_target_weight
         app.set_calibrate = calibrate_scale
 
         # Set the GUI's target weight to match your default
