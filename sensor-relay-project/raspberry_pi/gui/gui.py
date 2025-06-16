@@ -99,6 +99,15 @@ class StationWidget(QWidget):
         self.progress_bar.set_max(1)
         self.setStyleSheet(f"background-color: {bg_color_deactivated}; border: 2px solid #222;")
 
+    # Example methods for your StationWidget class
+    def set_final_weight(self, value):
+        # Display or store the final weight value
+        self.final_weight_label.setText(f"Final: {value}")
+
+    def set_fill_time(self, value):
+        # Display or store the fill time value
+        self.fill_time_label.setText(f"Fill Time: {value} ms")
+
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)

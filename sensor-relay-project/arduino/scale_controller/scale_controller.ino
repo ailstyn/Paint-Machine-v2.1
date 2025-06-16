@@ -205,6 +205,7 @@ void fill() {
 
     // Check the current weight on the scale
     long currentWeight = scale.get_units(3); // Get the current weight
+    Serial.write(VERBOSE_DEBUG);
     Serial.print("Current Weight: ");
     Serial.println(currentWeight);
 

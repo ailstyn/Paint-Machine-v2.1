@@ -695,9 +695,7 @@ def poll_hardware(app):
                 continue
             if not station_enabled[station_index]:
                 continue  # Skip disabled stations
-            # print(f"Polling station {station_index+1} (enabled, Arduino connected)")
 
-            # print(f"Station {station_index+1}: Arduino in_waiting = {arduino.in_waiting}")
             estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
             if estop_pressed:
                 print(f"Station {station_index+1}: E-STOP pressed")
@@ -721,9 +719,7 @@ def poll_hardware(app):
 
             # Normal operation for this station
             while arduino.in_waiting > 0:
-                # print(f"Station {station_index+1}: Reading message type...")
                 message_type = arduino.read(1)
-#                print(f"Station {station_index+1}: Received message_type: {message_type!r}")
                 if message_type == REQUEST_TARGET_WEIGHT:
                     if FILL_LOCKED:
                         print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
@@ -740,9 +736,7 @@ def poll_hardware(app):
                     arduino.write(REQUEST_TIME_LIMIT)
                     arduino.write(f"{time_limit}\n".encode('utf-8'))
                 elif message_type == CURRENT_WEIGHT:
-                    #print(f"Station {station_index+1}: CURRENT_WEIGHT")
                     current_weight = arduino.readline().decode('utf-8').strip()
-                    #print(f"Station {station_index+1} CURRENT_WEIGHT raw: '{current_weight}'")
                     try:
                         weight = float(current_weight)
                         if weight < 0:
@@ -751,6 +745,26 @@ def poll_hardware(app):
                     except Exception as e:
                         logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
                         app.update_station_weight(station_index, 0.0)
+                elif message_type == FINAL_WEIGHT:
+                    final_weight = arduino.readline().decode('utf-8').strip()
+                    print(f"Station {station_index+1}: Final weight: {final_weight}")
+                    if hasattr(app, "update_station_final_weight"):
+                        app.update_station_final_weight(station_index, final_weight)
+                    else:
+                        if hasattr(app, "station_widgets"):
+                            widget = app.station_widgets[station_index]
+                            if hasattr(widget, "set_final_weight"):
+                                widget.set_final_weight(final_weight)
+                elif message_type == FILL_TIME:
+                    fill_time = arduino.readline().decode('utf-8').strip()
+                    print(f"Station {station_index+1}: Fill time: {fill_time}")
+                    if hasattr(app, "update_station_fill_time"):
+                        app.update_station_fill_time(station_index, fill_time)
+                    else:
+                        if hasattr(app, "station_widgets"):
+                            widget = app.station_widgets[station_index]
+                            if hasattr(widget, "set_fill_time"):
+                                widget.set_fill_time(fill_time)
                 else:
                     # Try to read the rest of the line for context
                     if arduino.in_waiting > 0:
@@ -758,7 +772,7 @@ def poll_hardware(app):
                         print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
                     else:
                         print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
-            app.refresh_ui()
+                        app.refresh_ui()
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
         print(f"Error in poll_hardware: {e}")
