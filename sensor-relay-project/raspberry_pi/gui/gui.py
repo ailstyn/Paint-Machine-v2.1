@@ -552,9 +552,10 @@ class SetTimeLimitDialog(QDialog):
             if parent and hasattr(parent, "set_time_limit"):
                 print(f"[SetTimeLimitDialog] Calling parent.set_time_limit({value})")
                 parent.set_time_limit(value)
-                # Show info dialog for 2 seconds
+                # Show info dialog for 2 seconds, displaying seconds with one decimal
                 if hasattr(parent, "show_timed_info"):
-                    parent.show_timed_info("TIME LIMIT SAVED:", f"{value:05d} ms", timeout_ms=2000)
+                    seconds = value / 1000
+                    parent.show_timed_info("TIME LIMIT SAVED:", f"{seconds:.1f} sec", timeout_ms=2000)
             else:
                 print("[SetTimeLimitDialog] Parent missing or has no set_time_limit method!")
             self.accept()
