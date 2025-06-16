@@ -390,76 +390,42 @@ def ping_buzzer_invalid():
 
 def handle_button_presses(app):
     try:
-        # Check the topmost dialog first (order matters: most recently opened first)
-        if app.language_dialog and app.language_dialog.isVisible():
-            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                print('up button pressed in language dialog')
-                app.language_dialog.select_prev()
-            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                print('down button pressed in language dialog')
-                app.language_dialog.select_next()
-            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                print('select button pressed in language dialog')
-                app.language_dialog.activate_selected()
+        dialog = getattr(app, "active_dialog", None)
+
+        # UP BUTTON
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            # Wait for release
+            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            if dialog is not None:
+                dialog.select_prev()
             return
 
-        elif app.target_weight_dialog and app.target_weight_dialog.isVisible():
-            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                print('up button pressed in target weight dialog')
-                app.target_weight_dialog.select_prev()
-            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                print('down button pressed in target weight dialog')
-                app.target_weight_dialog.select_next()
-            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                print('select button pressed in target weight dialog')
-                app.target_weight_dialog.activate_selected()
+        # DOWN BUTTON
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            if dialog is not None:
+                dialog.select_next()
             return
 
-        elif app.time_limit_dialog and app.time_limit_dialog.isVisible():
-            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                print('up button pressed in time limit dialog')
-                app.time_limit_dialog.select_prev()
-            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                print('down button pressed in time limit dialog')
-                app.time_limit_dialog.select_next()
-            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                print('select button pressed in time limit dialog')
-                app.time_limit_dialog.activate_selected()
-            return
-
-        elif app.change_units_dialog and app.change_units_dialog.isVisible():
-            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                print('up button pressed in change units dialog')
-                app.change_units_dialog.select_prev()
-            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                print('down button pressed in change units dialog')
-                app.change_units_dialog.select_next()
-            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                print('select button pressed in change units dialog')
-                app.change_units_dialog.activate_selected()
-            return
-
-        elif app.menu_dialog and app.menu_dialog.isVisible():
-            if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                print('up button pressed in menu dialog')
-                app.menu_dialog.select_prev()
-            elif GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                print('down button pressed in menu dialog')
-                app.menu_dialog.select_next()
-            elif GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                print('select button pressed in menu dialog')
-                app.menu_dialog.activate_selected()
-            return
-
-        # If no dialog or menu is open, open the menu on SELECT
+        # SELECT BUTTON
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            print('select button pressed on main screen, opening menu')
-            if not app.menu_dialog or not app.menu_dialog.isVisible():
-                app.menu_dialog = MenuDialog(app)
-                app.menu_dialog.show()
+            ping_buzzer()
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            if dialog is not None:
+                dialog.activate_selected()
+            else:
+                print('select button pressed on main screen, opening menu')
+                if not app.menu_dialog or not app.menu_dialog.isVisible():
+                    app.show_menu()
             return
-
-        # (You can add main screen button logic here if needed)
 
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")

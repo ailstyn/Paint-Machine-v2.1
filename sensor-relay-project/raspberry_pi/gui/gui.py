@@ -283,8 +283,11 @@ class RelayControlApp(QWidget):
             )
         )
         self.setCursor(QCursor(Qt.CursorShape.BlankCursor))
+        self.active_menu = None  # e.g., "main_menu", "settings", "language_dialog", etc.
+        self.active_dialog = None
 
     def show_menu(self):
+        self.active_menu = "main_menu"
         print("RelayControlApp: show_menu() called")
         if self.menu_dialog is None or not self.menu_dialog.isVisible():
             self.menu_dialog = MenuDialog(self)
@@ -386,15 +389,15 @@ class SetTargetWeightDialog(QDialog):
         self.setModal(True)
 
     def select_prev(self):
-        # Implement logic to decrease value or move selection, if needed
-        pass
+        self.value = max(self.min_value, self.value - self.step)
+        self.update_display()
 
     def select_next(self):
-        # Implement logic to increase value or move selection, if needed
-        pass
+        self.value = min(self.max_value, self.value + self.step)
+        self.update_display()
 
     def activate_selected(self):
-        # Implement logic to confirm selection, or just close dialog
+        # Save value, then close
         self.accept()
 
 class SetTimeLimitDialog(QDialog):
