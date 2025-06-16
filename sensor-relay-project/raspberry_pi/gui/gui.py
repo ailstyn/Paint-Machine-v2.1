@@ -182,6 +182,8 @@ class MenuDialog(QDialog):
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
+            parent.active_dialog = parent.target_weight_dialog  # <-- Add this line!
+            parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
             parent.target_weight_dialog.finished.connect(self.show_again)
             parent.target_weight_dialog.show()
         elif selected_key == "SET TIME LIMIT":
