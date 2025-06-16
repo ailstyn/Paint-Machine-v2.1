@@ -291,6 +291,8 @@ class RelayControlApp(QWidget):
         print("RelayControlApp: show_menu() called")
         if self.menu_dialog is None or not self.menu_dialog.isVisible():
             self.menu_dialog = MenuDialog(self)
+            self.active_dialog = self.menu_dialog  # <-- Set active_dialog here!
+            self.menu_dialog.finished.connect(lambda: setattr(self, "active_dialog", None))
             self.menu_dialog.show()
 
     def set_target_weight(self, value):
@@ -385,8 +387,20 @@ class SetTargetWeightDialog(QDialog):
         layout = QVBoxLayout(self)
         label = QLabel(tr("ENTER_NEW_TARGET_WEIGHT"))
         layout.addWidget(label)
-        # Add input widgets as needed (QLineEdit, buttons, etc.)
+        # Example: simple numeric value with up/down
+        self.value = parent.target_weight if parent else 500
+        self.min_value = 1
+        self.max_value = 10000
+        self.step = 10
+        self.value_label = QLabel(str(self.value))
+        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.value_label.setFont(QFont("Arial", 32))
+        layout.addWidget(self.value_label)
+        self.setLayout(layout)
         self.setModal(True)
+
+    def update_display(self):
+        self.value_label.setText(str(self.value))
 
     def select_prev(self):
         self.value = max(self.min_value, self.value - self.step)
@@ -397,7 +411,8 @@ class SetTargetWeightDialog(QDialog):
         self.update_display()
 
     def activate_selected(self):
-        # Save value, then close
+        if self.parent():
+            self.parent().set_target_weight(self.value)
         self.accept()
 
 class SetTimeLimitDialog(QDialog):
@@ -409,17 +424,58 @@ class SetTimeLimitDialog(QDialog):
         layout = QVBoxLayout(self)
         label = QLabel(tr("ENTER_NEW_TIME_LIMIT"))
         layout.addWidget(label)
-        # Add input widgets as needed
+
+        # Start with parent's time_limit or 3000 ms, clamp to 4 digits
+        initial = parent.time_limit if parent else 3000
+        initial = max(0, min(initial, 99999))
+        digits = f"{initial:04d}"[-4:]  # Always 4 digits
+
+        self.digits = [int(d) for d in digits]
+        self.current_digit = 0  # Start editing the leftmost digit
+
+        self.digit_labels = []
+        digits_layout = QHBoxLayout()
+        for i in range(4):
+            lbl = QLabel(str(self.digits[i]))
+            lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setFixedWidth(48)
+            self.digit_labels.append(lbl)
+            digits_layout.addWidget(lbl)
+        layout.addLayout(digits_layout)
+        self.setLayout(layout)
         self.setModal(True)
+        self.update_display()
+
+    def update_display(self):
+        for i, lbl in enumerate(self.digit_labels):
+            if i == self.current_digit:
+                lbl.setStyleSheet("color: #F6EB61; border: 2px solid #F6EB61; border-radius: 8px; background: #222;")
+            else:
+                lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
+            lbl.setText(str(self.digits[i]))
 
     def select_prev(self):
-        pass
+        # Decrement current digit (wrap 0->9)
+        self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
+        self.update_display()
 
     def select_next(self):
-        pass
+        # Increment current digit (wrap 9->0)
+        self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
+        self.update_display()
 
     def activate_selected(self):
-        self.accept()
+        # Move to next digit, or save if at last
+        if self.current_digit < 3:
+            self.current_digit += 1
+            self.update_display()
+        else:
+            # Save value and exit
+            value = int("".join(str(d) for d in self.digits))
+            if self.parent():
+                self.parent().set_time_limit(value)
+            self.accept()
 
 class SelectionDialog(QDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True):
