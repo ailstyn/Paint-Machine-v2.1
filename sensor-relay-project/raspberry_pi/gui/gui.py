@@ -484,13 +484,15 @@ class SetTimeLimitDialog(QDialog):
             QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
-        self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
-        self.flash_arrow("down")
+        # UP button should increment
+        self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
+        self.flash_arrow("up")
         self.update_display()
 
     def select_next(self):
-        self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
-        self.flash_arrow("up")
+        # DOWN button should decrement
+        self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
+        self.flash_arrow("down")
         self.update_display()
 
     def update_display(self):
@@ -514,7 +516,7 @@ class SetTimeLimitDialog(QDialog):
             parent = self.parent()
             if parent and hasattr(parent, "set_time_limit"):
                 parent.set_time_limit(value)
-            self.accept()  # Close this dialog
+            self.accept()
             # Optionally, also close the menu dialog if you want to return to main screen:
             if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
                 parent.menu_dialog.accept()
