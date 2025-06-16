@@ -22,6 +22,7 @@ logging.basicConfig(
     level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
+logging.error("Test error: logging is working.")
 
 # List of potential serial ports for the Arduinos
 arduino_ports = [
@@ -82,6 +83,7 @@ arduinos = [None] * NUM_STATIONS
 for port in arduino_ports:
     try:
         arduino = serial.Serial(port, 9600, timeout=1)
+        found_id = False
         for attempt in range(5):
             arduino.reset_input_buffer()
             arduino.write(GET_ID)
@@ -97,7 +99,8 @@ for port in arduino_ports:
                             print(f"Arduino reports station ID {station_id}")
                             if 1 <= station_id <= NUM_STATIONS:
                                 arduinos[station_id - 1] = arduino
-                                break  # Success!
+                                found_id = True
+                                break  # Break inner for-loop
                             else:
                                 msg = f"Invalid station ID {station_id} from {port}"
                                 print(msg)
@@ -110,10 +113,12 @@ for port in arduino_ports:
                         time.sleep(0.1)
                 except Exception as e:
                     logging.error(f"Error parsing station ID from {port}: {e}")
-            else:
-                msg = f"Failed to get station ID from {port} after retries."
-                print(msg)
-                logging.error(msg)
+            if found_id:
+                break  # Break outer for-loop if ID found
+        else:
+            msg = f"Failed to get station ID from {port} after retries."
+            print(msg)
+            logging.error(msg)
     except Exception as e:
         msg = f"Port {port} not available or failed: {e}"
         print(msg)
@@ -782,7 +787,7 @@ def main():
         print('app initialized, contacting arduinos')
 
         # Set offline state for disabled stations
-        bg_colors_deactivated = ["#6c2222", "#22305a", "#2b4d2b", "#b1a93a"]
+        bg_colors_deactivated = ["#401010", "#131c35", "#041B04", "#3c3a15"]
         for i, widget in enumerate(app.station_widgets):
             if not station_enabled[i]:
                 widget.set_offline(bg_colors_deactivated[i])
