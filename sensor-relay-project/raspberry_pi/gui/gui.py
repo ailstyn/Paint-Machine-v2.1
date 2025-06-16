@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor  # <-- Add QPixmap here
 import sys
 import logging
@@ -474,25 +474,36 @@ class SetTimeLimitDialog(QDialog):
         self.setModal(True)
         self.update_display()
 
-    def update_display(self):
-        for i, lbl in enumerate(self.digit_labels):
-            if i == self.current_digit:
-                lbl.setStyleSheet("color: #F6EB61; border: 2px solid #F6EB61; border-radius: 8px; background: #222;")
-                self.up_labels[i].setStyleSheet("color: #F6EB61;")
-                self.down_labels[i].setStyleSheet("color: #F6EB61;")
-            else:
-                lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
-                self.up_labels[i].setStyleSheet("color: #555;")
-                self.down_labels[i].setStyleSheet("color: #555;")
-            lbl.setText(str(self.digits[i]))
+    def flash_arrow(self, direction):
+        """Flash the current up or down arrow green briefly."""
+        if direction == "up":
+            self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QTimer.singleShot(100, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
+        elif direction == "down":
+            self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
         self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
+        self.flash_arrow("down")
         self.update_display()
 
     def select_next(self):
         self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
+        self.flash_arrow("up")
         self.update_display()
+
+    def update_display(self):
+        for i, lbl in enumerate(self.digit_labels):
+            if i == self.current_digit:
+                lbl.setStyleSheet("color: #F6EB61; border: 2px solid #F6EB61; border-radius: 8px; background: #222;")
+            else:
+                lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
+            lbl.setText(str(self.digits[i]))
+        # Set all arrows to white by default
+        for i in range(4):
+            self.up_labels[i].setStyleSheet("color: #fff;")
+            self.down_labels[i].setStyleSheet("color: #fff;")
 
     def activate_selected(self):
         if self.current_digit < 3:
@@ -500,9 +511,13 @@ class SetTimeLimitDialog(QDialog):
             self.update_display()
         else:
             value = int("".join(str(d) for d in self.digits))
-            if self.parent():
-                self.parent().set_time_limit(value)
-            self.accept()
+            parent = self.parent()
+            if parent and hasattr(parent, "set_time_limit"):
+                parent.set_time_limit(value)
+            self.accept()  # Close this dialog
+            # Optionally, also close the menu dialog if you want to return to main screen:
+            if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
+                parent.menu_dialog.accept()
 
 class SelectionDialog(QDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True):
