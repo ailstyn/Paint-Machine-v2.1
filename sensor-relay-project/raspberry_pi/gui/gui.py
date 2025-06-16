@@ -66,6 +66,17 @@ class StationWidget(QWidget):
         self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         content_layout.addWidget(self.weight_label)
 
+        # Add these lines to create the labels
+        self.final_weight_label = QLabel("Final: --")
+        self.final_weight_label.setFont(QFont("Arial", 18))
+        self.final_weight_label.setStyleSheet("color: #fff;")
+        content_layout.addWidget(self.final_weight_label)
+
+        self.fill_time_label = QLabel("Fill Time: -- ms")
+        self.fill_time_label.setFont(QFont("Arial", 18))
+        self.fill_time_label.setStyleSheet("color: #fff;")
+        content_layout.addWidget(self.fill_time_label)
+
         if bar_on_left:
             main_layout.addWidget(self.progress_bar)
             main_layout.addLayout(content_layout)
