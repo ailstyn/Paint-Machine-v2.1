@@ -88,12 +88,12 @@ void setup() {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
-    // Blink LED 3 times to indicate setup complete
-    for (int i = 0; i < 3; i++) {
+    // Blink LED 6 times to indicate setup complete
+    for (int i = 0; i < 6; i++) {
         digitalWrite(LED_PIN, HIGH);
-        delay(500);
+        delay(250);
         digitalWrite(LED_PIN, LOW);
-        delay(500);
+        delay(250);
     }
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
@@ -149,9 +149,6 @@ void fill() {
     digitalWrite(LED_PIN, HIGH); // Turn LED ON at start of fill
 
     scale.tare();
-
-    Serial.write(BEGIN_FILL);
-    // Serial.println("<DEBUG:Sent BEGIN_FILL>");
 
     // Request target weight from Raspberry Pi
     Serial.write(REQUEST_TARGET_WEIGHT);
