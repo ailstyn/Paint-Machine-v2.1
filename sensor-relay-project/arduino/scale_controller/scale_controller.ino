@@ -151,7 +151,7 @@ void fill() {
     scale.tare();
 
     Serial.write(BEGIN_FILL);
-    Serial.println("<DEBUG:Sent BEGIN_FILL>");
+    // Serial.println("<DEBUG:Sent BEGIN_FILL>");
 
     // Request target weight from Raspberry Pi
     Serial.write(REQUEST_TARGET_WEIGHT);

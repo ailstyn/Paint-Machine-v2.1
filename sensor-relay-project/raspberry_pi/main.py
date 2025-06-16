@@ -723,7 +723,7 @@ def poll_hardware(app):
             while arduino.in_waiting > 0:
                 # print(f"Station {station_index+1}: Reading message type...")
                 message_type = arduino.read(1)
-                print(f"Station {station_index+1}: Received message_type: {message_type!r}")
+#                print(f"Station {station_index+1}: Received message_type: {message_type!r}")
                 if message_type == REQUEST_TARGET_WEIGHT:
                     if FILL_LOCKED:
                         print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
