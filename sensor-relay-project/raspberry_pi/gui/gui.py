@@ -353,18 +353,29 @@ class InfoDialog(QDialog):
                 border: none;
                 border-radius: 24px;
             }
-            QLabel {
+            QLabel#titleLabel {
                 color: #fff;
-                font-size: 36px;
+                font-size: 32px;
                 font-weight: bold;
-                padding: 24px;
+                padding: 12px;
+            }
+            QLabel#valueLabel {
+                color: #fff;
+                font-size: 48px;
+                font-weight: bold;
+                padding: 12px;
             }
         """)
         layout = QVBoxLayout(self)
-        self.label = QLabel(message)
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.label)
-        # No OK button for timed info dialog
+        self.title_label = QLabel(title)
+        self.title_label.setObjectName("titleLabel")
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.title_label)
+        self.value_label = QLabel(message)
+        self.value_label.setObjectName("valueLabel")
+        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.value_label)
+        self.setLayout(layout)
         self.setModal(True)
 
 class VerticalProgressBar(QWidget):
@@ -543,7 +554,7 @@ class SetTimeLimitDialog(QDialog):
                 parent.set_time_limit(value)
                 # Show info dialog for 2 seconds
                 if hasattr(parent, "show_timed_info"):
-                    parent.show_timed_info("NEW TIME LIMIT SAVED:", f"{value} ms", timeout_ms=2000)
+                    parent.show_timed_info("TIME LIMIT SAVED:", f"{value} ms", timeout_ms=2000)
             else:
                 print("[SetTimeLimitDialog] Parent missing or has no set_time_limit method!")
             self.accept()
