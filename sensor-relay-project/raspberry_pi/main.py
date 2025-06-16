@@ -62,6 +62,7 @@ DOWN_BUTTON_PIN = 6
 SELECT_BUTTON_PIN = 16
 E_STOP_PIN = 23
 BUZZER_PIN = 26
+RELAY_POWER_PIN = 17
 
 # Add a global flag for E-Stop
 E_STOP = False
@@ -346,6 +347,8 @@ def setup_gpio():
         GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(BUZZER_PIN, GPIO.OUT)
         GPIO.output(BUZZER_PIN, GPIO.LOW)
+        print('setting up relay power control')
+        GPIO.setup(RELAY_POWER_PIN, GPIO.OUT)
     except Exception as e:
         logging.error(f"Error in setup_gpio: {e}")
 
@@ -783,6 +786,7 @@ def main():
                 except Exception as e:
                     logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
+        GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)  # Power on the relays
         # Make Ctrl+C work with PyQt event loop
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
