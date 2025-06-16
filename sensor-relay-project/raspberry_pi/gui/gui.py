@@ -305,6 +305,8 @@ class RelayControlApp(QWidget):
 
     def set_time_limit(self, value):
         self.time_limit = value
+        print(f"[RelayControlApp] Time limit set to {value} ms")
+        # Optionally update any UI elements or widgets here
 
     def set_language(self, lang_code):
         self.language = lang_code
@@ -520,7 +522,7 @@ class SetTimeLimitDialog(QDialog):
             print(f"[SetTimeLimitDialog] parent: {parent}")
             if parent and hasattr(parent, "set_time_limit"):
                 print(f"[SetTimeLimitDialog] Calling parent.set_time_limit({value})")
-                result = parent.set_time_limit(value)
+                parent.set_time_limit(value)
                 print(f"[SetTimeLimitDialog] parent.set_time_limit returned: {result}")
             else:
                 print("[SetTimeLimitDialog] Parent missing or has no set_time_limit method!")

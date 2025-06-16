@@ -601,37 +601,6 @@ def set_target_weight(app):
     clear_serial_buffer(arduinos[0])
     app.clear_dialog_content()
 
-# Usage in set_time_limit:
-def set_time_limit(app):
-    global time_limit
-
-    def update_display(value, *args, **kwargs):
-        seconds = value / 1000.0
-        app.show_dialog_content(
-            title=LANGUAGES[app.language]["SET_TIME_LIMIT_TITLE"],
-            message=f"{seconds:.1f} s\n\n{LANGUAGES[app.language]['SET_TIME_LIMIT_MSG']}",
-        )
-
-    # Show the initial value immediately
-    update_display(time_limit)
-
-    time_limit = adjust_value_with_acceleration(
-        initial_value=time_limit,
-        dialog=type('DialogStub', (), {
-            'update_value': staticmethod(update_display),
-            'accept': staticmethod(lambda *args, **kwargs: None),
-            'close': staticmethod(lambda *args, **kwargs: None)
-        })(),
-        up_button_pin=UP_BUTTON_PIN,
-        down_button_pin=DOWN_BUTTON_PIN,
-        unit_increment=100,
-        min_value=0,
-        up_callback=update_display,
-        down_callback=update_display
-    )
-    clear_serial_buffer(arduinos[0])
-    app.clear_dialog_content()
-
 def clear_serial_buffer(arduino):
     """Read and discard all available bytes from the Arduino serial buffer."""
     while arduino.in_waiting > 0:
