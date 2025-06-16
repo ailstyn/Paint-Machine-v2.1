@@ -346,13 +346,25 @@ class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #222;
+                border: none;
+                border-radius: 24px;
+            }
+            QLabel {
+                color: #fff;
+                font-size: 36px;
+                font-weight: bold;
+                padding: 24px;
+            }
+        """)
         layout = QVBoxLayout(self)
         self.label = QLabel(message)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.label)
-        self.ok_button = QPushButton("OK")
-        self.ok_button.clicked.connect(self.accept)
-        layout.addWidget(self.ok_button)
+        # No OK button for timed info dialog
         self.setModal(True)
 
 class VerticalProgressBar(QWidget):
