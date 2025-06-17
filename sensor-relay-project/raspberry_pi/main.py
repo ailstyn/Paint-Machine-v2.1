@@ -386,52 +386,63 @@ def handle_button_presses(app):
 def startup():
     global arduinos
     arduinos = [None] * NUM_STATIONS
+    print("App initialized, contacting Arduinos...")
+
     for port in arduino_ports:
         try:
-            arduino = serial.Serial(port, 9600, timeout=0.1)
+            arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
-            found_id = False
-            loop_count = 0
-            # Only try to connect if any station is enabled and not already assigned
-            while not found_id and loop_count < 100:
-            # Every 10 loops, resend GET_ID
-                if loop_count % 10 == 0:
-                    arduino.reset_input_buffer()
-                    arduino.write(GET_ID)
-                    arduino.flush()
-                    time.sleep(0.05)
-            # Read all available bytes and look for a line with <ID:...>
-                while arduino.in_waiting > 0:
+            print(f"Trying port {port}...")
+
+            # Step 1: Wait for <ID:N>
+            station_id = None
+            for _ in range(60):  # Wait up to ~6 seconds
+                if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                    print(f"Raw station ID response: {repr(line)}")
+                    print(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<ID:(\d+)>", line)
                     if match:
                         station_id = int(match.group(1))
-                        print(f"Arduino reports station ID {station_id}")
-                        # Only connect if this station is enabled
-                        if 1 <= station_id <= NUM_STATIONS and station_enabled[station_id - 1]:
-                            arduinos[station_id - 1] = arduino
-                            arduino.write(CONFIRM_ID)
-                            arduino.flush()
-                            found_id = True
-                            print(f"Connected to enabled station {station_id} on {port}")
-                            break
-                        else:
-                            print(f"Station {station_id} is disabled or invalid, skipping.")
-                loop_count += 1
-                time.sleep(0.05)
-            if not found_id:
-                print(f"Failed to get enabled station ID from {port} after retries.")
+                        print(f"Station ID {station_id} detected on {port}")
+                        break
+                time.sleep(0.1)
+            if station_id is None or not (1 <= station_id <= NUM_STATIONS):
+                print(f"No valid station ID received from {port}, skipping.")
                 arduino.close()
+                continue
+
+            # Step 2: Send CONFIRM_ID
+            arduino.write(CONFIRM_ID)
+            arduino.flush()
+            print(f"Sent CONFIRM_ID to station {station_id} on {port}")
+
+            # Step 3: Wait for REQUEST_CALIBRATION
+            got_request = False
+            for _ in range(40):  # Wait up to ~4 seconds
+                if arduino.in_waiting > 0:
+                    req = arduino.read(1)
+                    if req == REQUEST_CALIBRATION:
+                        print(f"Station {station_id}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_id-1]}")
+                        arduino.write(REQUEST_CALIBRATION)
+                        arduino.write(f"{scale_calibrations[station_id-1]}\n".encode('utf-8'))
+                        got_request = True
+                        break
+                    else:
+                        # Read and discard any extra bytes
+                        arduino.reset_input_buffer()
+                time.sleep(0.1)
+            if not got_request:
+                print(f"Station {station_id}: Did not receive calibration request, skipping.")
+                arduino.close()
+                continue
+
+            # Step 4: Assign to arduinos list
+            arduinos[station_id - 1] = arduino
+            print(f"Station {station_id} on {port} initialized and ready.")
+
         except Exception as e:
-            msg = f"Port {port} not available or failed: {e}"
-            print(msg)
-            logging.error(msg)
-
-    if not arduinos:
-        print("No Arduinos connected. Exiting program.")
-        exit(1)  # Exit if no Arduinos are connected
-
+            print(f"Error initializing Arduino on {port}: {e}")
+            logging.error(f"Error initializing Arduino on {port}: {e}")
 
 def adjust_value_with_acceleration(
     initial_value, 

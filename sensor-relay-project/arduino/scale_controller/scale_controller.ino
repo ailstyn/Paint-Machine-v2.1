@@ -43,36 +43,31 @@ float cWeight1 = 0.0; // Variable to store the calibration value
 float cWeight2 = 0.0; // Variable to store the calibration value
 
 void handshake_station_id() {
-    const int blink_interval = 125; // ms (4 times per second)
+    const int blink_interval = 125;
     bool led_state = false;
     unsigned long last_blink = millis();
+    static unsigned long last_send = 0;
 
     while (true) {
-        // Blink LED
         unsigned long now = millis();
         if (now - last_blink >= blink_interval) {
             led_state = !led_state;
             digitalWrite(LED_PIN, led_state ? HIGH : LOW);
             last_blink = now;
         }
-
-        // Send station ID every 250ms
-        static unsigned long last_send = 0;
         if (now - last_send >= 250) {
             Serial.println("<ID:" + String(STATION_ID) + ">");
             last_send = now;
         }
-
-        // Check for confirmation from Pi
         while (Serial.available() > 0) {
             byte cmd = Serial.read();
             if (cmd == CONFIRM_ID) {
-                digitalWrite(LED_PIN, LOW); // Turn off LED after handshake
-                delay(100); // Give Pi time to process
+                digitalWrite(LED_PIN, LOW);
+                delay(100);
                 return;
             }
         }
-        delay(5); // Small delay to avoid busy-waiting
+        delay(5);
     }
 }
 
