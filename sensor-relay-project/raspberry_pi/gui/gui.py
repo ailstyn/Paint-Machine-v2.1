@@ -190,7 +190,6 @@ class MenuDialog(QDialog):
             parent.active_dialog = parent.station_status_dialog
             parent.station_status_dialog.station_selected.connect(parent.handle_station_selected)  # Connect the signal
             parent.station_status_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
-            parent.station_status_dialog.finished.connect(self.show_again)
             parent.station_status_dialog.show()
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
