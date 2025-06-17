@@ -46,9 +46,10 @@ void handshake_station_id() {
     const int blink_interval = 125;
     bool led_state = false;
     unsigned long last_blink = millis();
-    unsigned long last_id_send = 0;
+    const char handshake_seq[] = "PMID";
+    int handshake_pos = 0;
 
-    // 1. Blink and wait for GET_ID
+    // 1. Blink and wait for 'PMID' sequence
     while (true) {
         unsigned long now = millis();
         if (now - last_blink >= blink_interval) {
@@ -57,21 +58,25 @@ void handshake_station_id() {
             last_blink = now;
         }
         if (Serial.available() > 0) {
-            byte cmd = Serial.read();
-            if (cmd == GET_ID) {
-                break;
+            char c = Serial.read();
+            if (c == handshake_seq[handshake_pos]) {
+                handshake_pos++;
+                if (handshake_seq[handshake_pos] == '\0') {
+                    break; // Full sequence received
+                }
+            } else {
+                handshake_pos = 0; // Reset if sequence breaks
             }
         }
         delay(5);
     }
 
-    // 2. Repeatedly send station ID until CONFIRM_ID is received
+    // 2. Wait 500ms, then send station ID
+    delay(500);
+    Serial.println("<ID:" + String(STATION_ID) + ">");
+
+    // 3. Wait for CONFIRM_ID
     while (true) {
-        unsigned long now = millis();
-        if (now - last_id_send >= 250) {
-            Serial.println("<ID:" + String(STATION_ID) + ">");
-            last_id_send = now;
-        }
         if (Serial.available() > 0) {
             byte cmd = Serial.read();
             if (cmd == CONFIRM_ID) {
@@ -81,7 +86,7 @@ void handshake_station_id() {
         delay(5);
     }
 
-    // 3. Wait 200ms before exiting
+    // 4. Wait 200ms before exiting
     delay(200);
     digitalWrite(LED_PIN, LOW);
 }

@@ -399,6 +399,10 @@ def startup():
             arduino.flush()
             print(f"Sent GET_ID to {port}")
 
+            arduino.write(b'PMID')
+            arduino.flush()
+            print(f"Sent 'PMID' handshake to {port}")
+
             # Step 1: Wait for <ID:N>
             station_id = None
             for _ in range(60):  # Wait up to ~6 seconds
