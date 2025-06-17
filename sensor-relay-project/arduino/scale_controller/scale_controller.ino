@@ -140,7 +140,7 @@ void loop() {
             Serial.println("Manual fill started.");
         }
         else {
-            Serial.println("<ERR:Unknown message type received: " + String(messageType) + ">");
+            // Serial.println("<ERR:Unknown message type received: " + String(messageType) + ">");
         }
     }
 
@@ -198,7 +198,7 @@ void fill() {
             return;
         }
     } else {
-        Serial.println("<ERR:No time limit received from Pi>");
+        // Serial.println("<ERR:No time limit received from Pi>");
         digitalWrite(LED_PIN, LOW);
         return;
     }
@@ -217,7 +217,7 @@ void fill() {
 
     // If the current weight is greater than 20% of the target weight, abort the fill process
     if (currentWeight > 0.2 * targetWeight) {
-        Serial.println("<ERR:CLEAR SCALE>");
+        // Serial.println("<ERR:CLEAR SCALE>");
         digitalWrite(LED_PIN, LOW);
         return;
     }
@@ -322,7 +322,7 @@ void recalibrate() {
         scaleCalibration = delta / calibWeight;
         scale.set_scale(scaleCalibration);
     } else {
-        Serial.println("<ERR:Calibration weight is zero>");
+        // Serial.println("<ERR:Calibration weight is zero>");
     }
 
     // Send the new calibration value to the Pi
