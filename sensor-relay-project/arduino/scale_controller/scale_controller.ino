@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include <HX711.h>
 
 // Pin definitions
@@ -35,6 +36,7 @@
 #define STOP 0xFD
 #define CONFIRM_ID 0xA1
 #define RESET_HANDSHAKE 0xB0
+#define SERIAL_MAX_LEN 16  // Max serial number length (including null terminator)
 
 // Global variables
 HX711 scale;
@@ -43,6 +45,14 @@ float calibWeight = 61.0;     // Calibration weight in grams
 float cWeight1 = 0.0; // Variable to store the calibration value
 float cWeight2 = 0.0; // Variable to store the calibration value
 float trueBaseline = 0.0; // The initial tare value at startup
+char station_serial[SERIAL_MAX_LEN] = {0}; // Buffer for serial number
+
+void read_serial_from_eeprom() {
+    for (int i = 0; i < SERIAL_MAX_LEN; ++i) {
+        station_serial[i] = EEPROM.read(i);
+        if (station_serial[i] == '\0') break;
+    }
+}
 
 void handshake_station_id() {
     const int blink_interval = 125;
@@ -73,9 +83,11 @@ void handshake_station_id() {
         delay(5);
     }
 
-    // 2. Wait 500ms, then send station ID
+    // 2. Wait 500ms, then send serial number
     delay(500);
-    Serial.println("<ID:" + String(STATION_ID) + ">");
+    Serial.print("<SERIAL:");
+    Serial.print(station_serial);
+    Serial.println(">");
 
     // 3. Wait for CONFIRM_ID
     while (true) {
@@ -135,6 +147,7 @@ void setup() {
 
     trueBaseline = scale.get_units(10); // Store the initial baseline after tare
 
+    read_serial_from_eeprom(); // <-- Read serial number from EEPROM
     handshake_station_id();
     request_and_apply_calibration();
 }

@@ -1,8 +1,8 @@
-# Station mapping: stationN_id=ID
-station1_id=1
-station2_id=2
-station3_id=3
-station4_id=4
+# Serial numbers for each station
+station1_serial=PM-SN0001
+station2_serial=PM-SN0002
+station3_serial=PM-SN0003
+station4_serial=PM-SN0004
 
 # Calibration values
 station1_calibration=1.0

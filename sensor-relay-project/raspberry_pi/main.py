@@ -408,26 +408,29 @@ def startup():
             print(f"Sent 'PMID' handshake to {port}")
 
             # Step 1: Wait for <ID:N>
-            station_id = None
+            serial = None
             for _ in range(60):  # Wait up to ~6 seconds
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
                     print(f"Received from {port}: {repr(line)}")
-                    match = re.match(r"<ID:(\d+)>", line)
+                    match = re.match(r"<SERIAL:([A-Za-z0-9\-]+)>", line)
                     if match:
-                        station_id = int(match.group(1))
-                        print(f"Station ID {station_id} detected on {port}")
+                        serial = match.group(1)
+                        print(f"Station serial {serial} detected on {port}")
                         break
                 time.sleep(0.1)
-            if station_id is None or not (1 <= station_id <= NUM_STATIONS):
-                print(f"No station detected on port {port}, skipping...")
+            if serial is None or serial not in station_serials:
+                print(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
-                continue
+                continue  # or return False in reconnect_arduino
+
+            # Find the station index for this serial
+            station_index = station_serials.index(serial)
 
             # Step 2: Send CONFIRM_ID
             arduino.write(CONFIRM_ID)
             arduino.flush()
-            print(f"Sent CONFIRM_ID to station {station_id} on {port}")
+            print(f"Sent CONFIRM_ID to station {station_index} on {port}")
 
             # Step 3: Wait for REQUEST_CALIBRATION
             got_request = False
@@ -435,9 +438,9 @@ def startup():
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == REQUEST_CALIBRATION:
-                        print(f"Station {station_id}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_id-1]}")
+                        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
-                        arduino.write(f"{scale_calibrations[station_id-1]}\n".encode('utf-8'))
+                        arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
                         break
                     else:
@@ -445,13 +448,13 @@ def startup():
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
-                print(f"Station {station_id}: Did not receive calibration request, skipping.")
+                print(f"Station {station_index}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
 
             # Step 4: Assign to arduinos list
-            arduinos[station_id - 1] = arduino
-            print(f"Station {station_id} on {port} initialized and ready.")
+            arduinos[station_index] = arduino
+            print(f"Station {station_index} on {port} initialized and ready.")
 
         except serial.SerialException:
             print(f"No station detected on port {port}, skipping...")
@@ -571,6 +574,23 @@ def load_station_enabled_flags():
     except Exception as e:
         logging.error(f"Error reading enabled flags: {e}")
     return enabled
+
+def load_station_serials():
+    serials = [None] * NUM_STATIONS
+    config_path = os.path.join(os.path.dirname(__file__), config_file)
+    try:
+        with open(config_path, "r") as file:
+            for line in file:
+                if line.startswith("station") and "_serial=" in line:
+                    key, value = line.strip().split("=")
+                    station_num = int(key.replace("station", "").replace("_serial", ""))
+                    if 1 <= station_num <= NUM_STATIONS:
+                        serials[station_num - 1] = value
+    except Exception as e:
+        logging.error(f"Error reading serials from config: {e}")
+    return serials
+
+station_serials = load_station_serials()
 
 def poll_hardware(app):
     global E_STOP, FILL_LOCKED
@@ -771,26 +791,29 @@ def reconnect_arduino(station_index, port):
         print(f"Sent 'PMID' handshake to {port}")
 
         # Wait for <ID:N>
-        station_id = None
+        serial = None
         for _ in range(60):
             if arduino.in_waiting > 0:
                 line = arduino.read_until(b'\n').decode(errors='replace').strip()
                 print(f"Received from {port}: {repr(line)}")
-                match = re.match(r"<ID:(\d+)>", line)
+                match = re.match(r"<SERIAL:([A-Za-z0-9\-]+)>", line)
                 if match:
-                    station_id = int(match.group(1))
-                    print(f"Station ID {station_id} detected on {port}")
+                    serial = match.group(1)
+                    print(f"Station serial {serial} detected on {port}")
                     break
             time.sleep(0.1)
-        if station_id is None or not (1 <= station_id <= NUM_STATIONS):
-            print(f"No station detected on port {port}, skipping...")
+        if serial is None or serial not in station_serials:
+            print(f"No recognized station detected on port {port}, skipping...")
             arduino.close()
             return False
+
+        # Find the station index for this serial
+        station_index = station_serials.index(serial)
 
         # Send CONFIRM_ID
         arduino.write(CONFIRM_ID)
         arduino.flush()
-        print(f"Sent CONFIRM_ID to station {station_id} on {port}")
+        print(f"Sent CONFIRM_ID to station {station_index} on {port}")
 
         # Wait for REQUEST_CALIBRATION
         got_request = False
@@ -798,22 +821,22 @@ def reconnect_arduino(station_index, port):
             if arduino.in_waiting > 0:
                 req = arduino.read(1)
                 if req == REQUEST_CALIBRATION:
-                    print(f"Station {station_id}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_id-1]}")
+                    print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index-1]}")
                     arduino.write(REQUEST_CALIBRATION)
-                    arduino.write(f"{scale_calibrations[station_id-1]}\n".encode('utf-8'))
+                    arduino.write(f"{scale_calibrations[station_index-1]}\n".encode('utf-8'))
                     got_request = True
                     break
                 else:
                     arduino.reset_input_buffer()
             time.sleep(0.1)
         if not got_request:
-            print(f"Station {station_id}: Did not receive calibration request, skipping.")
+            print(f"Station {station_index}: Did not receive calibration request, skipping.")
             arduino.close()
             return False
 
         # Assign to arduinos list
-        arduinos[station_id - 1] = arduino
-        print(f"Station {station_id} on {port} reconnected and ready.")
+        arduinos[station_index - 1] = arduino
+        print(f"Station {station_index} on {port} reconnected and ready.")
         return True
 
     except Exception as e:
