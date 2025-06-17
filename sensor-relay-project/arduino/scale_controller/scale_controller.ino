@@ -123,7 +123,7 @@ void loop() {
         byte messageType = Serial.read();
 
         if (messageType == GET_ID) {
-            handshake_and_calibrate(); // Re-run handshake and calibration
+            request_and_apply_calibration(); // Re-run handshake and calibration
         }
 
         // Handle tare command
