@@ -737,8 +737,8 @@ if __name__ == "__main__":
     main()
 
 def reconnect_arduino(station_index, port):
+    print(f"reconnect_arduino called for {port}")
     try:
-        print(f"Attempting to reconnect to Arduino on {port} (station {station_index+1})...")
         # Close old connection if exists
         if arduinos[station_index]:
             try:
