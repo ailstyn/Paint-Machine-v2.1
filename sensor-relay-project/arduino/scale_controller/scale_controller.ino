@@ -41,21 +41,34 @@ float calibWeight = 61.0;     // Calibration weight in grams
 float cWeight1 = 0.0; // Variable to store the calibration value
 float cWeight2 = 0.0; // Variable to store the calibration value
 
-void handshake_and_calibrate() {
-    // Wait for GET_ID
+void handshake_station_id() {
+    const int blink_interval = 125; // ms (4 times per second)
+    bool led_state = false;
+    unsigned long last_blink = millis();
+
     while (true) {
-        if (Serial.available() > 0) {
+        // Blink LED
+        unsigned long now = millis();
+        if (now - last_blink >= blink_interval) {
+            led_state = !led_state;
+            digitalWrite(LED_PIN, led_state ? HIGH : LOW);
+            last_blink = now;
+        }
+
+        // Check for incoming serial data
+        while (Serial.available() > 0) {
             byte cmd = Serial.read();
             if (cmd == GET_ID) {
                 Serial.println("<ID:" + String(STATION_ID) + ">");
-                break;
-            } else {
-                Serial.println("<ERR:Unexpected command during handshake>");
+                digitalWrite(LED_PIN, LOW); // Turn off LED after handshake
+                return;
             }
         }
-        delay(10);
+        delay(5); // Small delay to avoid busy-waiting
     }
+}
 
+void request_and_apply_calibration() {
     // Request calibration from Pi
     while (true) {
         Serial.write(REQUEST_CALIBRATION);
@@ -88,20 +101,16 @@ void setup() {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
-    // Blink LED 6 times to indicate setup complete
-    for (int i = 0; i < 6; i++) {
-        digitalWrite(LED_PIN, HIGH);
-        delay(250);
-        digitalWrite(LED_PIN, LOW);
-        delay(250);
-    }
+
     Serial.begin(9600);
     scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
     delay(1000);
     scale.set_scale(scaleCalibration); // Set the initial calibration value
     scale.tare(); // Tare the scale
 
-    handshake_and_calibrate();
+    handshake_station_id();
+
+    request_and_apply_calibration();
 }
 
 void loop() {
