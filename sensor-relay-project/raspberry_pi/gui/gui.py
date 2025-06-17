@@ -262,15 +262,15 @@ class RelayControlApp(QWidget):
 
         # Explicitly assign widgets to grid positions with color
         self.station_widgets = [None] * 4
-        self.station_widgets[0] = StationWidget(1, self.bg_colors[0])  # Station 1
-        self.station_widgets[1] = StationWidget(2, self.bg_colors[1])  # Station 2
-        self.station_widgets[2] = StationWidget(3, self.bg_colors[2])  # Station 3
-        self.station_widgets[3] = StationWidget(4, self.bg_colors[3])  # Station 4
+        self.station_widgets[0] = StationWidget(1, self.bg_colors[0])  # Station 1 - Red
+        self.station_widgets[1] = StationWidget(2, self.bg_colors[1])  # Station 2 - Blue
+        self.station_widgets[2] = StationWidget(3, self.bg_colors[2])  # Station 3 - Green
+        self.station_widgets[3] = StationWidget(4, self.bg_colors[3])  # Station 4 - Yellow
 
-        grid.addWidget(self.station_widgets[0], 0, 0)  # Top left
-        grid.addWidget(self.station_widgets[1], 1, 0)  # Bottom left
-        grid.addWidget(self.station_widgets[2], 0, 1)  # Top right
-        grid.addWidget(self.station_widgets[3], 1, 1)  # Bottom right
+        grid.addWidget(self.station_widgets[0], 0, 0)  # Top left: Red
+        grid.addWidget(self.station_widgets[1], 0, 1)  # Top right: Blue
+        grid.addWidget(self.station_widgets[2], 1, 0)  # Bottom left: Green
+        grid.addWidget(self.station_widgets[3], 1, 1)  # Bottom right: Yellow
 
         self.setLayout(grid)
 
@@ -563,18 +563,19 @@ class SetTimeLimitDialog(QDialog):
         label = QLabel(tr("ENTER_NEW_TIME_LIMIT"))
         layout.addWidget(label)
 
-        # Start with parent's time_limit or 3000 ms, clamp to 5 digits
+        # Start with parent's time_limit or 3.0 seconds, clamp to 1 decimal
         initial = parent.time_limit if parent else 3000
-        initial = max(0, min(initial, 99999))
-        digits = f"{initial:05d}"[-5:]  # Always 5 digits
+        initial_tenths = int(round(initial / 100))  # tenths of a second
 
+        # Always 4 digits: e.g. 0300 = 30.0s, 0015 = 1.5s
+        digits = f"{initial_tenths:04d}"[-4:]
         self.digits = [int(d) for d in digits]
         self.current_digit = 0  # Start editing the leftmost digit
 
         # --- Add up arrows ---
         up_arrows_layout = QHBoxLayout()
         self.up_labels = []
-        for i in range(5):
+        for i in range(4):
             up = QLabel("▲")
             up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             up.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -586,19 +587,25 @@ class SetTimeLimitDialog(QDialog):
         # --- Digits ---
         self.digit_labels = []
         digits_layout = QHBoxLayout()
-        for i in range(5):
+        for i in range(4):
             lbl = QLabel(str(self.digits[i]))
             lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setFixedWidth(48)
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
+            if i == 2:  # Add decimal point after second digit
+                dot = QLabel(".")
+                dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+                dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                dot.setFixedWidth(24)
+                digits_layout.addWidget(dot)
         layout.addLayout(digits_layout)
 
         # --- Add down arrows ---
         down_arrows_layout = QHBoxLayout()
         self.down_labels = []
-        for i in range(5):
+        for i in range(4):
             down = QLabel("▼")
             down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             down.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -621,13 +628,11 @@ class SetTimeLimitDialog(QDialog):
             QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
-        # UP button should increment
         self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
         self.flash_arrow("up")
         self.update_display()
 
     def select_next(self):
-        # DOWN button should decrement
         self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
         self.flash_arrow("down")
         self.update_display()
@@ -639,35 +644,25 @@ class SetTimeLimitDialog(QDialog):
             else:
                 lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
             lbl.setText(str(self.digits[i]))
-        # Set all arrows to white by default
-        for i in range(5):
+        for i in range(4):
             self.up_labels[i].setStyleSheet("color: #fff;")
             self.down_labels[i].setStyleSheet("color: #fff;")
 
     def activate_selected(self):
-        print(f"[SetTimeLimitDialog] activate_selected called. current_digit={self.current_digit}, digits={self.digits}")
-        if self.current_digit < 4:  # Now 5 digits, so index 0-4
+        if self.current_digit < 3:  # 4 digits, so index 0-3
             self.current_digit += 1
-            print(f"[SetTimeLimitDialog] Moving to next digit: {self.current_digit}")
             self.update_display()
         else:
-            value = int("".join(str(d) for d in self.digits))
-            print(f"[SetTimeLimitDialog] Final value to set: {value}")
+            tenths = int("".join(str(d) for d in self.digits))
+            value_ms = tenths * 100  # Convert tenths of a second to ms
             parent = self.parent()
-            print(f"[SetTimeLimitDialog] parent: {parent}")
             if parent and hasattr(parent, "set_time_limit"):
-                print(f"[SetTimeLimitDialog] Calling parent.set_time_limit({value})")
-                parent.set_time_limit(value)
-                # Show info dialog for 2 seconds, displaying seconds with one decimal
+                parent.set_time_limit(value_ms)
                 if hasattr(parent, "show_timed_info"):
-                    seconds = value / 1000
+                    seconds = tenths / 10.0
                     parent.show_timed_info("TIME LIMIT SAVED:", f"{seconds:.1f} sec", timeout_ms=2000)
-            else:
-                print("[SetTimeLimitDialog] Parent missing or has no set_time_limit method!")
             self.accept()
-            # Optionally, also close the menu dialog if you want to return to main screen:
             if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
-                print("[SetTimeLimitDialog] Closing parent.menu_dialog")
                 parent.menu_dialog.accept()
 
 class SelectionDialog(QDialog):
