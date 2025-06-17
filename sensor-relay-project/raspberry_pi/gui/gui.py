@@ -262,15 +262,21 @@ class RelayControlApp(QWidget):
 
         # Explicitly assign widgets to grid positions with color
         self.station_widgets = [None] * 4
-        self.station_widgets[0] = StationWidget(1, self.bg_colors[0])  # Station 1 - Red
-        self.station_widgets[1] = StationWidget(2, self.bg_colors[1])  # Station 2 - Blue
-        self.station_widgets[2] = StationWidget(3, self.bg_colors[2])  # Station 3 - Green
-        self.station_widgets[3] = StationWidget(4, self.bg_colors[3])  # Station 4 - Yellow
+        color_map = {
+    1: "#CB1212",  # Red
+    2: "#2E4BA8",  # Blue
+    3: "#3f922e",  # Green
+    4: "#EDE021",  # Yellow
+}
+        self.station_widgets[0] = StationWidget(1, color_map[1])
+        self.station_widgets[1] = StationWidget(2, color_map[2])
+        self.station_widgets[2] = StationWidget(3, color_map[3])
+        self.station_widgets[3] = StationWidget(4, color_map[4])
 
-        grid.addWidget(self.station_widgets[0], 0, 0)  # Top left: Red
-        grid.addWidget(self.station_widgets[1], 0, 1)  # Top right: Blue
-        grid.addWidget(self.station_widgets[2], 1, 0)  # Bottom left: Green
-        grid.addWidget(self.station_widgets[3], 1, 1)  # Bottom right: Yellow
+        grid.addWidget(self.station_widgets[0], 0, 0)  # Top left
+        grid.addWidget(self.station_widgets[1], 1, 0)  # Bottom left
+        grid.addWidget(self.station_widgets[2], 0, 1)  # Top right
+        grid.addWidget(self.station_widgets[3], 1, 1)  # Bottom right
 
         self.setLayout(grid)
 
