@@ -348,6 +348,7 @@ def handle_button_presses(app):
         # UP BUTTON
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
+            print(f"UP button pressed, dialog: {dialog}")
             # Wait for release
             while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
@@ -359,6 +360,7 @@ def handle_button_presses(app):
         # DOWN BUTTON
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
+            print(f"DOWN button pressed, dialog: {dialog}")
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
@@ -369,6 +371,7 @@ def handle_button_presses(app):
         # SELECT BUTTON
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
+            print(f"SELECT button pressed, dialog: {dialog}")
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
