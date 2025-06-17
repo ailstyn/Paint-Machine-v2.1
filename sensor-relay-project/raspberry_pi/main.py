@@ -820,3 +820,19 @@ def reconnect_arduino(station_index, port):
         print(f"Error reconnecting Arduino on {port}: {e}")
         logging.error(f"Error reconnecting Arduino on {port}: {e}")
         return False
+
+def try_connect_station(station_index):
+    port = arduino_ports[station_index]
+    print(f"Attempting to (re)connect to station {station_index+1} on port {port}...")
+    try:
+        # Try to reconnect (reuse your reconnect_arduino logic)
+        success = reconnect_arduino(station_index, port)
+        if success:
+            station_enabled[station_index] = True
+            # Optionally, save enabled state to config here
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(f"Error in try_connect_station: {e}")
+        return False

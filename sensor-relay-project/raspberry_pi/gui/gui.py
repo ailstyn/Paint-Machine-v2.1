@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle
 )
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor  # <-- Add QPixmap here
 import sys
 import logging
@@ -189,6 +189,7 @@ class MenuDialog(QDialog):
                 bg_colors_deactivated=getattr(parent, "bg_colors_deactivated", None),
             )
             parent.active_dialog = parent.station_status_dialog
+            parent.station_status_dialog.station_selected.connect(parent.handle_station_selected)  # Connect the signal
             parent.station_status_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
             parent.station_status_dialog.finished.connect(self.show_again)
             parent.station_status_dialog.show()
@@ -362,6 +363,21 @@ class RelayControlApp(QWidget):
         dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
         dialog.show()
         QTimer.singleShot(timeout_ms, dialog.accept)
+
+    def handle_station_selected(self, station_index):
+        print(f"StationStatusDialog: Station {station_index+1} selected for (re)connect")
+        # Call a function in main.py to attempt (re)connect
+        try:
+            from main import try_connect_station  # Import your connect function
+            success = try_connect_station(station_index)
+            if success:
+                print(f"Station {station_index+1} connected and enabled.")
+                self.station_enabled[station_index] = True
+                self.update_station_states(self.station_enabled)
+            else:
+                print(f"Station {station_index+1} connection failed.")
+        except Exception as e:
+            print(f"Error connecting to station {station_index+1}: {e}")
 
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
@@ -768,6 +784,8 @@ class ChangeUnitsDialog(QDialog):
         self.accept()
 
 class StationStatusDialog(QDialog):
+    station_selected = pyqtSignal(int)  # Add this line
+
     def __init__(self, parent=None, station_enabled=None, bg_colors=None, bg_colors_deactivated=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -794,6 +812,7 @@ class StationStatusDialog(QDialog):
         self.boxes = []
         self.selected_index = 0
 
+        # Add four station boxes
         for i in range(4):
             box = QWidget()
             box_layout = QVBoxLayout(box)
@@ -822,6 +841,27 @@ class StationStatusDialog(QDialog):
             layout.addWidget(box)
             self.boxes.append(box)
 
+        # Add EXIT box as the fifth option
+        exit_box = QWidget()
+        exit_layout = QVBoxLayout(exit_box)
+        exit_layout.setContentsMargins(8, 8, 8, 8)
+        exit_layout.setSpacing(8)
+
+        exit_label = QLabel("EXIT")
+        exit_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        exit_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
+        exit_label.setStyleSheet("color: #fff;")
+        exit_layout.addWidget(exit_label)
+
+        exit_status = QLabel("")  # Empty label for spacing
+        exit_layout.addWidget(exit_status)
+
+        exit_color = "#444"  # Gray for exit
+        self.colors.append(exit_color)
+        exit_box.setStyleSheet(f"background-color: {exit_color}; border-radius: 16px;")
+        layout.addWidget(exit_box)
+        self.boxes.append(exit_box)
+
         self.setLayout(layout)
         self.setModal(True)
         self.update_selection_box()
@@ -838,18 +878,20 @@ class StationStatusDialog(QDialog):
                 )
 
     def select_prev(self):
-        print("StationStatusDialog: select_prev called")
         self.selected_index = (self.selected_index - 1) % len(self.boxes)
         self.update_selection_box()
 
     def select_next(self):
-        print("StationStatusDialog: select_next called")
         self.selected_index = (self.selected_index + 1) % len(self.boxes)
         self.update_selection_box()
 
     def activate_selected(self):
-        print("StationStatusDialog: activate_selected called")
-        self.accept()
+        # If EXIT is selected, close the dialog
+        if self.selected_index == len(self.boxes) - 1:
+            self.accept()
+        else:
+            # Emit signal with the selected station index (0-based)
+            self.station_selected.emit(self.selected_index)
 
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
