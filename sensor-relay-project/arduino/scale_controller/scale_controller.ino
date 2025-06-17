@@ -59,6 +59,7 @@ void handshake_station_id() {
         while (Serial.available() > 0) {
             byte cmd = Serial.read();
             if (cmd == GET_ID) {
+                delay(100);
                 Serial.println("<ID:" + String(STATION_ID) + ">");
                 digitalWrite(LED_PIN, LOW); // Turn off LED after handshake
                 return;
