@@ -91,25 +91,24 @@ for port in arduino_ports:
             for _ in range(10):
                 try:
                     if arduino.in_waiting > 0:
-                        data = arduino.read(arduino.in_waiting)
-                        print(f"Received raw bytes: {data}")
-                        lines = data.split(b'\n')
-                        for line in lines:
-                            if line:
-                                response = line.decode(errors='replace').strip()
-                                print(f"Raw station ID response: {repr(response)}")
-                                match = re.match(r"<ID:(\d+)>", response)
-                                if match:
-                                    station_id = int(match.group(1))
-                                    print(f"Arduino reports station ID {station_id}")
-                                    if 1 <= station_id <= NUM_STATIONS:
-                                        arduinos[station_id - 1] = arduino
-                                        found_id = True
-                                        break  # Break inner for-loop
-                                else:
-                                    msg = f"Could not parse station ID from {port}: {repr(response)}"
-                                    print(msg)
-                                    logging.error(msg)
+                        response = arduino.read_until(b'\n').decode(errors='replace').strip()
+                        print(f"Raw station ID response: {repr(response)}")
+                        match = re.match(r"<ID:(\d+)>", response)
+                        if match:
+                            station_id = int(match.group(1))
+                            print(f"Arduino reports station ID {station_id}")
+                            if 1 <= station_id <= NUM_STATIONS:
+                                arduinos[station_id - 1] = arduino
+                                found_id = True
+                                break  # Break inner for-loop
+                            else:
+                                msg = f"Invalid station ID {station_id} from {port}"
+                                print(msg)
+                                logging.error(msg)
+                        else:
+                            msg = f"Could not parse station ID from {port}: {repr(response)}"
+                            print(msg)
+                            logging.error(msg)
                     else:
                         time.sleep(0.1)
                 except Exception as e:
