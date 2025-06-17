@@ -175,11 +175,10 @@ class MenuDialog(QDialog):
 
     def activate_selected(self):
         selected_key = self.menu_keys[self.selected_index]
-        selected_label = self.menu_items[self.selected_index]
-        print(f"Menu item selected: {selected_key} ({selected_label})")
         parent = self.parent()
         if selected_key == "EXIT":
             self.accept()
+            # Do NOT call self.show_again() here
         elif selected_key == "STATION STATUS":
             self.hide()
             parent.station_status_dialog = StationStatusDialog(
@@ -314,7 +313,7 @@ class RelayControlApp(QWidget):
         print("RelayControlApp: show_menu() called")
         if self.menu_dialog is None or not self.menu_dialog.isVisible():
             self.menu_dialog = MenuDialog(self)
-            self.active_dialog = self.menu_dialog  # <-- Set active_dialog here!
+            self.active_dialog = self.menu_dialog
             self.menu_dialog.finished.connect(lambda: setattr(self, "active_dialog", None))
             self.menu_dialog.show()
 
