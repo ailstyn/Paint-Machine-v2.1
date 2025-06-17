@@ -100,14 +100,14 @@ class StationWidget(QWidget):
     def set_active(self, active, bg_color=None):
         color = bg_color if bg_color else "#FFFFFF"
         if not active:
-            # Convert hex to RGBA with alpha for 50% opacity
+            # Convert hex to RGBA with alpha for 25% opacity
             if color.startswith("#") and len(color) == 7:
                 r = int(color[1:3], 16)
                 g = int(color[3:5], 16)
                 b = int(color[5:7], 16)
-                color = f"rgba({r},{g},{b},0.4)"  # 0.4 = 40% opacity
+                color = f"rgba({r},{g},{b},0.25)"  # 0.25 = 25% opacity
             else:
-                color = "rgba(68,68,68,0.4)"  # fallback gray
+                color = "rgba(68,68,68,0.25)"  # fallback gray
         self.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
 
     def set_offline(self, bg_color_deactivated="#444444"):
@@ -823,6 +823,7 @@ class StationStatusDialog(QDialog):
             status.setStyleSheet("color: #fff;")
             box_layout.addWidget(status)
 
+            color = bg_colors[i] if bg_colors is not None else "#444444"
             self.colors.append(color)
             box.setStyleSheet(f"background-color: {color}; border-radius: 16px;")
             layout.addWidget(box)
