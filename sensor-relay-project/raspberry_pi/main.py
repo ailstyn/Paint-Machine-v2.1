@@ -77,7 +77,7 @@ fill_time_limit_reached = False
 
 # Usage example:
 NUM_STATIONS = 4  # Set this to however many stations you have
-
+arduinos = [None] * NUM_STATIONS
 
 # Replace your old load/write functions with these:
 def load_scale_calibrations():
@@ -383,7 +383,7 @@ def handle_button_presses(app):
         print(f"Error in handle_button_presses: {e}")
 
 def startup():
-    # Create a list of active serial connections (only for enabled stations)
+    global arduinos
     arduinos = [None] * NUM_STATIONS
     for port in arduino_ports:
         try:
