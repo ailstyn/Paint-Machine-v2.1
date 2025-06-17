@@ -99,6 +99,7 @@ class StationWidget(QWidget):
 
     def set_active(self, active, bg_color=None):
         color = bg_color if bg_color else "#FFFFFF"
+        print(f"[set_active] Station {self.station_number}: active={active}, base color={color}")
         if not active:
             # Convert hex to RGBA with alpha for 25% opacity
             if color.startswith("#") and len(color) == 7:
@@ -106,8 +107,12 @@ class StationWidget(QWidget):
                 g = int(color[3:5], 16)
                 b = int(color[5:7], 16)
                 color = f"rgba({r},{g},{b},0.25)"  # 0.25 = 25% opacity
+                print(f"[set_active] Station {self.station_number}: using RGBA color {color}")
             else:
                 color = "rgba(68,68,68,0.25)"  # fallback gray
+                print(f"[set_active] Station {self.station_number}: using fallback color {color}")
+        else:
+            print(f"[set_active] Station {self.station_number}: using full opacity color {color}")
         self.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
 
     def set_offline(self, bg_color_deactivated="#444444"):
@@ -346,7 +351,9 @@ class RelayControlApp(QWidget):
         QApplication.processEvents()
 
     def update_station_states(self, station_enabled):
+        print(f"[update_station_states] station_enabled={station_enabled}")
         for i, widget in enumerate(self.station_widgets):
+            print(f"[update_station_states] Setting Station {i+1} active={station_enabled[i]}, color={self.bg_colors[i]}")
             widget.set_active(station_enabled[i], self.bg_colors[i])
 
     def set_units(self, units):
