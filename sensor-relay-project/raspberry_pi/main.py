@@ -91,24 +91,25 @@ for port in arduino_ports:
             for _ in range(10):
                 try:
                     if arduino.in_waiting > 0:
-                        response = arduino.readline().decode(errors='replace').strip()
-                        print(f"Raw station ID response: {repr(response)}")
-                        match = re.match(r"<ID:(\d+)>", response)
-                        if match:
-                            station_id = int(match.group(1))
-                            print(f"Arduino reports station ID {station_id}")
-                            if 1 <= station_id <= NUM_STATIONS:
-                                arduinos[station_id - 1] = arduino
-                                found_id = True
-                                break  # Break inner for-loop
-                            else:
-                                msg = f"Invalid station ID {station_id} from {port}"
-                                print(msg)
-                                logging.error(msg)
-                        else:
-                            msg = f"Could not parse station ID from {port}: {repr(response)}"
-                            print(msg)
-                            logging.error(msg)
+                        data = arduino.read(arduino.in_waiting)
+                        print(f"Received raw bytes: {data}")
+                        lines = data.split(b'\n')
+                        for line in lines:
+                            if line:
+                                response = line.decode(errors='replace').strip()
+                                print(f"Raw station ID response: {repr(response)}")
+                                match = re.match(r"<ID:(\d+)>", response)
+                                if match:
+                                    station_id = int(match.group(1))
+                                    print(f"Arduino reports station ID {station_id}")
+                                    if 1 <= station_id <= NUM_STATIONS:
+                                        arduinos[station_id - 1] = arduino
+                                        found_id = True
+                                        break  # Break inner for-loop
+                                else:
+                                    msg = f"Could not parse station ID from {port}: {repr(response)}"
+                                    print(msg)
+                                    logging.error(msg)
                     else:
                         time.sleep(0.1)
                 except Exception as e:
@@ -690,16 +691,6 @@ def main():
                 widget.set_offline(bg_colors_deactivated[i])
             if station_enabled[i]:
                 widget.set_weight(0, target_weight)
-
-        for arduino in arduinos:
-            if arduino is not None:
-                arduino.reset_input_buffer()
-                arduino.reset_output_buffer()
-                try:
-                    arduino.write(b'P')
-                    print(f"Sent 'P' (PI READY) to Arduino on {arduino.port}")
-                except Exception as e:
-                    logging.error(f"Failed to send 'P' to Arduino on {arduino.port}: {e}")
 
         GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)  # Power on the relays
         # Make Ctrl+C work with PyQt event loop
