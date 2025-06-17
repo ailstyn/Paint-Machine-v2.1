@@ -486,7 +486,7 @@ void smart_fill() {
     }
     Serial.print("Final weight: ");
     Serial.println(endWeight);
-}   digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+    digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
     Serial.write(SMART_FILL_END);
 
     // 6. Final weight and flow rate reporting
