@@ -756,6 +756,7 @@ def reconnect_arduino(station_index, port):
         arduino.write(RESET_HANDSHAKE)
         arduino.flush()
         print(f"Sent RESET_HANDSHAKE to {port}")
+        time.sleep(0.5)
 
         # Now do the normal handshake
         arduino.write(b'PMID')
