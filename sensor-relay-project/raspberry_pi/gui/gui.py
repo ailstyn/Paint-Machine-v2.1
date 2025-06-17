@@ -256,25 +256,44 @@ class MenuDialog(QDialog):
         super().show()
 
 class RelayControlApp(QWidget):
-    def __init__(self):
+    def __init__(self, station_enabled=None):
         super().__init__()
         self.setWindowTitle("Four Station Control")
         self.setStyleSheet("background-color: #222222;")
 
         # Define station colors
-        self.bg_colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]  # Active: Red, Blue, Green, Yellow
+        self.bg_colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]  # Red, Blue, Green, Yellow
+
+        # Example enabled state (replace with your actual config loading)
+        if station_enabled is not None:
+            self.station_enabled = station_enabled
+        else:
+            self.station_enabled = [False, False, False, False]
 
         # Main grid layout (2x2 for four stations)
         grid = QGridLayout()
         grid.setContentsMargins(8, 8, 8, 8)
         grid.setSpacing(8)
 
-        # Explicitly assign widgets to grid positions with color
+        # Explicitly assign widgets to grid positions with color and opacity
         self.station_widgets = [None] * 4
-        self.station_widgets[0] = StationWidget(1, self.bg_colors[0])  # Station 1
-        self.station_widgets[1] = StationWidget(2, self.bg_colors[1])  # Station 2
-        self.station_widgets[2] = StationWidget(3, self.bg_colors[2])  # Station 3
-        self.station_widgets[3] = StationWidget(4, self.bg_colors[3])  # Station 4
+        for i in range(4):
+            widget = StationWidget(i + 1, self.bg_colors[i])
+            # Set initial color with opacity based on enabled state
+            if self.station_enabled[i]:
+                color = self.bg_colors[i]
+            else:
+                # Convert hex to rgba with 25% opacity
+                hex_color = self.bg_colors[i]
+                if hex_color.startswith("#") and len(hex_color) == 7:
+                    r = int(hex_color[1:3], 16)
+                    g = int(hex_color[3:5], 16)
+                    b = int(hex_color[5:7], 16)
+                    color = f"rgba({r},{g},{b},0.25)"
+                else:
+                    color = "rgba(68,68,68,0.25)"
+            widget.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
+            self.station_widgets[i] = widget
 
         grid.addWidget(self.station_widgets[0], 0, 0)  # Top left
         grid.addWidget(self.station_widgets[1], 1, 0)  # Bottom left

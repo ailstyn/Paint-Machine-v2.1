@@ -710,7 +710,7 @@ def main():
         # Create QApplication before any QWidget
         app_qt = QApplication(sys.argv)
 
-        app = RelayControlApp()
+        app = RelayControlApp(station_enabled=station_enabled)
         app.set_calibrate = calibrate_scale
 
         # Set the GUI's target weight to match your default
@@ -856,3 +856,22 @@ def try_connect_station(station_index):
     except Exception as e:
         print(f"Error in try_connect_station: {e}")
         return False
+
+def load_station_enabled(config_path, num_stations=4):
+    enabled = [False] * num_stations
+    try:
+        with open(config_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                for i in range(num_stations):
+                    key = f"station{i+1}_enabled="
+                    if line.startswith(key):
+                        value = line.split("=")[1].strip().lower()
+                        enabled[i] = value == "true"
+    except Exception as e:
+        print(f"Error reading station_enabled from config: {e}")
+    return enabled
+
+# Usage at startup:
+config_path = "config.txt"  # Adjust path as needed
+station_enabled = load_station_enabled(config_path)
