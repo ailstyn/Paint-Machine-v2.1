@@ -32,7 +32,6 @@
 #define SMART_FILL_START 0x30
 #define SMART_FILL_END   0x31
 #define GET_ID 0xA0
-#define STATION_ID 3
 #define STOP 0xFD
 #define CONFIRM_ID 0xA1
 #define RESET_HANDSHAKE 0xB0

@@ -408,24 +408,24 @@ def startup():
             print(f"Sent 'PMID' handshake to {port}")
 
             # Step 1: Wait for <ID:N>
-            serial = None
+            station_serial_number = None
             for _ in range(60):  # Wait up to ~6 seconds
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
                     print(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:([A-Za-z0-9\-]+)>", line)
                     if match:
-                        serial = match.group(1)
-                        print(f"Station serial {serial} detected on {port}")
+                        station_serial_number = match.group(1)
+                        print(f"Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
-            if serial is None or serial not in station_serials:
+            if station_serial_number is None or station_serial_number not in station_serials:
                 print(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue  # or return False in reconnect_arduino
 
             # Find the station index for this serial
-            station_index = station_serials.index(serial)
+            station_index = station_serials.index(station_serial_number)
 
             # Step 2: Send CONFIRM_ID
             arduino.write(CONFIRM_ID)
@@ -791,24 +791,24 @@ def reconnect_arduino(station_index, port):
         print(f"Sent 'PMID' handshake to {port}")
 
         # Wait for <ID:N>
-        serial = None
+        station_serial_number = None
         for _ in range(60):
             if arduino.in_waiting > 0:
                 line = arduino.read_until(b'\n').decode(errors='replace').strip()
                 print(f"Received from {port}: {repr(line)}")
                 match = re.match(r"<SERIAL:([A-Za-z0-9\-]+)>", line)
                 if match:
-                    serial = match.group(1)
-                    print(f"Station serial {serial} detected on {port}")
+                    station_serial_number = match.group(1)
+                    print(f"Station serial {station_serial_number} detected on {port}")
                     break
             time.sleep(0.1)
-        if serial is None or serial not in station_serials:
+        if station_serial_number is None or station_serial_number not in station_serials:
             print(f"No recognized station detected on port {port}, skipping...")
             arduino.close()
             return False
 
         # Find the station index for this serial
-        station_index = station_serials.index(serial)
+        station_index = station_serials.index(station_serial_number)
 
         # Send CONFIRM_ID
         arduino.write(CONFIRM_ID)
