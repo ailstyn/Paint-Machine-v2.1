@@ -45,53 +45,57 @@ class OutlinedLabel(QLabel):
         painter.drawPath(path)
 
 class StationWidget(QWidget):
-    def __init__(self, station_number, bg_color, *args, **kwargs):
+    def __init__(self, station_number, bg_color, enabled=True, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.station_number = station_number
 
-        main_layout = QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-
-        bar_on_left = station_number in (1, 2)
-        self.progress_bar = VerticalProgressBar(max_value=100, value=0, bar_color="#F6EB61")
-        self.progress_bar.setFixedWidth(24)
-
-        content_layout = QVBoxLayout()
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(0)
-
-        self.weight_label = OutlinedLabel("0.0 / 0.0 g")
-        self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
-        content_layout.addWidget(self.weight_label)
-
-        self.final_weight_label = QLabel("Final: --")
-        self.final_weight_label.setFont(QFont("Arial", 18))
-        self.final_weight_label.setStyleSheet("color: #fff;")
-        content_layout.addWidget(self.final_weight_label)
-
-        self.fill_time_label = QLabel("Fill Time: -- ms")
-        self.fill_time_label.setFont(QFont("Arial", 18))
-        self.fill_time_label.setStyleSheet("color: #fff;")
-        content_layout.addWidget(self.fill_time_label)
-
-        # Add the offline label, but hide it by default
-        self.offline_label = OutlinedLabel("STATION OFFLINE")
-        self.offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-        self.offline_label.setStyleSheet("color: #fff;")
-        self.offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.offline_label.hide()
-        content_layout.addWidget(self.offline_label)
-
-        if bar_on_left:
-            main_layout.addWidget(self.progress_bar)
-            main_layout.addLayout(content_layout)
-        else:
-            main_layout.addLayout(content_layout)
-            main_layout.addWidget(self.progress_bar)
-
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
+
+        if enabled:
+            main_layout = QHBoxLayout(self)
+            main_layout.setContentsMargins(0, 0, 0, 0)
+            main_layout.setSpacing(0)
+
+            bar_on_left = station_number in (1, 2)
+            self.progress_bar = VerticalProgressBar(max_value=100, value=0, bar_color="#F6EB61")
+            self.progress_bar.setFixedWidth(24)
+
+            content_layout = QVBoxLayout()
+            content_layout.setContentsMargins(0, 0, 0, 0)
+            content_layout.setSpacing(0)
+
+            self.weight_label = OutlinedLabel("0.0 / 0.0 g")
+            self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+            content_layout.addWidget(self.weight_label)
+
+            self.final_weight_label = QLabel("Final: --")
+            self.final_weight_label.setFont(QFont("Arial", 18))
+            self.final_weight_label.setStyleSheet("color: #fff;")
+            content_layout.addWidget(self.final_weight_label)
+
+            self.fill_time_label = QLabel("Fill Time: -- ms")
+            self.fill_time_label.setFont(QFont("Arial", 18))
+            self.fill_time_label.setStyleSheet("color: #fff;")
+            content_layout.addWidget(self.fill_time_label)
+
+            if bar_on_left:
+                main_layout.addWidget(self.progress_bar)
+                main_layout.addLayout(content_layout)
+            else:
+                main_layout.addLayout(content_layout)
+                main_layout.addWidget(self.progress_bar)
+        else:
+            offline_layout = QVBoxLayout(self)
+            offline_layout.setContentsMargins(0, 0, 0, 0)
+            offline_layout.setSpacing(0)
+            offline_label = OutlinedLabel("STATION OFFLINE")
+            offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+            offline_label.setStyleSheet("color: #fff;")
+            offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            offline_layout.addWidget(offline_label)
+
+        self.setLayout(main_layout if enabled else offline_layout)
 
     def set_weight(self, current_weight, target_weight, unit="g"):
         if unit == "g":
@@ -292,7 +296,7 @@ class RelayControlApp(QWidget):
         # Explicitly assign widgets to grid positions with color and opacity
         self.station_widgets = [None] * 4
         for i in range(4):
-            widget = StationWidget(i + 1, self.bg_colors[i])
+            widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
             # Set initial color with opacity based on enabled state
             if self.station_enabled[i]:
                 color = self.bg_colors[i]
