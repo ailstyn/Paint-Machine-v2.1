@@ -78,55 +78,6 @@ fill_time_limit_reached = False
 # Usage example:
 NUM_STATIONS = 4  # Set this to however many stations you have
 
-# Create a list of active serial connections
-arduinos = [None] * NUM_STATIONS
-for port in arduino_ports:
-    try:
-        arduino = serial.Serial(port, 9600, timeout=1)
-        found_id = False
-        for attempt in range(5):
-            arduino.reset_input_buffer()
-            arduino.write(GET_ID)
-            time.sleep(0.2)
-            for _ in range(10):
-                try:
-                    if arduino.in_waiting > 0:
-                        response = arduino.read_until(b'\n').decode(errors='replace').strip()
-                        print(f"Raw station ID response: {repr(response)}")
-                        match = re.match(r"<ID:(\d+)>", response)
-                        if match:
-                            station_id = int(match.group(1))
-                            print(f"Arduino reports station ID {station_id}")
-                            if 1 <= station_id <= NUM_STATIONS:
-                                arduinos[station_id - 1] = arduino
-                                found_id = True
-                                break  # Break inner for-loop
-                            else:
-                                msg = f"Invalid station ID {station_id} from {port}"
-                                print(msg)
-                                logging.error(msg)
-                        else:
-                            msg = f"Could not parse station ID from {port}: {repr(response)}"
-                            print(msg)
-                            logging.error(msg)
-                    else:
-                        time.sleep(0.1)
-                except Exception as e:
-                    logging.error(f"Error parsing station ID from {port}: {e}")
-            if found_id:
-                break  # Break outer for-loop if ID found
-        else:
-            msg = f"Failed to get station ID from {port} after retries."
-            print(msg)
-            logging.error(msg)
-    except Exception as e:
-        msg = f"Port {port} not available or failed: {e}"
-        print(msg)
-        logging.error(msg)
-
-if not arduinos:
-    print("No Arduinos connected. Exiting program.")
-    exit(1)  # Exit if no Arduinos are connected
 
 # Replace your old load/write functions with these:
 def load_scale_calibrations():
@@ -431,31 +382,52 @@ def handle_button_presses(app):
         logging.error(f"Error in handle_button_presses: {e}")
         print(f"Error in handle_button_presses: {e}")
 
-def startup(app):
-    # Display the "CLEAR SCALES" message
-    app.display_message(LANGUAGES[app.language]["CLEAR_SCALES_TITLE"], LANGUAGES[app.language]["CLEAR_SCALES_MSG"])
-
-    # Wait for the select button to be pressed
-    print("Waiting for SELECT button to be pressed...")
-    while GPIO.input(SELECT_BUTTON_PIN) == GPIO.HIGH:  # Wait until the button is pressed (LOW)
-        time.sleep(0.1)
-
-    print("SELECT button pressed. Proceeding with startup.")
-
-    # Send the TARE_SCALE command to every connected Arduino
-    for i, arduino in enumerate(arduinos):
+def startup():
+    # Create a list of active serial connections (only for enabled stations)
+    arduinos = [None] * NUM_STATIONS
+    for port in arduino_ports:
         try:
-            arduino.write(TARE_SCALE)  # Send the tare command
-            print(f"Sent TARE_SCALE command to Arduino {i} on port {arduino.port}")
-        except serial.SerialException as e:
-            logging.error(f"Error sending TARE_SCALE to Arduino {i} on port {arduino.port}: {e}")
+            arduino = serial.Serial(port, 9600, timeout=0.1)
+            found_id = False
+            loop_count = 0
+            # Only try to connect if any station is enabled and not already assigned
+            while not found_id and loop_count < 100:
+            # Every 10 loops, resend GET_ID
+                if loop_count % 10 == 0:
+                    arduino.reset_input_buffer()
+                    arduino.write(GET_ID)
+                    arduino.flush()
+                    time.sleep(0.05)
+            # Read all available bytes and look for a line with <ID:...>
+                while arduino.in_waiting > 0:
+                    line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                    print(f"Raw station ID response: {repr(line)}")
+                    match = re.match(r"<ID:(\d+)>", line)
+                    if match:
+                        station_id = int(match.group(1))
+                        print(f"Arduino reports station ID {station_id}")
+                        # Only connect if this station is enabled
+                        if 1 <= station_id <= NUM_STATIONS and station_enabled[station_id - 1]:
+                            arduinos[station_id - 1] = arduino
+                            found_id = True
+                            print(f"Connected to enabled station {station_id} on {port}")
+                            break
+                        else:
+                            print(f"Station {station_id} is disabled or invalid, skipping.")
+                loop_count += 1
+                time.sleep(0.05)
+            if not found_id:
+                print(f"Failed to get enabled station ID from {port} after retries.")
+                arduino.close()
+        except Exception as e:
+            msg = f"Port {port} not available or failed: {e}"
+            print(msg)
+            logging.error(msg)
 
-    # Display the "SCALES RESET" message
-    app.display_message(LANGUAGES[app.language]["SCALES_RESET_TITLE"], LANGUAGES[app.language]["SCALES_RESET_MSG"])
-    time.sleep(3)  # Wait for 3 seconds
+    if not arduinos:
+        print("No Arduinos connected. Exiting program.")
+        exit(1)  # Exit if no Arduinos are connected
 
-    # Reload the main screen
-    app.reload_main_screen()
 
 def adjust_value_with_acceleration(
     initial_value, 
@@ -671,6 +643,7 @@ def main():
         global station_enabled
         station_enabled = load_station_enabled_flags()
         setup_gpio()
+        startup()  # Initialize serial connections
 
         # Create QApplication before any QWidget
         app_qt = QApplication(sys.argv)

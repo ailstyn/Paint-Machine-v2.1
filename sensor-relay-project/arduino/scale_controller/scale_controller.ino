@@ -122,10 +122,6 @@ void loop() {
     if (Serial.available() > 0) {
         byte messageType = Serial.read();
 
-        if (messageType == GET_ID) {
-            request_and_apply_calibration(); // Re-run handshake and calibration
-        }
-
         // Handle tare command
         if (messageType == TARE_SCALE) {
             Serial.write(VERBOSE_DEBUG);
