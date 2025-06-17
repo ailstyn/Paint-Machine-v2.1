@@ -182,7 +182,12 @@ class MenuDialog(QDialog):
             self.accept()
         elif selected_key == "STATION STATUS":
             self.hide()
-            dlg = StationStatusDialog(parent)
+            dlg = StationStatusDialog(
+                parent,
+                station_enabled=getattr(parent, "station_enabled", None),
+                bg_colors=getattr(parent, "bg_colors", None),
+                bg_colors_deactivated=getattr(parent, "bg_colors_deactivated", None),
+            )
             dlg.exec()
             self.show_again()
             
@@ -761,7 +766,7 @@ class ChangeUnitsDialog(QDialog):
         self.accept()
 
 class StationStatusDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, station_enabled=None, bg_colors=None, bg_colors_deactivated=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setStyleSheet("""
@@ -775,11 +780,17 @@ class StationStatusDialog(QDialog):
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(24)
 
-        # Use parent's station colors if available
-        if parent and hasattr(parent, "bg_colors"):
-            colors = parent.bg_colors
-        else:
-            colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]
+        # Use parent's station colors if not provided
+        if bg_colors is None and parent and hasattr(parent, "bg_colors"):
+            bg_colors = parent.bg_colors
+        if bg_colors_deactivated is None and parent and hasattr(parent, "bg_colors_deactivated"):
+            bg_colors_deactivated = parent.bg_colors_deactivated
+        if station_enabled is None and parent and hasattr(parent, "station_enabled"):
+            station_enabled = parent.station_enabled
+
+        self.colors = []
+        self.boxes = []
+        self.selected_index = 0
 
         for i in range(4):
             box = QWidget()
@@ -793,19 +804,48 @@ class StationStatusDialog(QDialog):
             header.setStyleSheet("color: #fff;")
             box_layout.addWidget(header)
 
-            # You can add more status info here if desired
-            # Example: show current weight or status
-            status = QLabel("OK")
+            status = QLabel("OK" if station_enabled is None or station_enabled[i] else "DISABLED")
             status.setAlignment(Qt.AlignmentFlag.AlignCenter)
             status.setFont(QFont("Arial", 18))
             status.setStyleSheet("color: #fff;")
             box_layout.addWidget(status)
 
-            box.setStyleSheet(f"background-color: {colors[i]}; border-radius: 16px;")
+            # Choose color based on enabled/disabled
+            if station_enabled is not None and not station_enabled[i]:
+                color = bg_colors_deactivated[i] if bg_colors_deactivated else "#444"
+            else:
+                color = bg_colors[i] if bg_colors else "#222"
+            self.colors.append(color)
+            box.setStyleSheet(f"background-color: {color}; border-radius: 16px;")
             layout.addWidget(box)
+            self.boxes.append(box)
 
         self.setLayout(layout)
         self.setModal(True)
+        self.update_selection_box()
+
+    def update_selection_box(self):
+        for i, box in enumerate(self.boxes):
+            if i == self.selected_index:
+                box.setStyleSheet(
+                    f"background-color: {self.colors[i]}; border: 6px solid #F6EB61; border-radius: 16px;"
+                )
+            else:
+                box.setStyleSheet(
+                    f"background-color: {self.colors[i]}; border: 6px solid transparent; border-radius: 16px;"
+                )
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Left):
+            self.selected_index = (self.selected_index - 1) % len(self.boxes)
+            self.update_selection_box()
+        elif event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Right):
+            self.selected_index = (self.selected_index + 1) % len(self.boxes)
+            self.update_selection_box()
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Escape):
+            self.accept()
+        else:
+            super().keyPressEvent(event)
 
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
