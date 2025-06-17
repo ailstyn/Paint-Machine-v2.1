@@ -53,7 +53,6 @@ class StationWidget(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # Decide bar position: left for 0/1, right for 2/3
         bar_on_left = station_number in (1, 2)
         self.progress_bar = VerticalProgressBar(max_value=100, value=0, bar_color="#F6EB61")
         self.progress_bar.setFixedWidth(24)
@@ -66,7 +65,6 @@ class StationWidget(QWidget):
         self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         content_layout.addWidget(self.weight_label)
 
-        # Add these lines to create the labels
         self.final_weight_label = QLabel("Final: --")
         self.final_weight_label.setFont(QFont("Arial", 18))
         self.final_weight_label.setStyleSheet("color: #fff;")
@@ -76,6 +74,14 @@ class StationWidget(QWidget):
         self.fill_time_label.setFont(QFont("Arial", 18))
         self.fill_time_label.setStyleSheet("color: #fff;")
         content_layout.addWidget(self.fill_time_label)
+
+        # Add the offline label, but hide it by default
+        self.offline_label = OutlinedLabel("STATION OFFLINE")
+        self.offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        self.offline_label.setStyleSheet("color: #fff;")
+        self.offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.offline_label.hide()
+        content_layout.addWidget(self.offline_label)
 
         if bar_on_left:
             main_layout.addWidget(self.progress_bar)
@@ -99,20 +105,28 @@ class StationWidget(QWidget):
 
     def set_active(self, active, bg_color=None):
         color = bg_color if bg_color else "#FFFFFF"
-        print(f"[set_active] Station {self.station_number}: active={active}, base color={color}")
         if not active:
-            # Convert hex to RGBA with alpha for 25% opacity
+            # Hide all normal labels, show offline label
+            self.weight_label.hide()
+            self.final_weight_label.hide()
+            self.fill_time_label.hide()
+            self.progress_bar.hide()
+            self.offline_label.show()
+            # Set background color with opacity
             if color.startswith("#") and len(color) == 7:
                 r = int(color[1:3], 16)
                 g = int(color[3:5], 16)
                 b = int(color[5:7], 16)
-                color = f"rgba({r},{g},{b},0.25)"  # 0.25 = 25% opacity
-                print(f"[set_active] Station {self.station_number}: using RGBA color {color}")
+                color = f"rgba({r},{g},{b},0.25)"
             else:
-                color = "rgba(68,68,68,0.25)"  # fallback gray
-                print(f"[set_active] Station {self.station_number}: using fallback color {color}")
+                color = "rgba(68,68,68,0.25)"
         else:
-            print(f"[set_active] Station {self.station_number}: using full opacity color {color}")
+            # Show all normal labels, hide offline label
+            self.weight_label.show()
+            self.final_weight_label.show()
+            self.fill_time_label.show()
+            self.progress_bar.show()
+            self.offline_label.hide()
         self.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
 
     def set_offline(self, bg_color_deactivated="#444444"):
