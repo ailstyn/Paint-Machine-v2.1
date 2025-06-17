@@ -663,7 +663,6 @@ def main():
         global station_enabled
         station_enabled = load_station_enabled_flags()
         setup_gpio()
-        startup()  # Initialize serial connections
 
         # Create QApplication before any QWidget
         app_qt = QApplication(sys.argv)
@@ -672,7 +671,7 @@ def main():
         app.set_calibrate = calibrate_scale
 
         # Set the GUI's target weight to match your default
-        app.target_weight = target_weight  # <-- Add this line
+        app.target_weight = target_weight
 
         print('app initialized, contacting arduinos')
 
@@ -685,7 +684,6 @@ def main():
                 widget.set_weight(0, target_weight)
 
         GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)  # Power on the relays
-        # Make Ctrl+C work with PyQt event loop
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         # Use QTimer for polling instead of while True
@@ -697,6 +695,9 @@ def main():
         button_timer = QTimer()
         button_timer.timeout.connect(lambda: handle_button_presses(app))
         button_timer.start(50)  # 50 ms interval
+
+        # --- Run startup after GUI is ready ---
+        QTimer.singleShot(1000, startup)  # Wait 1 second after GUI setup
 
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
