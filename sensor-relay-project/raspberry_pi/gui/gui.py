@@ -182,17 +182,16 @@ class MenuDialog(QDialog):
             self.accept()
         elif selected_key == "STATION STATUS":
             self.hide()
-            dlg = StationStatusDialog(
+            parent.station_status_dialog = StationStatusDialog(
                 parent,
                 station_enabled=getattr(parent, "station_enabled", None),
                 bg_colors=getattr(parent, "bg_colors", None),
                 bg_colors_deactivated=getattr(parent, "bg_colors_deactivated", None),
             )
-            parent.active_dialog = dlg
-            dlg.exec()
-            parent.active_dialog = None
-            self.show_again()
-            
+            parent.active_dialog = parent.station_status_dialog
+            parent.station_status_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.station_status_dialog.finished.connect(self.show_again)
+            parent.station_status_dialog.show()
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
@@ -290,6 +289,7 @@ class RelayControlApp(QWidget):
         self.target_weight_dialog = None
         self.time_limit_dialog = None
         self.change_units_dialog = None
+        self.station_status_dialog = None
 
         self.setGeometry(
             QStyle.alignedRect(
