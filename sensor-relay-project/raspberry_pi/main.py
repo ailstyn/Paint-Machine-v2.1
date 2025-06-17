@@ -388,6 +388,7 @@ def startup():
     for port in arduino_ports:
         try:
             arduino = serial.Serial(port, 9600, timeout=0.1)
+            arduino.reset_input_buffer()
             found_id = False
             loop_count = 0
             # Only try to connect if any station is enabled and not already assigned
