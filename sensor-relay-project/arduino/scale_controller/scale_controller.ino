@@ -170,7 +170,6 @@ void loop() {
             Serial.println("Resetting handshake...");
             handshake_station_id();
             request_and_apply_calibration();
-            return; // Skip rest of loop this cycle
         }
         else {
             // Serial.println("<ERR:Unknown message type received: " + String(messageType) + ">");

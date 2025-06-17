@@ -395,6 +395,10 @@ def startup():
             arduino.reset_input_buffer()
             print(f"Trying port {port}...")
 
+            arduino.write(RESET_HANDSHAKE)
+            arduino.flush()
+            print(f"Sent RESENT HANDSHAKE to {port}")
+
             # Explicitly send GET_ID to start handshake
             arduino.write(b'PMID')
             arduino.flush()
@@ -813,10 +817,3 @@ def reconnect_arduino(station_index, port):
         print(f"Error reconnecting Arduino on {port}: {e}")
         logging.error(f"Error reconnecting Arduino on {port}: {e}")
         return False
-
-# After polling all stations, try to reconnect any missing Arduinos
-    for station_index, arduino in enumerate(arduinos):
-        if arduino is None and station_enabled[station_index]:
-            port = arduino_ports[station_index]
-            print(f"Arduino for station {station_index+1} is missing, attempting reconnect...")
-            reconnect_arduino(station_index, port)
