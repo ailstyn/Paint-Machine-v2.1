@@ -125,6 +125,7 @@ class MenuDialog(QDialog):
         print("MenuDialog: __init__ called")
         self.selected_index = 0
         self.menu_keys = [
+            "STATION STATUS",
             "SET TARGET WEIGHT",
             "SET TIME LIMIT",
             "SET LANGUAGE",
@@ -179,6 +180,12 @@ class MenuDialog(QDialog):
         parent = self.parent()
         if selected_key == "EXIT":
             self.accept()
+        elif selected_key == "STATION STATUS":
+            self.hide()
+            dlg = StationStatusDialog(parent)
+            dlg.exec()
+            self.show_again()
+            
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
@@ -288,6 +295,11 @@ class RelayControlApp(QWidget):
         self.setCursor(QCursor(Qt.CursorShape.BlankCursor))
         self.active_menu = None  # e.g., "main_menu", "settings", "language_dialog", etc.
         self.active_dialog = None
+
+        # Overlay widget for messages
+        self.overlay_widget = OverlayWidget(self)
+        self.overlay_widget.resize(self.size())
+        self.overlay_widget.hide()
 
     def show_menu(self):
         self.active_menu = "main_menu"
@@ -748,6 +760,79 @@ class ChangeUnitsDialog(QDialog):
             self.parent().set_units(units)
         self.accept()
 
+class StationStatusDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #222;
+                border: 6px solid white;
+                border-radius: 24px;
+            }
+        """)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(24)
+
+        # Use parent's station colors if available
+        if parent and hasattr(parent, "bg_colors"):
+            colors = parent.bg_colors
+        else:
+            colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]
+
+        for i in range(4):
+            box = QWidget()
+            box_layout = QVBoxLayout(box)
+            box_layout.setContentsMargins(8, 8, 8, 8)
+            box_layout.setSpacing(8)
+
+            header = QLabel(f"Station {i+1}")
+            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            header.setFont(QFont("Arial", 20, QFont.Weight.Bold))
+            header.setStyleSheet("color: #fff;")
+            box_layout.addWidget(header)
+
+            # You can add more status info here if desired
+            # Example: show current weight or status
+            status = QLabel("OK")
+            status.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            status.setFont(QFont("Arial", 18))
+            status.setStyleSheet("color: #fff;")
+            box_layout.addWidget(status)
+
+            box.setStyleSheet(f"background-color: {colors[i]}; border-radius: 16px;")
+            layout.addWidget(box)
+
+        self.setLayout(layout)
+        self.setModal(True)
+
+class OverlayWidget(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setStyleSheet("background: rgba(0,0,0,180);")
+        self.label = QLabel("", self)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setStyleSheet("color: #fff; font-size: 64px; font-weight: bold;")
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.label)
+        self.setLayout(layout)
+        self.hide()
+
+    def show_overlay(self, html, color="#CD0A0A"):
+        self.label.setText(html)
+        self.label.setStyleSheet(f"color: #fff; font-size: 64px; font-weight: bold; background: transparent;")
+        self.setStyleSheet(f"background: rgba(0,0,0,180); border: 8px solid {color}; border-radius: 32px;")
+        self.resize(self.parent().size())
+        self.move(0, 0)
+        self.show()
+        self.raise_()
+
+    def hide_overlay(self):
+        self.hide()
+
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
         def keyPressEvent(self, event):
@@ -778,7 +863,7 @@ if __name__ == "__main__":
     # Use the testable versions for desktop testing
     window = TestableRelayControlApp()
     # Patch show_menu to use the testable dialog
-    def show_test_menu(self):
+    def show_test_menu():
         menu = TestableMenuDialog(self)
         menu.exec()
     window.show_menu = show_test_menu.__get__(window)

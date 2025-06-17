@@ -34,6 +34,7 @@
 #define STATION_ID 3
 #define STOP 0xFD
 #define CONFIRM_ID 0xA1
+#define RESET_HANDSHAKE 0xB0
 
 // Global variables
 HX711 scale;
@@ -41,6 +42,7 @@ float scaleCalibration = 427.530059; // Default calibration value
 float calibWeight = 61.0;     // Calibration weight in grams
 float cWeight1 = 0.0; // Variable to store the calibration value
 float cWeight2 = 0.0; // Variable to store the calibration value
+float trueBaseline = 0.0; // The initial tare value at startup
 
 void handshake_station_id() {
     const int blink_interval = 125;
@@ -131,8 +133,9 @@ void setup() {
     scale.set_scale(scaleCalibration); // Set the initial calibration value
     scale.tare(); // Tare the scale
 
-    handshake_station_id();
+    trueBaseline = scale.get_units(10); // Store the initial baseline after tare
 
+    handshake_station_id();
     request_and_apply_calibration();
 }
 
@@ -160,6 +163,14 @@ void loop() {
         else if (messageType == MANUAL_FILL_START) {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Manual fill started.");
+        }
+        // Handle handshake reset
+        if (messageType == RESET_HANDSHAKE) {
+            Serial.write(VERBOSE_DEBUG);
+            Serial.println("Resetting handshake...");
+            handshake_station_id();
+            request_and_apply_calibration();
+            return; // Skip rest of loop this cycle
         }
         else {
             // Serial.println("<ERR:Unknown message type received: " + String(messageType) + ">");
@@ -506,4 +517,8 @@ void smart_fill() {
     Serial.write(VERBOSE_DEBUG);
     Serial.print("Final weight: ");
     Serial.println(endWeight);
+}
+
+float get_true_weight() {
+    return scale.get_units(3) - trueBaseline;
 }

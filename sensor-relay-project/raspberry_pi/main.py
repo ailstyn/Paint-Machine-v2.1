@@ -58,6 +58,7 @@ FINAL_WEIGHT = b'\x11'
 GET_ID = b'\xA0'
 STOP = b'\xFD'
 CONFIRM_ID = b'\xA1'
+RESET_HANDSHAKE = b'\xB0'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -412,7 +413,7 @@ def startup():
                         break
                 time.sleep(0.1)
             if station_id is None or not (1 <= station_id <= NUM_STATIONS):
-                print(f"No valid station ID received from {port}, skipping.")
+                print(f"No station detected on port {port}, skipping...")
                 arduino.close()
                 continue
 
@@ -445,6 +446,8 @@ def startup():
             arduinos[station_id - 1] = arduino
             print(f"Station {station_id} on {port} initialized and ready.")
 
+        except serial.SerialException:
+            print(f"No station detected on port {port}, skipping...")
         except Exception as e:
             print(f"Error initializing Arduino on {port}: {e}")
             logging.error(f"Error initializing Arduino on {port}: {e}")
@@ -563,91 +566,104 @@ def load_station_enabled_flags():
     return enabled
 
 def poll_hardware(app):
-    global E_STOP, last_fill_time, last_final_weight, fill_time_limit_reached, E_STOP_ACTIVATED, target_weight
+    global E_STOP, FILL_LOCKED
     try:
-        for station_index, arduino in enumerate(arduinos):
-            if arduino is None:
-                continue
-            if not station_enabled[station_index]:
-                continue  # Skip disabled stations
+        estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
 
-            estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
-            if estop_pressed:
-                print(f"Station {station_index+1}: E-STOP pressed")
-                if not E_STOP:
-                    E_STOP = True
-                    app.overlay_widget.show_overlay(
-                        f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
-                        f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
-                        color="#CD0A0A"
-                    )
-                while arduino.in_waiting > 0:
-                    print(f"Station {station_index+1}: Flushing serial buffer due to E-STOP")
-                    arduino.read(arduino.in_waiting)
+        # Handle E-STOP state change
+        if estop_pressed and not E_STOP:
+            print("E-STOP pressed")
+            E_STOP = True
+            FILL_LOCKED = True
+            app.overlay_widget.show_overlay(
+                f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
+                f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
+                color="#CD0A0A"
+            )
+            # Notify all connected Arduinos
+            for arduino in arduinos:
+                if arduino:
                     arduino.write(E_STOP_ACTIVATED)
+                    arduino.flush()
+        elif not estop_pressed and E_STOP:
+            print("E-STOP released")
+            E_STOP = False
+            FILL_LOCKED = False
+            app.overlay_widget.hide_overlay()
+            # Optionally notify Arduinos E-STOP is cleared (define a byte if needed)
+
+        # Now handle normal station polling
+        for station_index, arduino in enumerate(arduinos):
+            if arduino is None or not station_enabled[station_index]:
                 continue
+            try:
+                # If E-STOP is active, skip fill-related commands
+                if E_STOP:
+                    # Optionally flush serial buffer for this arduino
+                    while arduino.in_waiting > 0:
+                        arduino.read(arduino.in_waiting)
+                    continue
 
-            if E_STOP:
-                print("E-STOP cleared")
-                E_STOP = False
-                app.overlay_widget.hide_overlay()
-
-            # Normal operation for this station
-            while arduino.in_waiting > 0:
-                message_type = arduino.read(1)
-                if message_type == REQUEST_TARGET_WEIGHT:
-                    if FILL_LOCKED:
-                        print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
-                        arduino.write(STOP)
+                # Normal operation for this station
+                while arduino.in_waiting > 0:
+                    message_type = arduino.read(1)
+                    if message_type == REQUEST_TARGET_WEIGHT:
+                        if FILL_LOCKED:
+                            print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
+                            arduino.write(STOP)
+                        else:
+                            arduino.write(TARGET_WEIGHT)
+                            arduino.write(f"{target_weight}\n".encode('utf-8'))
+                    elif message_type == REQUEST_CALIBRATION:
+                        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        arduino.write(REQUEST_CALIBRATION)
+                        arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
+                    elif message_type == REQUEST_TIME_LIMIT:
+                        print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
+                        arduino.write(REQUEST_TIME_LIMIT)
+                        arduino.write(f"{time_limit}\n".encode('utf-8'))
+                    elif message_type == CURRENT_WEIGHT:
+                        current_weight = arduino.readline().decode('utf-8').strip()
+                        try:
+                            weight = float(current_weight)
+                            if weight < 0:
+                                weight = 0.0
+                            app.update_station_weight(station_index, weight)
+                        except Exception as e:
+                            logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
+                            app.update_station_weight(station_index, 0.0)
+                    elif message_type == FINAL_WEIGHT:
+                        final_weight = arduino.readline().decode('utf-8').strip()
+                        print(f"Station {station_index+1}: Final weight: {final_weight}")
+                        if hasattr(app, "update_station_final_weight"):
+                            app.update_station_final_weight(station_index, final_weight)
+                        else:
+                            if hasattr(app, "station_widgets"):
+                                widget = app.station_widgets[station_index]
+                                if hasattr(widget, "set_final_weight"):
+                                    widget.set_final_weight(final_weight)
+                    elif message_type == FILL_TIME:
+                        fill_time = arduino.readline().decode('utf-8').strip()
+                        print(f"Station {station_index+1}: Fill time: {fill_time}")
+                        if hasattr(app, "update_station_fill_time"):
+                            app.update_station_fill_time(station_index, fill_time)
+                        else:
+                            if hasattr(app, "station_widgets"):
+                                widget = app.station_widgets[station_index]
+                                if hasattr(widget, "set_fill_time"):
+                                    widget.set_fill_time(fill_time)
                     else:
-                        arduino.write(TARGET_WEIGHT)
-                        arduino.write(f"{target_weight}\n".encode('utf-8'))
-                elif message_type == REQUEST_CALIBRATION:
-                    print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
-                    arduino.write(REQUEST_CALIBRATION)
-                    arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
-                elif message_type == REQUEST_TIME_LIMIT:
-                    print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
-                    arduino.write(REQUEST_TIME_LIMIT)
-                    arduino.write(f"{time_limit}\n".encode('utf-8'))
-                elif message_type == CURRENT_WEIGHT:
-                    current_weight = arduino.readline().decode('utf-8').strip()
-                    try:
-                        weight = float(current_weight)
-                        if weight < 0:
-                            weight = 0.0
-                        app.update_station_weight(station_index, weight)
-                    except Exception as e:
-                        logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
-                        app.update_station_weight(station_index, 0.0)
-                elif message_type == FINAL_WEIGHT:
-                    final_weight = arduino.readline().decode('utf-8').strip()
-                    print(f"Station {station_index+1}: Final weight: {final_weight}")
-                    if hasattr(app, "update_station_final_weight"):
-                        app.update_station_final_weight(station_index, final_weight)
-                    else:
-                        if hasattr(app, "station_widgets"):
-                            widget = app.station_widgets[station_index]
-                            if hasattr(widget, "set_final_weight"):
-                                widget.set_final_weight(final_weight)
-                elif message_type == FILL_TIME:
-                    fill_time = arduino.readline().decode('utf-8').strip()
-                    print(f"Station {station_index+1}: Fill time: {fill_time}")
-                    if hasattr(app, "update_station_fill_time"):
-                        app.update_station_fill_time(station_index, fill_time)
-                    else:
-                        if hasattr(app, "station_widgets"):
-                            widget = app.station_widgets[station_index]
-                            if hasattr(widget, "set_fill_time"):
-                                widget.set_fill_time(fill_time)
-                else:
-                    # Try to read the rest of the line for context
-                    if arduino.in_waiting > 0:
-                        extra = arduino.readline().decode('utf-8', errors='replace').strip()
-                        print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
-                    else:
-                        print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
-                        app.refresh_ui()
+                        # Try to read the rest of the line for context
+                        if arduino.in_waiting > 0:
+                            extra = arduino.readline().decode('utf-8', errors='replace').strip()
+                            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
+                        else:
+                            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
+                            app.refresh_ui()
+            except serial.SerialException as e:
+                print(f"Lost connection to Arduino {station_index+1}: {e}")
+                port = arduino_ports[station_index]
+                reconnect_arduino(station_index, port)
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
         print(f"Error in poll_hardware: {e}")
@@ -719,3 +735,80 @@ sys.excepthook = log_uncaught_exceptions
 
 if __name__ == "__main__":
     main()
+
+def reconnect_arduino(station_index, port):
+    try:
+        print(f"Attempting to reconnect to Arduino on {port} (station {station_index+1})...")
+        # Close old connection if exists
+        if arduinos[station_index]:
+            try:
+                arduinos[station_index].close()
+            except Exception:
+                pass
+            arduinos[station_index] = None
+
+        # Open serial port
+        arduino = serial.Serial(port, 9600, timeout=0.5)
+        arduino.reset_input_buffer()
+        time.sleep(1)  # Give Arduino time to reset if needed
+
+        # Send RESET_HANDSHAKE
+        arduino.write(RESET_HANDSHAKE)
+        arduino.flush()
+        print(f"Sent RESET_HANDSHAKE to {port}")
+
+        # Now do the normal handshake
+        arduino.write(b'PMID')
+        arduino.flush()
+        print(f"Sent 'PMID' handshake to {port}")
+
+        # Wait for <ID:N>
+        station_id = None
+        for _ in range(60):
+            if arduino.in_waiting > 0:
+                line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                print(f"Received from {port}: {repr(line)}")
+                match = re.match(r"<ID:(\d+)>", line)
+                if match:
+                    station_id = int(match.group(1))
+                    print(f"Station ID {station_id} detected on {port}")
+                    break
+            time.sleep(0.1)
+        if station_id is None or not (1 <= station_id <= NUM_STATIONS):
+            print(f"No station detected on port {port}, skipping...")
+            arduino.close()
+            return False
+
+        # Send CONFIRM_ID
+        arduino.write(CONFIRM_ID)
+        arduino.flush()
+        print(f"Sent CONFIRM_ID to station {station_id} on {port}")
+
+        # Wait for REQUEST_CALIBRATION
+        got_request = False
+        for _ in range(40):
+            if arduino.in_waiting > 0:
+                req = arduino.read(1)
+                if req == REQUEST_CALIBRATION:
+                    print(f"Station {station_id}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_id-1]}")
+                    arduino.write(REQUEST_CALIBRATION)
+                    arduino.write(f"{scale_calibrations[station_id-1]}\n".encode('utf-8'))
+                    got_request = True
+                    break
+                else:
+                    arduino.reset_input_buffer()
+            time.sleep(0.1)
+        if not got_request:
+            print(f"Station {station_id}: Did not receive calibration request, skipping.")
+            arduino.close()
+            return False
+
+        # Assign to arduinos list
+        arduinos[station_id - 1] = arduino
+        print(f"Station {station_id} on {port} reconnected and ready.")
+        return True
+
+    except Exception as e:
+        print(f"Error reconnecting Arduino on {port}: {e}")
+        logging.error(f"Error reconnecting Arduino on {port}: {e}")
+        return False
