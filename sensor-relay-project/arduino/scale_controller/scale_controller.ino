@@ -46,6 +46,7 @@ void handshake_station_id() {
     const int blink_interval = 125;
     bool led_state = false;
     unsigned long last_blink = millis();
+    unsigned long last_id_send = 0;
 
     // 1. Blink and wait for GET_ID
     while (true) {
@@ -64,12 +65,13 @@ void handshake_station_id() {
         delay(5);
     }
 
-    // 2. Wait 500ms, then send station ID
-    delay(500);
-    Serial.println("<ID:" + String(STATION_ID) + ">");
-
-    // 3. Wait for CONFIRM_ID
+    // 2. Repeatedly send station ID until CONFIRM_ID is received
     while (true) {
+        unsigned long now = millis();
+        if (now - last_id_send >= 250) {
+            Serial.println("<ID:" + String(STATION_ID) + ">");
+            last_id_send = now;
+        }
         if (Serial.available() > 0) {
             byte cmd = Serial.read();
             if (cmd == CONFIRM_ID) {
@@ -79,7 +81,7 @@ void handshake_station_id() {
         delay(5);
     }
 
-    // 4. Wait 200ms before exiting
+    // 3. Wait 200ms before exiting
     delay(200);
     digitalWrite(LED_PIN, LOW);
 }
