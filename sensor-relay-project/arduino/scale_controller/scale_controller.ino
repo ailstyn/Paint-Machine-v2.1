@@ -33,6 +33,7 @@
 #define GET_ID 0xA0
 #define STATION_ID 3
 #define STOP 0xFD
+#define CONFIRM_ID 0xA1
 
 // Global variables
 HX711 scale;
@@ -55,14 +56,19 @@ void handshake_station_id() {
             last_blink = now;
         }
 
-        // Check for incoming serial data
+        // Send station ID every 250ms
+        static unsigned long last_send = 0;
+        if (now - last_send >= 250) {
+            Serial.println("<ID:" + String(STATION_ID) + ">");
+            last_send = now;
+        }
+
+        // Check for confirmation from Pi
         while (Serial.available() > 0) {
             byte cmd = Serial.read();
-            if (cmd == GET_ID) {
-                delay(500);
-                Serial.println("<ID:" + String(STATION_ID) + ">");
+            if (cmd == CONFIRM_ID) {
                 digitalWrite(LED_PIN, LOW); // Turn off LED after handshake
-                delay(500);
+                delay(100); // Give Pi time to process
                 return;
             }
         }

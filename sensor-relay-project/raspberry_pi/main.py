@@ -57,6 +57,7 @@ FILL_TIME = b'\x15'
 FINAL_WEIGHT = b'\x11'
 GET_ID = b'\xA0'
 STOP = b'\xFD'
+CONFIRM_ID = b'\xA1'
 
 # GPIO pin assignments for buttons
 UP_BUTTON_PIN = 5
@@ -410,6 +411,8 @@ def startup():
                         # Only connect if this station is enabled
                         if 1 <= station_id <= NUM_STATIONS and station_enabled[station_id - 1]:
                             arduinos[station_id - 1] = arduino
+                            arduino.write(CONFIRM_ID)
+                            arduino.flush()
                             found_id = True
                             print(f"Connected to enabled station {station_id} on {port}")
                             break
