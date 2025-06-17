@@ -838,14 +838,17 @@ class StationStatusDialog(QDialog):
                 )
 
     def select_prev(self):
+        print("StationStatusDialog: select_prev called")
         self.selected_index = (self.selected_index - 1) % len(self.boxes)
         self.update_selection_box()
 
     def select_next(self):
+        print("StationStatusDialog: select_next called")
         self.selected_index = (self.selected_index + 1) % len(self.boxes)
         self.update_selection_box()
 
     def activate_selected(self):
+        print("StationStatusDialog: activate_selected called")
         self.accept()
 
 class OverlayWidget(QWidget):
