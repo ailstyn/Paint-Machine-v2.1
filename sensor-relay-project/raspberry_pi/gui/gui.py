@@ -97,11 +97,17 @@ class StationWidget(QWidget):
         self.progress_bar.set_max(target_weight)
         self.progress_bar.set_value(current_weight)
 
-    def set_active(self, active, bg_color=None, bg_color_deactivated=None):
-        if active:
-            color = bg_color if bg_color else "#FFFFFF"
-        else:
-            color = bg_color_deactivated if bg_color_deactivated else "#444444"
+    def set_active(self, active, bg_color=None):
+        color = bg_color if bg_color else "#FFFFFF"
+        if not active:
+            # Convert hex to RGBA with alpha for 50% opacity
+            if color.startswith("#") and len(color) == 7:
+                r = int(color[1:3], 16)
+                g = int(color[3:5], 16)
+                b = int(color[5:7], 16)
+                color = f"rgba({r},{g},{b},0.4)"  # 0.4 = 40% opacity
+            else:
+                color = "rgba(68,68,68,0.4)"  # fallback gray
         self.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
 
     def set_offline(self, bg_color_deactivated="#444444"):
@@ -185,7 +191,6 @@ class MenuDialog(QDialog):
                 parent,
                 station_enabled=getattr(parent, "station_enabled", None),
                 bg_colors=getattr(parent, "bg_colors", None),
-                bg_colors_deactivated=getattr(parent, "bg_colors_deactivated", None),
             )
             parent.active_dialog = parent.station_status_dialog
             parent.station_status_dialog.station_selected.connect(parent.handle_station_selected)  # Connect the signal
@@ -253,7 +258,6 @@ class RelayControlApp(QWidget):
 
         # Define station colors
         self.bg_colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]  # Active: Red, Blue, Green, Yellow
-        self.bg_colors_deactivated = ["#6c2222", "#22305a", "#2b4d2b", "#b1a93a"]  # Deactivated: darker shades
 
         # Main grid layout (2x2 for four stations)
         grid = QGridLayout()
@@ -262,16 +266,10 @@ class RelayControlApp(QWidget):
 
         # Explicitly assign widgets to grid positions with color
         self.station_widgets = [None] * 4
-        color_map = {
-    1: "#CB1212",  # Red
-    2: "#2E4BA8",  # Blue
-    3: "#3f922e",  # Green
-    4: "#EDE021",  # Yellow
-}
-        self.station_widgets[0] = StationWidget(1, color_map[1])
-        self.station_widgets[1] = StationWidget(2, color_map[2])
-        self.station_widgets[2] = StationWidget(3, color_map[3])
-        self.station_widgets[3] = StationWidget(4, color_map[4])
+        self.station_widgets[0] = StationWidget(1, self.bg_colors[0])  # Station 1
+        self.station_widgets[1] = StationWidget(2, self.bg_colors[1])  # Station 2
+        self.station_widgets[2] = StationWidget(3, self.bg_colors[2])  # Station 3
+        self.station_widgets[3] = StationWidget(4, self.bg_colors[3])  # Station 4
 
         grid.addWidget(self.station_widgets[0], 0, 0)  # Top left
         grid.addWidget(self.station_widgets[1], 1, 0)  # Bottom left
@@ -349,10 +347,7 @@ class RelayControlApp(QWidget):
 
     def update_station_states(self, station_enabled):
         for i, widget in enumerate(self.station_widgets):
-            if station_enabled[i]:
-                widget.set_active(True, self.bg_colors[i], self.bg_colors_deactivated[i])
-            else:
-                widget.set_active(False, self.bg_colors[i], self.bg_colors_deactivated[i])
+            widget.set_active(station_enabled[i], self.bg_colors[i])
 
     def set_units(self, units):
         self.units = units
@@ -785,7 +780,7 @@ class ChangeUnitsDialog(QDialog):
 class StationStatusDialog(QDialog):
     station_selected = pyqtSignal(int)  # Add this line
 
-    def __init__(self, parent=None, station_enabled=None, bg_colors=None, bg_colors_deactivated=None):
+    def __init__(self, parent=None, station_enabled=None, bg_colors=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setStyleSheet("""
@@ -802,8 +797,6 @@ class StationStatusDialog(QDialog):
         # Use parent's station colors if not provided
         if bg_colors is None and parent and hasattr(parent, "bg_colors"):
             bg_colors = parent.bg_colors
-        if bg_colors_deactivated is None and parent and hasattr(parent, "bg_colors_deactivated"):
-            bg_colors_deactivated = parent.bg_colors_deactivated
         if station_enabled is None and parent and hasattr(parent, "station_enabled"):
             station_enabled = parent.station_enabled
 
@@ -830,11 +823,6 @@ class StationStatusDialog(QDialog):
             status.setStyleSheet("color: #fff;")
             box_layout.addWidget(status)
 
-            # Choose color based on enabled/disabled
-            if station_enabled is not None and not station_enabled[i]:
-                color = bg_colors_deactivated[i] if bg_colors_deactivated else "#444"
-            else:
-                color = bg_colors[i] if bg_colors else "#222"
             self.colors.append(color)
             box.setStyleSheet(f"background-color: {color}; border-radius: 16px;")
             layout.addWidget(box)

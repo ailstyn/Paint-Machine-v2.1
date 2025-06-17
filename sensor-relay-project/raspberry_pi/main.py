@@ -719,10 +719,7 @@ def main():
         print('app initialized, contacting arduinos')
 
         # Set offline state for disabled stations
-        bg_colors_deactivated = ["#CB12122E", "#2E4BA82E", "#3f922e2E", "#EDE0212E"]
         for i, widget in enumerate(app.station_widgets):
-            if not station_enabled[i]:
-                widget.set_offline(bg_colors_deactivated[i])
             if station_enabled[i]:
                 widget.set_weight(0, target_weight)
 
