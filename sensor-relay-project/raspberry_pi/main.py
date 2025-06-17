@@ -395,10 +395,6 @@ def startup():
             print(f"Trying port {port}...")
 
             # Explicitly send GET_ID to start handshake
-            arduino.write(GET_ID)
-            arduino.flush()
-            print(f"Sent GET_ID to {port}")
-
             arduino.write(b'PMID')
             arduino.flush()
             print(f"Sent 'PMID' handshake to {port}")
