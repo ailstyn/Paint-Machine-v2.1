@@ -46,8 +46,8 @@ void handshake_station_id() {
     const int blink_interval = 125;
     bool led_state = false;
     unsigned long last_blink = millis();
-    static unsigned long last_send = 0;
 
+    // 1. Blink and wait for GET_ID
     while (true) {
         unsigned long now = millis();
         if (now - last_blink >= blink_interval) {
@@ -55,20 +55,33 @@ void handshake_station_id() {
             digitalWrite(LED_PIN, led_state ? HIGH : LOW);
             last_blink = now;
         }
-        if (now - last_send >= 250) {
-            Serial.println("<ID:" + String(STATION_ID) + ">");
-            last_send = now;
-        }
-        while (Serial.available() > 0) {
+        if (Serial.available() > 0) {
             byte cmd = Serial.read();
-            if (cmd == CONFIRM_ID) {
-                digitalWrite(LED_PIN, LOW);
-                delay(100);
-                return;
+            if (cmd == GET_ID) {
+                break;
             }
         }
         delay(5);
     }
+
+    // 2. Wait 500ms, then send station ID
+    delay(500);
+    Serial.println("<ID:" + String(STATION_ID) + ">");
+
+    // 3. Wait for CONFIRM_ID
+    while (true) {
+        if (Serial.available() > 0) {
+            byte cmd = Serial.read();
+            if (cmd == CONFIRM_ID) {
+                break;
+            }
+        }
+        delay(5);
+    }
+
+    // 4. Wait 200ms before exiting
+    delay(200);
+    digitalWrite(LED_PIN, LOW);
 }
 
 void request_and_apply_calibration() {
@@ -471,9 +484,9 @@ void smart_fill() {
         Serial.println(weight);
         delay(10); // Don't hammer the scale
     }
-
-    // 5. Stop filling
-    digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
+    Serial.print("Final weight: ");
+    Serial.println(endWeight);
+}   digitalWrite(RELAY_PIN, LOW); // Turn relay OFF
     Serial.write(SMART_FILL_END);
 
     // 6. Final weight and flow rate reporting
