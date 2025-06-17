@@ -188,7 +188,9 @@ class MenuDialog(QDialog):
                 bg_colors=getattr(parent, "bg_colors", None),
                 bg_colors_deactivated=getattr(parent, "bg_colors_deactivated", None),
             )
+            parent.active_dialog = dlg
             dlg.exec()
+            parent.active_dialog = None
             self.show_again()
             
         elif selected_key == "SET TARGET WEIGHT":
@@ -835,17 +837,16 @@ class StationStatusDialog(QDialog):
                     f"background-color: {self.colors[i]}; border: 6px solid transparent; border-radius: 16px;"
                 )
 
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Left):
-            self.selected_index = (self.selected_index - 1) % len(self.boxes)
-            self.update_selection_box()
-        elif event.key() in (Qt.Key.Key_Down, Qt.Key.Key_Right):
-            self.selected_index = (self.selected_index + 1) % len(self.boxes)
-            self.update_selection_box()
-        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Escape):
-            self.accept()
-        else:
-            super().keyPressEvent(event)
+    def select_prev(self):
+        self.selected_index = (self.selected_index - 1) % len(self.boxes)
+        self.update_selection_box()
+
+    def select_next(self):
+        self.selected_index = (self.selected_index + 1) % len(self.boxes)
+        self.update_selection_box()
+
+    def activate_selected(self):
+        self.accept()
 
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
