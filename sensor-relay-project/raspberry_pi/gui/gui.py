@@ -543,9 +543,11 @@ class SetTargetWeightDialog(QDialog):
         """Flash the current up or down arrow green briefly."""
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QApplication.processEvents()  # Force UI update
             QTimer.singleShot(100, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
         elif direction == "down":
             self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QApplication.processEvents()  # Force UI update
             QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
@@ -635,6 +637,7 @@ class SetTimeLimitDialog(QDialog):
                 dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 dot.setFixedWidth(24)
+                dot.setStyleSheet("color: #fff;")  # Make the decimal point white
                 digits_layout.addWidget(dot)
         layout.addLayout(digits_layout)
 
@@ -658,9 +661,11 @@ class SetTimeLimitDialog(QDialog):
         """Flash the current up or down arrow green briefly."""
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QApplication.processEvents()  # Force UI update
             QTimer.singleShot(100, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
         elif direction == "down":
             self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+            QApplication.processEvents()  # Force UI update
             QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
