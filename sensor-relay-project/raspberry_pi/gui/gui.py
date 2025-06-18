@@ -509,7 +509,7 @@ class SetTargetWeightDialog(QDialog):
             up.setFixedWidth(48)
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
-            if i == 1:  # After the second arrow, add a spacer for the decimal point
+            if i == 2:  # After the third arrow, add a spacer for the decimal point
                 spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
                 up_arrows_layout.addItem(spacer)
         layout.addLayout(up_arrows_layout)
@@ -524,7 +524,7 @@ class SetTargetWeightDialog(QDialog):
             lbl.setFixedWidth(48)
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
-            if i == 1:  # After the second digit, add the decimal point
+            if i == 2:  # After the third digit, add the decimal point
                 dot = QLabel(".")
                 dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -543,7 +543,7 @@ class SetTargetWeightDialog(QDialog):
             down.setFixedWidth(48)
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
-            if i == 1:  # After the second arrow, add a spacer for the decimal point
+            if i == 2:  # After the third arrow, add a spacer for the decimal point
                 spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
                 down_arrows_layout.addItem(spacer)
         layout.addLayout(down_arrows_layout)
@@ -634,7 +634,7 @@ class SetTimeLimitDialog(QDialog):
             up.setFixedWidth(48)
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
-            if i == 1:  # After the second arrow, add a spacer for the decimal point
+            if i == 2:  # After the third arrow, add a spacer for the decimal point
                 spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
                 up_arrows_layout.addItem(spacer)
         layout.addLayout(up_arrows_layout)
@@ -649,7 +649,7 @@ class SetTimeLimitDialog(QDialog):
             lbl.setFixedWidth(48)
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
-            if i == 1:  # After the second digit, add the decimal point
+            if i == 2:  # After the third digit, add the decimal point
                 dot = QLabel(".")
                 dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -668,7 +668,7 @@ class SetTimeLimitDialog(QDialog):
             down.setFixedWidth(48)
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
-            if i == 1:  # After the second arrow, add a spacer for the decimal point
+            if i == 2:  # After the third arrow, add a spacer for the decimal point
                 spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
                 down_arrows_layout.addItem(spacer)
         layout.addLayout(down_arrows_layout)
