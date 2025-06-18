@@ -216,7 +216,8 @@ class MenuDialog(QDialog):
         elif selected_key == "SET LANGUAGE":
             self.hide()
             parent.language_dialog = SetLanguageDialog(parent)
-            parent.language_dialog.finished.connect(self.show_again)
+            parent.active_dialog = parent.language_dialog  # <-- Make it the active dialog
+            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))  # <-- Reset on close
             parent.language_dialog.show()
         elif selected_key == "CHANGE UNITS":
             self.hide()
