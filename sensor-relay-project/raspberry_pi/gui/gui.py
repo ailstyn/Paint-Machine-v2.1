@@ -222,7 +222,6 @@ class MenuDialog(QDialog):
             self.hide()
             parent.change_units_dialog = ChangeUnitsDialog(parent)
             parent.active_dialog = parent.change_units_dialog
-            parent.change_units_dialog.finished.connect(self.show_again)
             parent.change_units_dialog.show()
 
     def show_again(self):
