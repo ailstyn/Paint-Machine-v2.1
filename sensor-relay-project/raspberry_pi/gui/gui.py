@@ -570,10 +570,6 @@ class SetTargetWeightDialog(QDialog):
             else:
                 lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
             lbl.setText(str(self.digits[i]))
-        # Set all arrows to white by default
-        for i in range(4):
-            self.up_labels[i].setStyleSheet("color: #fff;")
-            self.down_labels[i].setStyleSheet("color: #fff;")
 
     def activate_selected(self):
         if self.current_digit < 3:  # 4 digits, so index 0-3
@@ -693,9 +689,6 @@ class SetTimeLimitDialog(QDialog):
             else:
                 lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
             lbl.setText(str(self.digits[i]))
-        for i in range(4):
-            self.up_labels[i].setStyleSheet("color: #fff;")
-            self.down_labels[i].setStyleSheet("color: #fff;")
 
     def activate_selected(self):
         if self.current_digit < 3:  # 4 digits, so index 0-3
