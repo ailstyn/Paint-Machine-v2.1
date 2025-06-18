@@ -276,6 +276,7 @@ class MenuDialog(QDialog):
 class RelayControlApp(QWidget):
     def __init__(self, station_enabled=None):
         super().__init__()
+        print(f"[DEBUG] RelayControlApp.__init__ called with station_enabled={station_enabled}")
         self.setWindowTitle("Four Station Control")
         self.setStyleSheet("background-color: #222222;")
 
@@ -284,8 +285,10 @@ class RelayControlApp(QWidget):
 
         # Example enabled state (replace with your actual config loading)
         if station_enabled is not None:
+            print("[DEBUG] Using provided station_enabled list.")
             self.station_enabled = station_enabled
         else:
+            print("[DEBUG] No station_enabled provided, defaulting to all False.")
             self.station_enabled = [False, False, False, False]
 
         # Main grid layout (2x2 for four stations)

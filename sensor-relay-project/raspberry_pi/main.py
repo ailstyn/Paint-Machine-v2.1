@@ -114,8 +114,10 @@ def load_station_enabled(config_path, num_stations=4):
                     if line.startswith(key):
                         value = line.split("=")[1].strip().lower()
                         enabled[i] = value == "true"
+                        print(f"[DEBUG] Found {key}{value} -> enabled[{i}] = {enabled[i]}")
     except Exception as e:
         print(f"Error reading station_enabled from config: {e}")
+    print(f"[DEBUG] Final enabled list: {enabled}")
     return enabled
 
 def load_station_serials():
@@ -223,7 +225,7 @@ def startup():
 
             arduino.write(CONFIRM_ID)
             arduino.flush()
-            print(f"Sent CONFIRM_ID to station {station_index} on {port}")
+            print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
 
             got_request = False
             for _ in range(40):
@@ -239,12 +241,12 @@ def startup():
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
-                print(f"Station {station_index}: Did not receive calibration request, skipping.")
+                print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
 
             arduinos[station_index] = arduino
-            print(f"Station {station_index} on {port} initialized and ready.")
+            print(f"Station {station_index+1} on {port} initialized and ready.")
 
         except serial.SerialException:
             print(f"No station detected on port {port}, skipping...")
@@ -296,28 +298,28 @@ def reconnect_arduino(station_index, port):
 
         arduino.write(CONFIRM_ID)
         arduino.flush()
-        print(f"Sent CONFIRM_ID to station {station_index} on {port}")
+        print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
 
         got_request = False
         for _ in range(40):
             if arduino.in_waiting > 0:
                 req = arduino.read(1)
                 if req == REQUEST_CALIBRATION:
-                    print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index-1]}")
+                    print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     arduino.write(REQUEST_CALIBRATION)
-                    arduino.write(f"{scale_calibrations[station_index-1]}\n".encode('utf-8'))
+                    arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                     got_request = True
                     break
                 else:
                     arduino.reset_input_buffer()
             time.sleep(0.1)
         if not got_request:
-            print(f"Station {station_index}: Did not receive calibration request, skipping.")
+            print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
             arduino.close()
             return False
 
         arduinos[station_index - 1] = arduino
-        print(f"Station {station_index} on {port} reconnected and ready.")
+        print(f"Station {station_index+1} on {port} reconnected and ready.")
         return True
 
     except Exception as e:
@@ -493,6 +495,7 @@ def main():
         global station_enabled
         config_path = "config.txt"
         station_enabled = load_station_enabled(config_path)
+        print(f"Loaded station_enabled: {station_enabled}")
         setup_gpio()
 
         app_qt = QApplication(sys.argv)
