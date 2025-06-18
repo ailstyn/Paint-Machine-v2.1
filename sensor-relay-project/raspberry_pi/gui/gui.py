@@ -548,9 +548,9 @@ class BottleProgressBar(QWidget):
         # Draw bottle outline
         bottle_path = QPainterPath()
         margin = 8
-        neck_width = rect.width() * 0.15
+        neck_width = rect.width() * 0.35
         body_width = rect.width() * 0.7
-        neck_height = rect.height() * 0.15
+        neck_height = rect.height() * 0.05
         body_height = rect.height() - neck_height - margin
 
         # Neck
