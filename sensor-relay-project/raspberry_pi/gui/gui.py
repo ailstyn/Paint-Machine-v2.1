@@ -507,6 +507,7 @@ class SetTargetWeightDialog(QDialog):
             up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             up.setAlignment(Qt.AlignmentFlag.AlignCenter)
             up.setFixedWidth(48)
+            up.setStyleSheet("color: #fff;")  # <-- Make arrow white initially
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
         layout.addLayout(up_arrows_layout)
@@ -531,6 +532,7 @@ class SetTargetWeightDialog(QDialog):
             down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             down.setAlignment(Qt.AlignmentFlag.AlignCenter)
             down.setFixedWidth(48)
+            down.setStyleSheet("color: #fff;")  # <-- Make arrow white initially
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
         layout.addLayout(down_arrows_layout)
@@ -539,28 +541,26 @@ class SetTargetWeightDialog(QDialog):
         self.setModal(True)
         self.update_display()
 
-    def flash_arrow(self, direction):
-        """Flash the current up or down arrow green briefly."""
-        flash_duration = 300  # milliseconds (was 100)
+    def set_arrow_active(self, direction):
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
-            QApplication.processEvents()  # Force UI update
-            QTimer.singleShot(flash_duration, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
         elif direction == "down":
             self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
-            QApplication.processEvents()  # Force UI update
-            QTimer.singleShot(flash_duration, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
+
+    def set_arrow_inactive(self, direction):
+        if direction == "up":
+            self.up_labels[self.current_digit].setStyleSheet("color: #fff;")
+        elif direction == "down":
+            self.down_labels[self.current_digit].setStyleSheet("color: #fff;")
 
     def select_prev(self):
         # UP button should increment
         self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
-        self.flash_arrow("up")
         self.update_display()
 
     def select_next(self):
         # DOWN button should decrement
         self.digits[self.current_digit] = (self.digits[self.current_digit] - 1) % 10
-        self.flash_arrow("down")
         self.update_display()
 
     def update_display(self):
@@ -615,6 +615,7 @@ class SetTimeLimitDialog(QDialog):
             up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             up.setAlignment(Qt.AlignmentFlag.AlignCenter)
             up.setFixedWidth(48)
+            up.setStyleSheet("color: #fff;")  # <-- Make arrow white initially
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
             if i == 2:  # After the third arrow, add a spacer for the decimal point
@@ -649,6 +650,7 @@ class SetTimeLimitDialog(QDialog):
             down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             down.setAlignment(Qt.AlignmentFlag.AlignCenter)
             down.setFixedWidth(48)
+            down.setStyleSheet("color: #fff;")  # <-- Make arrow white initially
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
             if i == 2:  # After the third arrow, add a spacer for the decimal point
@@ -662,7 +664,7 @@ class SetTimeLimitDialog(QDialog):
 
     def flash_arrow(self, direction):
         """Flash the current up or down arrow green briefly."""
-        flash_duration = 300  # milliseconds (was 100)
+        flash_duration = 100  # milliseconds (was 100)
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
@@ -671,6 +673,18 @@ class SetTimeLimitDialog(QDialog):
             self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
             QTimer.singleShot(flash_duration, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
+
+    def set_arrow_active(self, direction):
+        if direction == "up":
+            self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+        elif direction == "down":
+            self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
+
+    def set_arrow_inactive(self, direction):
+        if direction == "up":
+            self.up_labels[self.current_digit].setStyleSheet("color: #fff;")
+        elif direction == "down":
+            self.down_labels[self.current_digit].setStyleSheet("color: #fff;")
 
     def select_prev(self):
         self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
