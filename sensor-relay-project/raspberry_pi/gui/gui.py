@@ -141,6 +141,17 @@ class StationWidget(QWidget):
             )
             self.fill_time_label.setText(tr("FILL_TIME").format(value))
 
+    def update_language(self):
+        tr = self.tr if hasattr(self, "tr") else (
+            self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+        )
+        if self.final_weight_label is not None:
+            self.final_weight_label.setText(tr("FINAL_WEIGHT").format("--"))
+        if self.fill_time_label is not None:
+            self.fill_time_label.setText(tr("FILL_TIME").format("--"))
+        if self.offline_label is not None:
+            self.offline_label.setText(tr("STATION_OFFLINE"))
+
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -379,6 +390,12 @@ class RelayControlApp(QWidget):
 
     def set_language(self, lang_code):
         self.language = lang_code
+        # Update menu dialog
+        if self.menu_dialog is not None:
+            self.menu_dialog.update_menu_language()
+        # Update all station widgets
+        for widget in self.station_widgets:
+            widget.update_language()
 
     def show_info_dialog(self, title, message):
         dialog = InfoDialog(title, message, self)
