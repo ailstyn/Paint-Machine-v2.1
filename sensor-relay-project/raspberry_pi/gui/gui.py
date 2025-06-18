@@ -132,25 +132,25 @@ class StationWidget(QWidget):
             tr = self.tr if hasattr(self, "tr") else (
                 self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
             )
-            self.final_weight_label.setText(tr("FINAL_WEIGHT").format(value))
+            self.final_weight_label.setText(self.tr("FINAL_WEIGHT").format(value))
 
     def set_fill_time(self, value):
         if self.fill_time_label is not None:
             tr = self.tr if hasattr(self, "tr") else (
                 self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
             )
-            self.fill_time_label.setText(tr("FILL_TIME").format(value))
+            self.fill_time_label.setText(self.tr("FILL_TIME").format(value))
 
     def update_language(self):
         tr = self.tr if hasattr(self, "tr") else (
             self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
         )
         if self.final_weight_label is not None:
-            self.final_weight_label.setText(tr("FINAL_WEIGHT").format("--"))
+            self.final_weight_label.setText(self.tr("FINAL_WEIGHT").format("--"))
         if self.fill_time_label is not None:
-            self.fill_time_label.setText(tr("FILL_TIME").format("--"))
+            self.fill_time_label.setText(self.tr("FILL_TIME").format("--"))
         if self.offline_label is not None:
-            self.offline_label.setText(tr("STATION_OFFLINE"))
+            self.offline_label.setText(self.tr("STATION_OFFLINE"))
 
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
@@ -276,7 +276,8 @@ class MenuDialog(QDialog):
 
 
     def show(self):
-        print("MenuDialog: show() called")
+        if DEBUG:
+            print("MenuDialog: show() called")
         super().show()
 
     def update_menu_language(self):
@@ -362,7 +363,7 @@ class RelayControlApp(QWidget):
             )
         )
         self.setCursor(QCursor(Qt.CursorShape.BlankCursor))
-        self.active_menu = None  # e.g., "main_menu", "settings", "language_dialog", etc.
+        self.active_menu = None
         self.active_dialog = None
 
         # Overlay widget for messages
@@ -592,9 +593,9 @@ class SetTargetWeightDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        self.setWindowTitle(tr("SET_TARGET_WEIGHT"))
+        self.setWindowTitle(self.tr("SET_TARGET_WEIGHT"))
         layout = QVBoxLayout(self)
-        label = QLabel(tr("ENTER_NEW_TARGET_WEIGHT"))
+        label = QLabel(self.tr("ENTER_NEW_TARGET_WEIGHT"))
         layout.addWidget(label)
 
         # Start with parent's target_weight or 500, clamp to 5 digits
@@ -699,9 +700,9 @@ class SetTimeLimitDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        self.setWindowTitle(tr("SET_TIME_LIMIT"))
+        self.setWindowTitle(self.tr("SET_TIME_LIMIT"))
         layout = QVBoxLayout(self)
-        label = QLabel(tr("ENTER_NEW_TIME_LIMIT"))
+        label = QLabel(self.tr("ENTER_NEW_TIME_LIMIT"))
         layout.addWidget(label)
 
         # Start with parent's time_limit or 3.0 seconds, clamp to 1 decimal
@@ -868,7 +869,7 @@ class SetLanguageDialog(SelectionDialog):
     def __init__(self, parent=None):
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
         options = [("en", "English"), ("es", "Español")]
-        super().__init__(options, parent, title=tr("SET_LANGUAGE_TITLE"), label_text=tr("CHOOSE_LANGUAGE"))
+        super().__init__(options, parent, title=self.tr("SET_LANGUAGE_TITLE"), label_text=tr("CHOOSE_LANGUAGE"))
         self.parent_app = parent
 
     def on_select(self, lang_code):
@@ -880,9 +881,9 @@ class ChangeUnitsDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        self.setWindowTitle(tr("CHANGE_UNITS"))
+        self.setWindowTitle(self.tr("CHANGE_UNITS"))
         layout = QVBoxLayout(self)
-        label = QLabel(tr("CHOOSE_UNITS"))
+        label = QLabel(self.tr("CHOOSE_UNITS"))
         layout.addWidget(label)
 
         self.units_options = ["g", "oz"]
