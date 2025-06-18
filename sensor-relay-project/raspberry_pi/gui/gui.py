@@ -494,7 +494,7 @@ class SetTargetWeightDialog(QDialog):
         # Start with parent's target_weight or 500, clamp to 5 digits
         initial = parent.target_weight if parent else 500
         initial = max(0, min(initial, 99999))
-        digits = f"{int(initial):05d}"[-5:]  # Always 5 digits, initial as int
+        digits = f"{int(initial):04d}"[-4:]  # Always 4 digits, initial as int
 
         self.digits = [int(d) for d in digits]
         self.current_digit = 0  # Start editing the leftmost digit
@@ -509,9 +509,6 @@ class SetTargetWeightDialog(QDialog):
             up.setFixedWidth(48)
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
-            if i == 2:  # After the third arrow, add a spacer for the decimal point
-                spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-                up_arrows_layout.addItem(spacer)
         layout.addLayout(up_arrows_layout)
 
         # --- Digits ---
@@ -524,13 +521,6 @@ class SetTargetWeightDialog(QDialog):
             lbl.setFixedWidth(48)
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
-            if i == 2:  # After the third digit, add the decimal point
-                dot = QLabel(".")
-                dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
-                dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                dot.setFixedWidth(24)
-                dot.setStyleSheet("color: #fff;")
-                digits_layout.addWidget(dot)
         layout.addLayout(digits_layout)
 
         # --- Add down arrows ---
@@ -543,9 +533,6 @@ class SetTargetWeightDialog(QDialog):
             down.setFixedWidth(48)
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
-            if i == 2:  # After the third arrow, add a spacer for the decimal point
-                spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-                down_arrows_layout.addItem(spacer)
         layout.addLayout(down_arrows_layout)
 
         self.setLayout(layout)
@@ -554,7 +541,7 @@ class SetTargetWeightDialog(QDialog):
 
     def flash_arrow(self, direction):
         """Flash the current up or down arrow green briefly."""
-        flash_duration = 200  # milliseconds (was 100)
+        flash_duration = 300  # milliseconds (was 100)
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
@@ -679,7 +666,7 @@ class SetTimeLimitDialog(QDialog):
 
     def flash_arrow(self, direction):
         """Flash the current up or down arrow green briefly."""
-        flash_duration = 200  # milliseconds (was 100)
+        flash_duration = 300  # milliseconds (was 100)
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
