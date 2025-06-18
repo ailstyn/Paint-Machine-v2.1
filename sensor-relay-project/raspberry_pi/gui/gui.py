@@ -66,7 +66,7 @@ class StationWidget(QWidget):
             main_layout.setSpacing(0)
 
             bar_on_left = station_number in (1, 2)
-            self.progress_bar = VerticalProgressBar(max_value=100, value=0, bar_color="#F6EB61")
+            self.progress_bar = BottleProgressBar(max_value=100, value=0, bar_color="#4FC3F7")
             self.progress_bar.setFixedWidth(24)
 
             content_layout = QVBoxLayout()
@@ -480,6 +480,72 @@ class VerticalProgressBar(QWidget):
         bar_rect = rect.adjusted(4, rect.height() - bar_height + 4, -4, -4)
         painter.setBrush(QColor(self.bar_color))
         painter.drawRect(bar_rect)
+
+class BottleProgressBar(QWidget):
+    def __init__(self, max_value=100, value=0, bar_color="#4FC3F7", parent=None):
+        super().__init__(parent)
+        self.max_value = max_value
+        self.value = value
+        self.bar_color = bar_color
+
+    def set_value(self, value):
+        self.value = value
+        self.update()
+
+    def set_max(self, max_value):
+        self.max_value = max_value
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        rect = self.rect()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Draw bottle outline
+        bottle_path = QPainterPath()
+        margin = 8
+        neck_width = rect.width() * 0.3
+        body_width = rect.width() * 0.7
+        neck_height = rect.height() * 0.15
+        body_height = rect.height() - neck_height - margin
+
+        # Neck
+        neck_left = rect.center().x() - neck_width / 2
+        neck_right = rect.center().x() + neck_width / 2
+        bottle_path.moveTo(neck_left, margin)
+        bottle_path.lineTo(neck_right, margin)
+        bottle_path.lineTo(neck_right, neck_height + margin)
+        bottle_path.lineTo(rect.center().x() + body_width / 2, neck_height + margin)
+        # Body right
+        bottle_path.lineTo(rect.center().x() + body_width / 2, neck_height + body_height)
+        # Bottom curve
+        bottle_path.arcTo(rect.center().x() - body_width / 2, neck_height + body_height - body_width / 2,
+                          body_width, body_width, 0, -180)
+        # Body left
+        bottle_path.lineTo(rect.center().x() - body_width / 2, neck_height + margin)
+        bottle_path.lineTo(neck_left, neck_height + margin)
+        bottle_path.closeSubpath()
+
+        # Draw outline
+        painter.setPen(QPen(QColor("#fff"), 3))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(bottle_path)
+
+        # Draw fill (water)
+        if self.max_value > 0:
+            fill_ratio = min(max(self.value / self.max_value, 0), 1)
+        else:
+            fill_ratio = 0
+        fill_height = (body_height + neck_height) * fill_ratio
+        fill_rect = QRectF(rect.center().x() - body_width / 2 + 3,
+                           neck_height + margin + body_height + neck_height - fill_height,
+                           body_width - 6,
+                           fill_height)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(self.bar_color))
+        painter.setClipPath(bottle_path)
+        painter.drawRect(fill_rect)
+        painter.setClipping(False)
 
 class SetTargetWeightDialog(QDialog):
     def __init__(self, parent=None):
