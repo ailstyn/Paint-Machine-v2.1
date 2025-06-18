@@ -384,6 +384,13 @@ def poll_hardware(app):
                 print("E-STOP pressed")
             E_STOP = True
             FILL_LOCKED = True
+            if getattr(app, "active_dialog", None) is not None:
+                try:
+                    app.active_dialog.reject()
+                except Exception as e:
+                    logging.error(f"Error rejecting active dialog: {e}")
+                app.active_dialog = None
+                
             app.overlay_widget.show_overlay(
                 f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
                 f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
