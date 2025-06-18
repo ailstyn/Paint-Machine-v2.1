@@ -50,6 +50,10 @@ class StationWidget(QWidget):
         super().__init__(*args, **kwargs)
         self.station_number = station_number
 
+        tr = self.tr if hasattr(self, "tr") else (
+            self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+        )
+
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
 
@@ -77,12 +81,12 @@ class StationWidget(QWidget):
             self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
             content_layout.addWidget(self.weight_label)
 
-            self.final_weight_label = QLabel("Final: --")
+            self.final_weight_label = QLabel(tr("FINAL_WEIGHT").format("--"))
             self.final_weight_label.setFont(QFont("Arial", 18))
             self.final_weight_label.setStyleSheet("color: #fff;")
             content_layout.addWidget(self.final_weight_label)
 
-            self.fill_time_label = QLabel("Fill Time: -- ms")
+            self.fill_time_label = QLabel(tr("FILL_TIME").format("--"))
             self.fill_time_label.setFont(QFont("Arial", 18))
             self.fill_time_label.setStyleSheet("color: #fff;")
             content_layout.addWidget(self.fill_time_label)
@@ -98,7 +102,7 @@ class StationWidget(QWidget):
             offline_layout = QVBoxLayout(self)
             offline_layout.setContentsMargins(0, 0, 0, 0)
             offline_layout.setSpacing(0)
-            self.offline_label = OutlinedLabel("STATION OFFLINE")
+            self.offline_label = OutlinedLabel(tr("STATION_OFFLINE"))
             self.offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
             self.offline_label.setStyleSheet("color: #fff;")
             self.offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -123,11 +127,17 @@ class StationWidget(QWidget):
 
     def set_final_weight(self, value):
         if self.final_weight_label is not None:
-            self.final_weight_label.setText(f"Final: {value}")
+            tr = self.tr if hasattr(self, "tr") else (
+                self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+            )
+            self.final_weight_label.setText(tr("FINAL_WEIGHT").format(value))
 
     def set_fill_time(self, value):
         if self.fill_time_label is not None:
-            self.fill_time_label.setText(f"Fill Time: {value} ms")
+            tr = self.tr if hasattr(self, "tr") else (
+                self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+            )
+            self.fill_time_label.setText(tr("FILL_TIME").format(value))
 
 class MenuDialog(QDialog):
     def __init__(self, parent=None):

@@ -27,6 +27,9 @@ LANGUAGES = {
         "TIME_LIMIT_REACHED_TITLE": "TIME LIMIT REACHED:",
         "TIME_LABEL": "Time",
         "WEIGHT_LABEL": "Weight",
+        "FINAL_WEIGHT": "Final: {}",
+        "FILL_TIME": "Fill Time: {} ms",
+        "STATION_OFFLINE": "STATION OFFLINE",
         # Add more as needed...
     },
     "es": {
