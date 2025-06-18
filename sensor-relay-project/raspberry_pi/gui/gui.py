@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle
+    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor  # <-- Add QPixmap here
@@ -502,37 +502,50 @@ class SetTargetWeightDialog(QDialog):
         # --- Add up arrows ---
         up_arrows_layout = QHBoxLayout()
         self.up_labels = []
-        for i in range(5):
+        for i in range(4):
             up = QLabel("▲")
             up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             up.setAlignment(Qt.AlignmentFlag.AlignCenter)
             up.setFixedWidth(48)
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
+            if i == 1:  # After the second arrow, add a spacer for the decimal point
+                spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+                up_arrows_layout.addItem(spacer)
         layout.addLayout(up_arrows_layout)
 
         # --- Digits ---
         self.digit_labels = []
         digits_layout = QHBoxLayout()
-        for i in range(5):
+        for i in range(4):
             lbl = QLabel(str(self.digits[i]))
             lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             lbl.setFixedWidth(48)
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
+            if i == 1:  # After the second digit, add the decimal point
+                dot = QLabel(".")
+                dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+                dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                dot.setFixedWidth(24)
+                dot.setStyleSheet("color: #fff;")
+                digits_layout.addWidget(dot)
         layout.addLayout(digits_layout)
 
         # --- Add down arrows ---
         down_arrows_layout = QHBoxLayout()
         self.down_labels = []
-        for i in range(5):
+        for i in range(4):
             down = QLabel("▼")
             down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
             down.setAlignment(Qt.AlignmentFlag.AlignCenter)
             down.setFixedWidth(48)
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
+            if i == 1:  # After the second arrow, add a spacer for the decimal point
+                spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+                down_arrows_layout.addItem(spacer)
         layout.addLayout(down_arrows_layout)
 
         self.setLayout(layout)
@@ -541,14 +554,15 @@ class SetTargetWeightDialog(QDialog):
 
     def flash_arrow(self, direction):
         """Flash the current up or down arrow green briefly."""
+        flash_duration = 200  # milliseconds (was 100)
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
-            QTimer.singleShot(100, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
+            QTimer.singleShot(flash_duration, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
         elif direction == "down":
             self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
-            QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
+            QTimer.singleShot(flash_duration, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
         # UP button should increment
@@ -570,7 +584,7 @@ class SetTargetWeightDialog(QDialog):
                 lbl.setStyleSheet("color: #fff; border: 2px solid transparent; background: #222;")
             lbl.setText(str(self.digits[i]))
         # Set all arrows to white by default
-        for i in range(5):
+        for i in range(4):
             self.up_labels[i].setStyleSheet("color: #fff;")
             self.down_labels[i].setStyleSheet("color: #fff;")
 
@@ -620,6 +634,9 @@ class SetTimeLimitDialog(QDialog):
             up.setFixedWidth(48)
             self.up_labels.append(up)
             up_arrows_layout.addWidget(up)
+            if i == 1:  # After the second arrow, add a spacer for the decimal point
+                spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+                up_arrows_layout.addItem(spacer)
         layout.addLayout(up_arrows_layout)
 
         # --- Digits ---
@@ -632,12 +649,12 @@ class SetTimeLimitDialog(QDialog):
             lbl.setFixedWidth(48)
             self.digit_labels.append(lbl)
             digits_layout.addWidget(lbl)
-            if i == 2:  # Add decimal point after second digit
+            if i == 1:  # After the second digit, add the decimal point
                 dot = QLabel(".")
                 dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 dot.setFixedWidth(24)
-                dot.setStyleSheet("color: #fff;")  # Make the decimal point white
+                dot.setStyleSheet("color: #fff;")
                 digits_layout.addWidget(dot)
         layout.addLayout(digits_layout)
 
@@ -651,6 +668,9 @@ class SetTimeLimitDialog(QDialog):
             down.setFixedWidth(48)
             self.down_labels.append(down)
             down_arrows_layout.addWidget(down)
+            if i == 1:  # After the second arrow, add a spacer for the decimal point
+                spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+                down_arrows_layout.addItem(spacer)
         layout.addLayout(down_arrows_layout)
 
         self.setLayout(layout)
@@ -659,14 +679,15 @@ class SetTimeLimitDialog(QDialog):
 
     def flash_arrow(self, direction):
         """Flash the current up or down arrow green briefly."""
+        flash_duration = 200  # milliseconds (was 100)
         if direction == "up":
             self.up_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
-            QTimer.singleShot(100, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
+            QTimer.singleShot(flash_duration, lambda: self.up_labels[self.current_digit].setStyleSheet("color: #fff;"))
         elif direction == "down":
             self.down_labels[self.current_digit].setStyleSheet("color: #00FF00;")
             QApplication.processEvents()  # Force UI update
-            QTimer.singleShot(100, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
+            QTimer.singleShot(flash_duration, lambda: self.down_labels[self.current_digit].setStyleSheet("color: #fff;"))
 
     def select_prev(self):
         self.digits[self.current_digit] = (self.digits[self.current_digit] + 1) % 10
