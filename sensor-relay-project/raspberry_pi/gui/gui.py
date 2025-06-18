@@ -545,49 +545,51 @@ class BottleProgressBar(QWidget):
         rect = self.rect()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # Draw bottle outline
-        bottle_path = QPainterPath()
+        # Bottle geometry
         margin = 8
-        neck_width = rect.width() * 0.35
+        neck_width = rect.width() * 0.3
         body_width = rect.width() * 0.7
-        neck_height = rect.height() * 0.05
+        neck_height = rect.height() * 0.15
         body_height = rect.height() - neck_height - margin
-        corner_radius = body_width * 0.18  # Adjust for more/less roundness
+        corner_radius = body_width * 0.18  # Adjust for roundness
 
+        neck_left = rect.center().x() - neck_width / 2
+        neck_right = rect.center().x() + neck_width / 2
+        body_left = rect.center().x() - body_width / 2
+        body_right = rect.center().x() + body_width / 2
+
+        bottle_path = QPainterPath()
         # Start at left neck
         bottle_path.moveTo(neck_left, margin)
         bottle_path.lineTo(neck_right, margin)
         bottle_path.lineTo(neck_right, neck_height + margin)
 
-        # Top right arc (from neck to body)
+        # Top right arc (neck to body)
         bottle_path.arcTo(
-            rect.center().x() + body_width / 2 - corner_radius,  # x
-            neck_height + margin,                                # y
-            corner_radius * 2,                                   # w
-            corner_radius * 2,                                   # h
-            90, -90                                              # start angle, span angle
+            body_right - 2 * corner_radius, neck_height + margin,
+            2 * corner_radius, 2 * corner_radius,
+            90, -90
         )
 
         # Body right
-        bottle_path.lineTo(rect.center().x() + body_width / 2, neck_height + body_height)
+        bottle_path.lineTo(body_right, neck_height + margin + corner_radius)
+        bottle_path.lineTo(body_right, neck_height + body_height)
 
-        # Bottom curve (already curved)
+        # Bottom curve
         bottle_path.arcTo(
-            rect.center().x() - body_width / 2, 
-            neck_height + body_height - body_width / 2,
-            body_width, body_width, 0, -180
+            body_left, neck_height + body_height - body_width / 2,
+            body_width, body_width,
+            0, -180
         )
 
         # Body left
-        bottle_path.lineTo(rect.center().x() - body_width / 2, neck_height + margin + corner_radius)
+        bottle_path.lineTo(body_left, neck_height + margin + corner_radius)
 
-        # Top left arc (from body to neck)
+        # Top left arc (body to neck)
         bottle_path.arcTo(
-            rect.center().x() - body_width / 2,                  # x
-            neck_height + margin,                                # y
-            corner_radius * 2,                                   # w
-            corner_radius * 2,                                   # h
-            180, -90                                             # start angle, span angle
+            body_left, neck_height + margin,
+            2 * corner_radius, 2 * corner_radius,
+            180, -90
         )
 
         bottle_path.lineTo(neck_left, neck_height + margin)
@@ -604,10 +606,12 @@ class BottleProgressBar(QWidget):
         else:
             fill_ratio = 0
         fill_height = (body_height + neck_height) * fill_ratio
-        fill_rect = QRectF(rect.center().x() - body_width / 2 + 3,
-                           neck_height + margin + body_height + neck_height - fill_height,
-                           body_width - 6,
-                           fill_height)
+        fill_rect = QRectF(
+            body_left + 3,
+            neck_height + margin + body_height + neck_height - fill_height,
+            body_width - 6,
+            fill_height
+        )
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(self.bar_color))
         painter.setClipPath(bottle_path)
