@@ -113,7 +113,7 @@ class StationWidget(QWidget):
                 # Convert grams to ounces (1 oz = 28.3495 g)
                 current_oz = current_weight / 28.3495
                 target_oz = target_weight / 28.3495
-                new_text = f"{current_oz:.2f} / {target_oz:.2f} oz"
+                new_text = f"{current_oz:.1f} / {target_oz:.1f} oz"
             if self.weight_label.text() != new_text:
                 self.weight_label.setText(new_text)
         if self.progress_bar is not None:
@@ -222,6 +222,7 @@ class MenuDialog(QDialog):
             self.hide()
             parent.change_units_dialog = ChangeUnitsDialog(parent)
             parent.active_dialog = parent.change_units_dialog
+            parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))  # <-- Add this line
             parent.change_units_dialog.show()
 
     def show_again(self):
