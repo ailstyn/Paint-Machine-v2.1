@@ -30,7 +30,6 @@ LANGUAGES = {
         "FINAL_WEIGHT": "Final: {}",
         "FILL_TIME": "Fill Time: {} ms",
         "STATION_OFFLINE": "STATION OFFLINE",
-        # Add more as needed...
     },
     "es": {
         "SET_TARGET_WEIGHT_TITLE": "FIJAR PESO OBJETIVO",
