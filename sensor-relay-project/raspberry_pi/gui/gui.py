@@ -110,10 +110,14 @@ class StationWidget(QWidget):
             if unit == "g":
                 new_text = f"{int(round(current_weight))} / {int(round(target_weight))} g"
             else:  # "oz"
-                new_text = f"{current_weight:.1f} / {target_weight:.1f} oz"
+                # Convert grams to ounces (1 oz = 28.3495 g)
+                current_oz = current_weight / 28.3495
+                target_oz = target_weight / 28.3495
+                new_text = f"{current_oz:.2f} / {target_oz:.2f} oz"
             if self.weight_label.text() != new_text:
                 self.weight_label.setText(new_text)
         if self.progress_bar is not None:
+            # Always use grams for the progress bar fill math
             self.progress_bar.set_max(target_weight)
             self.progress_bar.set_value(current_weight)
 
