@@ -221,6 +221,7 @@ class MenuDialog(QDialog):
         elif selected_key == "CHANGE UNITS":
             self.hide()
             parent.change_units_dialog = ChangeUnitsDialog(parent)
+            parent.active_dialog = parent.change_units_dialog
             parent.change_units_dialog.finished.connect(self.show_again)
             parent.change_units_dialog.show()
 
