@@ -549,7 +549,7 @@ class BottleProgressBar(QWidget):
         margin = 8
         neck_width = rect.width() * 0.3
         body_width = rect.width() * 0.7
-        neck_height = rect.height() * 0.15
+        neck_height = rect.height() * 0.05
         body_height = rect.height() - neck_height - margin
         corner_radius = body_width * 0.18  # Adjust for roundness
 
