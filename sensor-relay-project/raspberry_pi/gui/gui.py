@@ -67,7 +67,7 @@ class StationWidget(QWidget):
 
             bar_on_left = station_number in (1, 2)
             self.progress_bar = BottleProgressBar(max_value=100, value=0, bar_color="#4FC3F7")
-            self.progress_bar.setFixedWidth(24)
+            self.progress_bar.setFixedWidth(48)  # Was 24, now 48 for double width
 
             content_layout = QVBoxLayout()
             content_layout.setContentsMargins(0, 0, 0, 0)
