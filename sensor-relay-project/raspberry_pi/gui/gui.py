@@ -142,15 +142,14 @@ class StationWidget(QWidget):
             self.fill_time_label.setText(self.tr("FILL_TIME").format(value))
 
     def update_language(self):
-        tr = self.tr if hasattr(self, "tr") else (
-            self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
-        )
+        parent = self.parent()
+        tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
         if self.final_weight_label is not None:
-            self.final_weight_label.setText(self.tr("FINAL_WEIGHT").format("--"))
+            self.final_weight_label.setText(tr("FINAL_WEIGHT").format("--"))
         if self.fill_time_label is not None:
-            self.fill_time_label.setText(self.tr("FILL_TIME").format("--"))
+            self.fill_time_label.setText(tr("FILL_TIME").format("--"))
         if self.offline_label is not None:
-            self.offline_label.setText(self.tr("STATION_OFFLINE"))
+            self.offline_label.setText(tr("STATION_OFFLINE"))
 
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
@@ -879,6 +878,8 @@ class SetLanguageDialog(SelectionDialog):
     def on_select(self, lang_code):
         if self.parent_app:
             self.parent_app.set_language(lang_code)
+        for widget in self.parent_app.station_widgets:
+            widget.update_language()
 
 class ChangeUnitsDialog(QDialog):
     def __init__(self, parent=None):
