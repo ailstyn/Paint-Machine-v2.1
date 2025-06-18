@@ -576,7 +576,7 @@ class SetTargetWeightDialog(QDialog):
             self.down_labels[i].setStyleSheet("color: #fff;")
 
     def activate_selected(self):
-        if self.current_digit < 4:  # 5 digits, so index 0-4
+        if self.current_digit < 3:  # 4 digits, so index 0-3
             self.current_digit += 1
             self.update_display()
         else:
