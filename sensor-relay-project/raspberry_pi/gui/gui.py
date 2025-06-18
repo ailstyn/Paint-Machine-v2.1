@@ -349,13 +349,14 @@ class RelayControlApp(QWidget):
     def set_target_weight(self, value):
         self.target_weight = value
         for i, widget in enumerate(self.station_widgets):
-            if widget.weight_label.text() != "OFFLINE":
+            if widget.weight_label is not None and widget.weight_label.text() != "OFFLINE":
                 current_weight = 0  # Or use actual current weight if available
                 widget.set_weight(current_weight, self.target_weight, self.units)
 
     def set_time_limit(self, value):
         self.time_limit = value
-        if DEBUG:print(f"[RelayControlApp] Time limit set to {value} ms")
+        if DEBUG:
+            print(f"[RelayControlApp] Time limit set to {value} ms")
         # Optionally update UI here
 
     def set_language(self, lang_code):
