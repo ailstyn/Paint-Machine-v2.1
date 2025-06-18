@@ -394,6 +394,10 @@ class RelayControlApp(QWidget):
             print(f"[RelayControlApp] Time limit set to {value} ms")
         # Optionally update UI here
 
+    def tr(self, key):
+        lang = getattr(self, "language", "en")
+        return LANGUAGES.get(lang, LANGUAGES["en"]).get(key, key)
+
     def set_language(self, lang_code):
         self.language = lang_code
         # Update menu dialog
