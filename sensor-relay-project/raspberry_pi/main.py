@@ -11,13 +11,14 @@ from PyQt6.QtCore import QTimer
 from gui.gui import RelayControlApp, MenuDialog
 from gui.languages import LANGUAGES
 import re
+from app_config import ERROR_LOG_FILE, STATS_LOG_FILE, ERROR_LOG_DIR, STATS_LOG_DIR
 
 # ========== CONFIG & CONSTANTS ==========
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
-log_filename = os.path.join(LOG_DIR, f"error_log_{datetime.now().strftime('%Y-%m-%d')}.txt")
+os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 logging.basicConfig(
-    filename=log_filename,
+    filename=ERROR_LOG_FILE,
     level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -74,12 +75,14 @@ last_final_weight = None
 fill_time_limit_reached = False
 SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 arduinos = [None] * NUM_STATIONS
+DEBUG = True  # Set to False to disable debug prints
 
 # ========== UTILITY FUNCTIONS ==========
 
 def log_uncaught_exceptions(exctype, value, tb):
     logging.error("Uncaught exception", exc_info=(exctype, value, tb))
-    print("Uncaught exception:", value)
+    if DEBUG:
+        print("Uncaught exception:", value)
 
 sys.excepthook = log_uncaught_exceptions
 
@@ -101,7 +104,8 @@ def load_scale_calibrations():
     except Exception as e:
         logging.error(f"Error reading {config_file}: {e}")
     scale_calibrations = calibrations
-    print(f"Loaded scale calibration values: {scale_calibrations}")
+    if DEBUG:
+        print(f"Loaded scale calibration values: {scale_calibrations}")
 
 def load_station_enabled(config_path, num_stations=4):
     enabled = [False] * num_stations
@@ -114,10 +118,13 @@ def load_station_enabled(config_path, num_stations=4):
                     if line.startswith(key):
                         value = line.split("=")[1].strip().lower()
                         enabled[i] = value == "true"
-                        print(f"[DEBUG] Found {key}{value} -> enabled[{i}] = {enabled[i]}")
+                        if DEBUG:
+                            print(f"[DEBUG] Found {key}{value} -> enabled[{i}] = {enabled[i]}")
     except Exception as e:
-        print(f"Error reading station_enabled from config: {e}")
-    print(f"[DEBUG] Final enabled list: {enabled}")
+        if DEBUG:
+            print(f"Error reading station_enabled from config: {e}")
+    if DEBUG:
+        print(f"[DEBUG] Final enabled list: {enabled}")
     return enabled
 
 def load_station_serials():
@@ -146,7 +153,8 @@ def setup_gpio():
     try:
         GPIO.setwarnings(False)
         GPIO.cleanup()
-        print('setting up GPIO')
+        if DEBUG:
+            print('setting up GPIO')
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -155,7 +163,8 @@ def setup_gpio():
         GPIO.setup(BUZZER_PIN, GPIO.OUT)
         GPIO.output(BUZZER_PIN, GPIO.LOW)
         GPIO.setup(RELAY_POWER_PIN, GPIO.OUT)
-        print('GPIO setup complete')
+        if DEBUG:
+            print('GPIO setup complete')
     except Exception as e:
         logging.error(f"Error in setup_gpio: {e}")
 
@@ -176,11 +185,8 @@ def ping_buzzer_invalid():
 # ========== SESSION/DATA LOGGING ==========
 
 def log_final_weight(station_index, final_weight):
-    today = datetime.now().strftime("%Y-%m-%d")
-    log_dir = "logs"
-    os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, f"material_log_{today}.txt")
-    with open(log_file, "a") as f:
+    os.makedirs(STATS_LOG_DIR, exist_ok=True)
+    with open(STATS_LOG_FILE, "a") as f:
         f.write(f"{datetime.now().isoformat()} session={SESSION_ID} station={station_index+1} weight={final_weight}\n")
 
 # ========== ARDUINO COMMUNICATION ==========
@@ -188,36 +194,43 @@ def log_final_weight(station_index, final_weight):
 def startup():
     global arduinos
     arduinos = [None] * NUM_STATIONS
-    print("App initialized, contacting Arduinos...")
+    if DEBUG:
+        print("App initialized, contacting Arduinos...")
     station_serials = load_station_serials()
 
     for port in arduino_ports:
         try:
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
-            print(f"Trying port {port}...")
+            if DEBUG:
+                print(f"Trying port {port}...")
 
             arduino.write(RESET_HANDSHAKE)
             arduino.flush()
-            print(f"Sent RESET HANDSHAKE to {port}")
+            if DEBUG:
+                print(f"Sent RESET HANDSHAKE to {port}")
 
             arduino.write(b'PMID')
             arduino.flush()
-            print(f"Sent 'PMID' handshake to {port}")
+            if DEBUG:
+                print(f"Sent 'PMID' handshake to {port}")
 
             station_serial_number = None
             for _ in range(60):
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                    print(f"Received from {port}: {repr(line)}")
+                    if DEBUG:
+                        print(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:([A-Za-z0-9\-]+)>", line)
                     if match:
                         station_serial_number = match.group(1)
-                        print(f"Station serial {station_serial_number} detected on {port}")
+                        if DEBUG:
+                            print(f"Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
-                print(f"No recognized station detected on port {port}, skipping...")
+                if DEBUG:
+                    print(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
 
@@ -225,14 +238,16 @@ def startup():
 
             arduino.write(CONFIRM_ID)
             arduino.flush()
-            print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
+            if DEBUG:
+                print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
 
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == REQUEST_CALIBRATION:
-                        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        if DEBUG:
+                            print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
@@ -241,21 +256,26 @@ def startup():
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
-                print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
+                if DEBUG:
+                    print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
 
             arduinos[station_index] = arduino
-            print(f"Station {station_index+1} on {port} initialized and ready.")
+            if DEBUG:
+                print(f"Station {station_index+1} on {port} initialized and ready.")
 
         except serial.SerialException:
-            print(f"No station detected on port {port}, skipping...")
+            if DEBUG:
+                print(f"No station detected on port {port}, skipping...")
         except Exception as e:
-            print(f"Error initializing Arduino on {port}: {e}")
+            if DEBUG:
+                print(f"Error initializing Arduino on {port}: {e}")
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
 def reconnect_arduino(station_index, port):
-    print(f"reconnect_arduino called for {port}")
+    if DEBUG:
+        print(f"reconnect_arduino called for {port}")
     try:
         if arduinos[station_index]:
             try:
@@ -270,27 +290,32 @@ def reconnect_arduino(station_index, port):
 
         arduino.write(RESET_HANDSHAKE)
         arduino.flush()
-        print(f"Sent RESET_HANDSHAKE to {port}")
+        if DEBUG:
+            print(f"Sent RESET_HANDSHAKE to {port}")
         time.sleep(0.5)
 
         arduino.write(b'PMID')
         arduino.flush()
-        print(f"Sent 'PMID' handshake to {port}")
+        if DEBUG:
+            print(f"Sent 'PMID' handshake to {port}")
 
         station_serials = load_station_serials()
         station_serial_number = None
         for _ in range(60):
             if arduino.in_waiting > 0:
                 line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                print(f"Received from {port}: {repr(line)}")
+                if DEBUG:
+                    print(f"Received from {port}: {repr(line)}")
                 match = re.match(r"<SERIAL:([A-Za-z0-9\-]+)>", line)
                 if match:
                     station_serial_number = match.group(1)
-                    print(f"Station serial {station_serial_number} detected on {port}")
+                    if DEBUG:
+                        print(f"Station serial {station_serial_number} detected on {port}")
                     break
             time.sleep(0.1)
         if station_serial_number is None or station_serial_number not in station_serials:
-            print(f"No recognized station detected on port {port}, skipping...")
+            if DEBUG:
+                print(f"No recognized station detected on port {port}, skipping...")
             arduino.close()
             return False
 
@@ -298,14 +323,16 @@ def reconnect_arduino(station_index, port):
 
         arduino.write(CONFIRM_ID)
         arduino.flush()
-        print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
+        if DEBUG:
+            print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
 
         got_request = False
         for _ in range(40):
             if arduino.in_waiting > 0:
                 req = arduino.read(1)
                 if req == REQUEST_CALIBRATION:
-                    print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                    if DEBUG:
+                        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     arduino.write(REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                     got_request = True
@@ -314,22 +341,26 @@ def reconnect_arduino(station_index, port):
                     arduino.reset_input_buffer()
             time.sleep(0.1)
         if not got_request:
-            print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
+            if DEBUG:
+                print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
             arduino.close()
             return False
 
         arduinos[station_index - 1] = arduino
-        print(f"Station {station_index+1} on {port} reconnected and ready.")
+        if DEBUG:
+            print(f"Station {station_index+1} on {port} reconnected and ready.")
         return True
 
     except Exception as e:
-        print(f"Error reconnecting Arduino on {port}: {e}")
+        if DEBUG:
+            print(f"Error reconnecting Arduino on {port}: {e}")
         logging.error(f"Error reconnecting Arduino on {port}: {e}")
         return False
 
 def try_connect_station(station_index):
     port = arduino_ports[station_index]
-    print(f"Attempting to (re)connect to station {station_index+1} on port {port}...")
+    if DEBUG:
+        print(f"Attempting to (re)connect to station {station_index+1} on port {port}...")
     try:
         success = reconnect_arduino(station_index, port)
         if success:
@@ -338,7 +369,8 @@ def try_connect_station(station_index):
         else:
             return False
     except Exception as e:
-        print(f"Error in try_connect_station: {e}")
+        if DEBUG:
+            print(f"Error in try_connect_station: {e}")
         return False
 
 def poll_hardware(app):
@@ -348,7 +380,8 @@ def poll_hardware(app):
 
         # Handle E-STOP state change
         if estop_pressed and not E_STOP:
-            print("E-STOP pressed")
+            if DEBUG:
+                print("E-STOP pressed")
             E_STOP = True
             FILL_LOCKED = True
             app.overlay_widget.show_overlay(
@@ -361,7 +394,8 @@ def poll_hardware(app):
                     arduino.write(E_STOP_ACTIVATED)
                     arduino.flush()
         elif not estop_pressed and E_STOP:
-            print("E-STOP released")
+            if DEBUG:
+                print("E-STOP released")
             E_STOP = False
             FILL_LOCKED = False
             app.overlay_widget.hide_overlay()
@@ -379,17 +413,20 @@ def poll_hardware(app):
                     message_type = arduino.read(1)
                     if message_type == REQUEST_TARGET_WEIGHT:
                         if FILL_LOCKED:
-                            print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
+                            if DEBUG:
+                                print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
                             arduino.write(STOP)
                         else:
                             arduino.write(TARGET_WEIGHT)
                             arduino.write(f"{target_weight}\n".encode('utf-8'))
                     elif message_type == REQUEST_CALIBRATION:
-                        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        if DEBUG:
+                            print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                     elif message_type == REQUEST_TIME_LIMIT:
-                        print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
+                        if DEBUG:
+                            print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
                         arduino.write(REQUEST_TIME_LIMIT)
                         arduino.write(f"{time_limit}\n".encode('utf-8'))
                     elif message_type == CURRENT_WEIGHT:
@@ -404,12 +441,14 @@ def poll_hardware(app):
                             app.update_station_weight(station_index, 0.0)
                     elif message_type == FINAL_WEIGHT:
                         final_weight = arduino.readline().decode('utf-8').strip()
-                        print(f"Station {station_index+1}: Final weight: {final_weight}")
+                        if DEBUG:
+                            print(f"Station {station_index+1}: Final weight: {final_weight}")
                         try:
                             grams = float(final_weight)
                             log_final_weight(station_index, grams)
                         except Exception as e:
-                            print(f"Could not log final weight: {e}")
+                            if DEBUG:
+                                print(f"Could not log final weight: {e}")
                         if hasattr(app, "update_station_final_weight"):
                             app.update_station_final_weight(station_index, final_weight)
                         else:
@@ -419,7 +458,8 @@ def poll_hardware(app):
                                     widget.set_final_weight(final_weight)
                     elif message_type == FILL_TIME:
                         fill_time = arduino.readline().decode('utf-8').strip()
-                        print(f"Station {station_index+1}: Fill time: {fill_time}")
+                        if DEBUG:
+                            print(f"Station {station_index+1}: Fill time: {fill_time}")
                         if hasattr(app, "update_station_fill_time"):
                             app.update_station_fill_time(station_index, fill_time)
                         else:
@@ -430,17 +470,21 @@ def poll_hardware(app):
                     else:
                         if arduino.in_waiting > 0:
                             extra = arduino.readline().decode('utf-8', errors='replace').strip()
-                            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
+                            if DEBUG:
+                                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
                         else:
-                            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
+                            if DEBUG:
+                                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
                             app.refresh_ui()
             except serial.SerialException as e:
-                print(f"Lost connection to Arduino {station_index+1}: {e}")
+                if DEBUG:
+                    print(f"Lost connection to Arduino {station_index+1}: {e}")
                 port = arduino_ports[station_index]
                 reconnect_arduino(station_index, port)
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
-        print(f"Error in poll_hardware: {e}")
+        if DEBUG:
+            print(f"Error in poll_hardware: {e}")
 
 # ========== GUI/BUTTON HANDLING ==========
 
@@ -450,7 +494,8 @@ def handle_button_presses(app):
 
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
-            print(f"UP button pressed, dialog: {dialog}")
+            if DEBUG:
+                print(f"UP button pressed, dialog: {dialog}")
             while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
@@ -460,7 +505,8 @@ def handle_button_presses(app):
 
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
-            print(f"DOWN button pressed, dialog: {dialog}")
+            if DEBUG:
+                print(f"DOWN button pressed, dialog: {dialog}")
             while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
@@ -470,21 +516,24 @@ def handle_button_presses(app):
 
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
-            print(f"SELECT button pressed, dialog: {dialog}")
+            if DEBUG:
+                print(f"SELECT button pressed, dialog: {dialog}")
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             if dialog is not None:
                 dialog.activate_selected()
             else:
-                print('select button pressed on main screen, opening menu')
+                if DEBUG:
+                    print('select button pressed on main screen, opening menu')
                 if not app.menu_dialog or not app.menu_dialog.isVisible():
                     app.show_menu()
             return
 
     except Exception as e:
         logging.error(f"Error in handle_button_presses: {e}")
-        print(f"Error in handle_button_presses: {e}")
+        if DEBUG:
+            print(f"Error in handle_button_presses: {e}")
 
 # ========== MAIN ENTRY POINT ==========
 
@@ -495,7 +544,8 @@ def main():
         global station_enabled
         config_path = "config.txt"
         station_enabled = load_station_enabled(config_path)
-        print(f"Loaded station_enabled: {station_enabled}")
+        if DEBUG:
+            print(f"Loaded station_enabled: {station_enabled}")
         setup_gpio()
 
         app_qt = QApplication(sys.argv)
@@ -504,7 +554,8 @@ def main():
 
         app.target_weight = target_weight
 
-        print('app initialized, contacting arduinos')
+        if DEBUG:
+            print('app initialized, contacting arduinos')
 
         for i, widget in enumerate(app.station_widgets):
             if station_enabled[i]:
@@ -525,12 +576,14 @@ def main():
 
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
-        print("Program interrupted by user.")
+        if DEBUG:
+            print("Program interrupted by user.")
         logging.info("Program interrupted by user.")
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
     finally:
-        print("Shutting down...")
+        if DEBUG:
+            print("Shutting down...")
         logging.info("Shutting down and cleaning up GPIO.")
         GPIO.cleanup()
 

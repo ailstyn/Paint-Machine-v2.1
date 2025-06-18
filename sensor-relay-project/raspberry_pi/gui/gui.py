@@ -7,6 +7,7 @@ import sys
 import logging
 import os
 from gui.languages import LANGUAGES
+from app_config import DEBUG, NUM_STATIONS, target_weight, time_limit
 
 logging.basicConfig(level=logging.INFO)
 
@@ -52,6 +53,13 @@ class StationWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
 
+        # Always define these attributes
+        self.weight_label = None
+        self.final_weight_label = None
+        self.fill_time_label = None
+        self.progress_bar = None
+        self.offline_label = None
+
         if enabled:
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
@@ -85,68 +93,37 @@ class StationWidget(QWidget):
             else:
                 main_layout.addLayout(content_layout)
                 main_layout.addWidget(self.progress_bar)
+            self.setLayout(main_layout)
         else:
             offline_layout = QVBoxLayout(self)
             offline_layout.setContentsMargins(0, 0, 0, 0)
             offline_layout.setSpacing(0)
-            offline_label = OutlinedLabel("STATION OFFLINE")
-            offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            offline_label.setStyleSheet("color: #fff;")
-            offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            offline_layout.addWidget(offline_label)
-
-        self.setLayout(main_layout if enabled else offline_layout)
+            self.offline_label = OutlinedLabel("STATION OFFLINE")
+            self.offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+            self.offline_label.setStyleSheet("color: #fff;")
+            self.offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            offline_layout.addWidget(self.offline_label)
+            self.setLayout(offline_layout)
 
     def set_weight(self, current_weight, target_weight, unit="g"):
-        if unit == "g":
-            new_text = f"{int(round(current_weight))} / {int(round(target_weight))} g"
-        else:  # "oz"
-            new_text = f"{current_weight:.1f} / {target_weight:.1f} oz"
-        if self.weight_label.text() != new_text:
-            self.weight_label.setText(new_text)
-        self.progress_bar.set_max(target_weight)
-        self.progress_bar.set_value(current_weight)
+        if self.weight_label is not None:
+            if unit == "g":
+                new_text = f"{int(round(current_weight))} / {int(round(target_weight))} g"
+            else:  # "oz"
+                new_text = f"{current_weight:.1f} / {target_weight:.1f} oz"
+            if self.weight_label.text() != new_text:
+                self.weight_label.setText(new_text)
+        if self.progress_bar is not None:
+            self.progress_bar.set_max(target_weight)
+            self.progress_bar.set_value(current_weight)
 
-    def set_active(self, active, bg_color=None):
-        color = bg_color if bg_color else "#FFFFFF"
-        if not active:
-            # Hide all normal labels, show offline label
-            self.weight_label.hide()
-            self.final_weight_label.hide()
-            self.fill_time_label.hide()
-            self.progress_bar.hide()
-            self.offline_label.show()
-            # Set background color with opacity
-            if color.startswith("#") and len(color) == 7:
-                r = int(color[1:3], 16)
-                g = int(color[3:5], 16)
-                b = int(color[5:7], 16)
-                color = f"rgba({r},{g},{b},0.25)"
-            else:
-                color = "rgba(68,68,68,0.25)"
-        else:
-            # Show all normal labels, hide offline label
-            self.weight_label.show()
-            self.final_weight_label.show()
-            self.fill_time_label.show()
-            self.progress_bar.show()
-            self.offline_label.hide()
-        self.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
-
-    def set_offline(self, bg_color_deactivated="#444444"):
-        self.weight_label.setText("OFFLINE")
-        self.progress_bar.set_value(0)
-        self.progress_bar.set_max(1)
-        self.setStyleSheet(f"background-color: {bg_color_deactivated}; border: 2px solid #222;")
-
-    # Example methods for your StationWidget class
     def set_final_weight(self, value):
-        # Display or store the final weight value
-        self.final_weight_label.setText(f"Final: {value}")
+        if self.final_weight_label is not None:
+            self.final_weight_label.setText(f"Final: {value}")
 
     def set_fill_time(self, value):
-        # Display or store the fill time value
-        self.fill_time_label.setText(f"Fill Time: {value} ms")
+        if self.fill_time_label is not None:
+            self.fill_time_label.setText(f"Fill Time: {value} ms")
 
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
@@ -276,7 +253,8 @@ class MenuDialog(QDialog):
 class RelayControlApp(QWidget):
     def __init__(self, station_enabled=None):
         super().__init__()
-        print(f"[DEBUG] RelayControlApp.__init__ called with station_enabled={station_enabled}")
+        if DEBUG:
+            print(f"[DEBUG] RelayControlApp.__init__ called with station_enabled={station_enabled}")
         self.setWindowTitle("Four Station Control")
         self.setStyleSheet("background-color: #222222;")
 
@@ -285,10 +263,12 @@ class RelayControlApp(QWidget):
 
         # Example enabled state (replace with your actual config loading)
         if station_enabled is not None:
-            print("[DEBUG] Using provided station_enabled list.")
+            if DEBUG:
+                print("[DEBUG] Using provided station_enabled list.")
             self.station_enabled = station_enabled
         else:
-            print("[DEBUG] No station_enabled provided, defaulting to all False.")
+            if DEBUG:
+                print("[DEBUG] No station_enabled provided, defaulting to all False.")
             self.station_enabled = [False, False, False, False]
 
         # Main grid layout (2x2 for four stations)
@@ -358,7 +338,8 @@ class RelayControlApp(QWidget):
 
     def show_menu(self):
         self.active_menu = "main_menu"
-        print("RelayControlApp: show_menu() called")
+        if DEBUG:
+            print("RelayControlApp: show_menu() called")
         if self.menu_dialog is None or not self.menu_dialog.isVisible():
             self.menu_dialog = MenuDialog(self)
             self.active_dialog = self.menu_dialog
@@ -374,7 +355,7 @@ class RelayControlApp(QWidget):
 
     def set_time_limit(self, value):
         self.time_limit = value
-        print(f"[RelayControlApp] Time limit set to {value} ms")
+        if DEBUG:print(f"[RelayControlApp] Time limit set to {value} ms")
         # Optionally update UI here
 
     def set_language(self, lang_code):
@@ -391,9 +372,11 @@ class RelayControlApp(QWidget):
         QApplication.processEvents()
 
     def update_station_states(self, station_enabled):
-        print(f"[update_station_states] station_enabled={station_enabled}")
+        if DEBUG:
+            print(f"[update_station_states] station_enabled={station_enabled}")
         for i, widget in enumerate(self.station_widgets):
-            print(f"[update_station_states] Setting Station {i+1} active={station_enabled[i]}, color={self.bg_colors[i]}")
+            if DEBUG:
+                print(f"[update_station_states] Setting Station {i+1} active={station_enabled[i]}, color={self.bg_colors[i]}")
             widget.set_active(station_enabled[i], self.bg_colors[i])
 
     def set_units(self, units):
@@ -411,19 +394,23 @@ class RelayControlApp(QWidget):
         QTimer.singleShot(timeout_ms, dialog.accept)
 
     def handle_station_selected(self, station_index):
-        print(f"StationStatusDialog: Station {station_index+1} selected for (re)connect")
+        if DEBUG:
+            print(f"StationStatusDialog: Station {station_index+1} selected for (re)connect")
         # Call a function in main.py to attempt (re)connect
         try:
             from main import try_connect_station  # Import your connect function
             success = try_connect_station(station_index)
             if success:
-                print(f"Station {station_index+1} connected and enabled.")
+                if DEBUG:
+                    print(f"Station {station_index+1} connected and enabled.")
                 self.station_enabled[station_index] = True
                 self.update_station_states(self.station_enabled)
             else:
-                print(f"Station {station_index+1} connection failed.")
+                if DEBUG:
+                    print(f"Station {station_index+1} connection failed.")
         except Exception as e:
-            print(f"Error connecting to station {station_index+1}: {e}")
+            if DEBUG:
+                print(f"Error connecting to station {station_index+1}: {e}")
 
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
