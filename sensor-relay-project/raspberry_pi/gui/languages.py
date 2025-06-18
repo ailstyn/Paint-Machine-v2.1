@@ -49,5 +49,8 @@ LANGUAGES = {
         "TIME_LIMIT_REACHED_TITLE": "SE ALCANZÓ EL LÍMITE DE TIEMPO:",
         "TIME_LABEL": "TIEMPO",
         "WEIGHT_LABEL": "PESO",
+        "STATION_OFFLINE": "FUERA DE SERVICIO",
+        "FINAL_WEIGHT": "FINAL: {}",
+        "FILL_TIME": "TIEMPO DE LLENADO: {} ms",
     }
 }
