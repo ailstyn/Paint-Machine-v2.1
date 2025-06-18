@@ -279,6 +279,11 @@ class MenuDialog(QDialog):
         print("MenuDialog: show() called")
         super().show()
 
+    def update_menu_language(self):
+        self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
+        for label, text in zip(self.labels, self.menu_items):
+            label.setText(text)
+
 class RelayControlApp(QWidget):
     def __init__(self, station_enabled=None):
         super().__init__()
