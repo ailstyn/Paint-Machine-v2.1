@@ -1223,6 +1223,7 @@ class FillingModeDialog(QDialog):
         self.update_selection_box()
 
     def activate_selected(self):
+        print(f"[DEBUG] activate_selected called with index {self.selected_index}")
         self.done(self.selected_index)
 
 class CalibrationDialog(QDialog):
