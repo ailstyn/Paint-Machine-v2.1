@@ -383,7 +383,6 @@ def startup(app, timer):
 
     # ========== Step 3: Calibration Check ==========
     print("[DEBUG] Step 3: Calibration Check dialog")
-    timer.stop()
     calib_dialog = CalibrationDialog(station_enabled, parent=app)
     calib_dialog.set_main_label("CALIBRATING")
     calib_dialog.set_sub_label("Clear all stations (including empty bottles), then press any button.")
@@ -517,8 +516,6 @@ def startup(app, timer):
 
     app.active_dialog = None
     calib_dialog.accept()
-
-    timer.start(35)
 
 # ========== Final Setup ==========
     button_error_counts = [0] * NUM_STATIONS
@@ -805,10 +802,19 @@ def poll_hardware(app):
                             weight = float(current_weight)
                             if weight < 0:
                                 weight = 0.0
-                            app.update_station_weight(station_index, weight)
+                            # If CalibrationDialog is active, update only it
+                            dialog = getattr(app, "active_dialog", None)
+                            if dialog is not None and dialog.__class__.__name__ == "CalibrationDialog":
+                                dialog.set_weight(station_index, weight)
+                            else:
+                                app.update_station_weight(station_index, weight)
                         except Exception as e:
                             logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
-                            app.update_station_weight(station_index, 0.0)
+                            dialog = getattr(app, "active_dialog", None)
+                            if dialog is not None and dialog.__class__.__name__ == "CalibrationDialog":
+                                dialog.set_weight(station_index, 0.0)
+                            else:
+                                app.update_station_weight(station_index, 0.0)
                     elif message_type == FINAL_WEIGHT:
                         final_weight = arduino.readline().decode('utf-8').strip()
                         if DEBUG:
