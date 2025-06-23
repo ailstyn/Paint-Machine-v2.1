@@ -311,14 +311,10 @@ def startup(app):
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
-# ========== Initialize Setup Dialog ==========
-    dialog = StartupDialog("Verifying stations...", parent=app)
-    dialog.show()
-    QApplication.processEvents()
 # ========== Step 1: Verify Stations ==========
     dialog = StartupDialog("Are these the filling stations you are using?", parent=app)
     app.active_dialog = dialog  # <-- Mark as active dialog
-    dialog.show()
+    dialog.showMaximized()
     QApplication.processEvents()
 
     station_names = [f"Station {i+1}" for i in range(NUM_STATIONS)]
@@ -349,22 +345,19 @@ def startup(app):
             dialog.activate_selected()
             while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.01)
-            break
+            result = dialog.result()
+            if result == 1:
+                break  # Only break if YES is selected
+            else:
+                # Optionally, give feedback or just continue the loop
+                continue
         time.sleep(0.01)
 
-    result = dialog.result()
     dialog.accept()
-
     app.active_dialog = None  # <-- Clear active dialog
 
-    if result == 1:
-        # YES selected: proceed to next step
-        pass  # continue startup
-    else:
-        # NO selected: do nothing for now
-        pass
-
-# ========== Step 2: Select Filling Mode ==========
+    # YES selected: proceed to next step
+    # ========== Step 2: Select Filling Mode ==========
     filling_mode_dialog = FillingModeDialog(parent=app)
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.show()

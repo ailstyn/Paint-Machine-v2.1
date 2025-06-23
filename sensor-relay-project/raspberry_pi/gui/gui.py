@@ -1122,8 +1122,8 @@ class StartupDialog(QDialog):
                 item.widget().deleteLater()
             elif item.layout():
                 item.layout().deleteLater()
-    
-        row = QHBoxLayout()
+
+        grid = QGridLayout()
         for i in range(len(station_names)):
             box = QVBoxLayout()
             name_label = QLabel(station_names[i])
@@ -1140,8 +1140,10 @@ class StartupDialog(QDialog):
             box_widget.setStyleSheet(
                 f"border: 2px solid #fff; border-radius: 12px; background: {colors[i]}; margin: 8px;"
             )
-            row.addWidget(box_widget)
-        self.layout().addLayout(row)
+            row = i // 2
+            col = i % 2
+            grid.addWidget(box_widget, row, col)
+        self.layout().addLayout(grid)
 
         # Add YES/NO buttons below the row
         button_row = QHBoxLayout()
