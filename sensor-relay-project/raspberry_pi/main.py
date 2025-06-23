@@ -372,21 +372,13 @@ def startup(app):
         print("[DEBUG] Step 2: Select Filling Mode dialog")
     filling_mode_dialog = FillingModeDialog(parent=app)
     app.active_dialog = filling_mode_dialog
-    filling_mode_dialog.show()
-    QApplication.processEvents()
-
-    if DEBUG:
-        print("[DEBUG] Waiting for user to select filling mode...")
-    while filling_mode_dialog.result() == 0:
-        QApplication.processEvents()
-        time.sleep(0.01)
+    result = filling_mode_dialog.exec()  # This blocks until the dialog is closed
 
     selected_index = filling_mode_dialog.selected_index
     filling_modes = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes[selected_index]
     if DEBUG:
         print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
-    filling_mode_dialog.accept()  # <-- Ensure dialog is closed
     app.active_dialog = None
 
     # ========== Step 3: Calibration Check ==========
