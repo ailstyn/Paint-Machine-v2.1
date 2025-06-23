@@ -334,32 +334,14 @@ def startup(app):
     dialog.show_station_verification(station_names, statuses, colors)
     QApplication.processEvents()
 
-    # Wait for user to select YES/NO using buttons
-    while True:
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-            dialog.select_prev()  # Move selection left
-            QApplication.processEvents()
-            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-                time.sleep(0.01)
-        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            dialog.select_next()  # Move selection right
-            QApplication.processEvents()
-            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-                time.sleep(0.01)
-        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            dialog.activate_selected()
-            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-                time.sleep(0.01)
-            result = dialog.result()
-            if result == 1:
-                break  # Only break if YES is selected
-            else:
-                # Optionally, give feedback or just continue the loop
-                continue
+    # Wait for user to select YES/NO using hardware buttons (handled by handle_button_presses)
+    while dialog.result() == 0:
+        QApplication.processEvents()
         time.sleep(0.01)
 
+    result = dialog.result()
     dialog.accept()
-    app.active_dialog = None  # <-- Clear active dialog
+    app.active_dialog = None
 
     # YES selected: proceed to next step
     # ========== Step 2: Select Filling Mode ==========
