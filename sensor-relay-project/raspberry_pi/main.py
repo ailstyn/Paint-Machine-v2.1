@@ -114,7 +114,7 @@ def load_scale_calibrations():
     if DEBUG:
         print(f"Loaded scale calibration values: {scale_calibrations}")
 
-def load_station_enabled(config_path, serial_numbers):
+def load_station_enabled(config_path):
     enabled = [False] * NUM_STATIONS
     try:
         with open(config_path, "r") as f:
@@ -305,7 +305,7 @@ def startup(app):
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
     # ========== Load enabled states ==========
-    station_enabled = load_station_enabled("config.txt", station_serials)
+    station_enabled = load_station_enabled("config.txt")
 
     # ========== Check E-STOP state ==========
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
