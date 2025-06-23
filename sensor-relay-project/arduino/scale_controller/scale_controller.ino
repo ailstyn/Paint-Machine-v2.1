@@ -36,6 +36,7 @@
 #define CONFIRM_ID 0xA1
 #define RESET_HANDSHAKE 0xB0
 #define SERIAL_MAX_LEN 16  // Max serial number length (including null terminator)
+#define BUTTON_ERROR 0xE0  // Chosen unused byte for button error
 
 // Global variables
 HX711 scale;
@@ -151,9 +152,34 @@ void setup() {
     request_and_apply_calibration();
 }
 
+const unsigned long BUTTON_STUCK_THRESHOLD = 3000; // 3 seconds
+
 void loop() {
+    static unsigned long buttonLowStart = 0;
+    static bool buttonWasStuck = false;
+
+    // Check for stuck button
     if (digitalRead(BUTTON_PIN) == LOW) {
-        fill();
+        if (buttonLowStart == 0) {
+            buttonLowStart = millis();
+        } else if ((millis() - buttonLowStart) > BUTTON_STUCK_THRESHOLD) {
+            // Button stuck LOW for too long
+            if (!buttonWasStuck) {
+                digitalWrite(LED_PIN, HIGH);
+                Serial.write(BUTTON_ERROR); // Send error byte to Pi
+                Serial.println("<ERR:BUTTON STUCK>");
+                buttonWasStuck = true;
+            }
+            // Do NOT call fill() if stuck
+        }
+    } else {
+        if (buttonLowStart != 0 && !buttonWasStuck) {
+            // Button was pressed and released quickly: treat as normal press
+            fill();
+        }
+        buttonLowStart = 0;
+        buttonWasStuck = false;
+        digitalWrite(LED_PIN, LOW); // Turn off LED if it was on
     }
 
     // Check for incoming serial messages

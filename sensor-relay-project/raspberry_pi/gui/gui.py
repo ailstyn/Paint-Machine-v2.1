@@ -412,6 +412,9 @@ class RelayControlApp(QWidget):
 
     def update_station_weight(self, station_index, weight):
         self.station_widgets[station_index].set_weight(weight, self.target_weight, self.units)
+        # If CalibrationDialog is active, update its weight display too
+        if hasattr(self, "active_dialog") and isinstance(self.active_dialog, CalibrationDialog):
+            self.active_dialog.set_weight(station_index, weight)
 
     def refresh_ui(self):
         QApplication.processEvents()
@@ -492,6 +495,9 @@ class InfoDialog(QDialog):
         layout.addWidget(self.value_label)
         self.setLayout(layout)
         self.setModal(True)
+
+    def set_message(self, message):
+        self.label.setText(message)
 
 class VerticalProgressBar(QWidget):
     def __init__(self, max_value=100, value=0, bar_color="#F6EB61", parent=None):
@@ -1086,6 +1092,211 @@ class OverlayWidget(QWidget):
 
     def hide_overlay(self):
         self.hide()
+
+class StartupDialog(QDialog):
+    def __init__(self, message, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setStyleSheet("background-color: #222; color: #fff;")
+
+        layout = QVBoxLayout(self)
+        self.label = QLabel(message)
+        self.label.setWordWrap(True)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        layout.addWidget(self.label)
+
+        self.setLayout(layout)
+
+    def show_station_verification(self, station_names, statuses, colors):
+        """
+        station_names: list of str, e.g. ["Station 1", ...]
+        statuses: list of str, e.g. ["ENABLED", "DISABLED", ...]
+        colors: list of str, e.g. ["#CB1212", ...]
+        """
+        # Remove previous widgets except the main label
+        while self.layout().count() > 1:
+            item = self.layout().takeAt(1)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                item.layout().deleteLater()
+    
+        row = QHBoxLayout()
+        for i in range(len(station_names)):
+            box = QVBoxLayout()
+            name_label = QLabel(station_names[i])
+            name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
+            status_label = QLabel(statuses[i])
+            status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            status_label.setFont(QFont("Arial", 18))
+            status_label.setStyleSheet("color: #fff;")
+            box.addWidget(name_label)
+            box.addWidget(status_label)
+            box_widget = QWidget()
+            box_widget.setLayout(box)
+            box_widget.setStyleSheet(
+                f"border: 2px solid #fff; border-radius: 12px; background: {colors[i]}; margin: 8px;"
+            )
+            row.addWidget(box_widget)
+        self.layout().addLayout(row)
+
+        # Add YES/NO buttons below the row
+        button_row = QHBoxLayout()
+        self.yes_label = QLabel("<YES>")
+        self.no_label = QLabel("<NO>")
+        for lbl in (self.yes_label, self.no_label):
+            lbl.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            lbl.setFixedWidth(160)
+            lbl.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
+            button_row.addWidget(lbl)
+        self.selected_option = 0  # 0 = YES, 1 = NO
+        self._update_yesno_selection()
+        self.layout().addLayout(button_row)
+
+    def _update_yesno_selection(self):
+        if getattr(self, "yes_label", None) and getattr(self, "no_label", None):
+            if self.selected_option == 0:
+                self.yes_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
+                self.no_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
+            else:
+                self.yes_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
+                self.no_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
+
+    def select_prev(self):
+        # Move selection LEFT (YES <-> NO)
+        self.selected_option = (self.selected_option - 1) % 2
+        self._update_yesno_selection()
+
+    def select_next(self):
+        # Move selection RIGHT (YES <-> NO)
+        self.selected_option = (self.selected_option + 1) % 2
+        self._update_yesno_selection()
+
+    def activate_selected(self):
+        # 0 = YES, 1 = NO
+        self.done(1 if self.selected_option == 0 else 0)
+
+class FillingModeDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setStyleSheet("background-color: #222; color: #fff;")
+        layout = QVBoxLayout(self)
+        label = QLabel("SELECT FILLING MODE")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        layout.addWidget(label)
+
+        self.options = ["AUTO", "MANUAL", "SMART"]
+        self.selected_index = 0
+        self.labels = []
+        for opt in self.options:
+            opt_label = QLabel(opt)
+            opt_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            opt_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            opt_label.setFixedHeight(64)
+            self.labels.append(opt_label)
+            layout.addWidget(opt_label)
+        self.setLayout(layout)
+        self.update_selection_box()
+
+    def update_selection_box(self):
+        for i, label in enumerate(self.labels):
+            if i == self.selected_index:
+                label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px; background: #333;")
+            else:
+                label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px; background: #222;")
+
+    def select_next(self):
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
+        self.update_selection_box()
+
+    def select_prev(self):
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
+        self.update_selection_box()
+
+    def activate_selected(self):
+        self.done(self.selected_index)
+
+class CalibrationDialog(QDialog):
+    def __init__(self, station_enabled, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setStyleSheet("background-color: #222; color: #fff;")
+        layout = QVBoxLayout(self)
+
+        # Large label (main instruction)
+        self.main_label = QLabel("CALIBRATION")
+        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.main_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        layout.addWidget(self.main_label)
+
+        # Smaller label (sub-instruction)
+        self.sub_label = QLabel("Follow the instructions to calibrate each station.")
+        self.sub_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.sub_label.setFont(QFont("Arial", 20))
+        layout.addWidget(self.sub_label)
+
+        # Four sections for weight readouts
+        self.weight_labels = []
+        weights_layout = QHBoxLayout()
+        for i in range(4):
+            box = QVBoxLayout()
+            station_label = QLabel(f"Station {i+1}")
+            station_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            station_label.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+            box.addWidget(station_label)
+
+            weight_label = QLabel("--" if not station_enabled[i] else "0.0 g")
+            weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            weight_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+            weight_label.setStyleSheet("color: #0f0;" if station_enabled[i] else "color: #888;")
+            box.addWidget(weight_label)
+            self.weight_labels.append(weight_label)
+
+            box_widget = QWidget()
+            box_widget.setLayout(box)
+            box_widget.setStyleSheet(
+                "border: 2px solid #fff; border-radius: 12px; background: #333; margin: 8px;"
+            )
+            weights_layout.addWidget(box_widget)
+        layout.addLayout(weights_layout)
+
+        # Bottom label (status or instruction)
+        self.bottom_label = QLabel("Press SELECT to continue when ready.")
+        self.bottom_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.bottom_label.setFont(QFont("Arial", 18))
+        layout.addWidget(self.bottom_label)
+
+        self.setLayout(layout)
+
+    def set_main_label(self, text):
+        self.main_label.setText(text)
+
+    def set_sub_label(self, text):
+        self.sub_label.setText(text)
+
+    def set_weight(self, station_index, weight):
+        if 0 <= station_index < len(self.weight_labels):
+            self.weight_labels[station_index].setText(f"{weight:.1f} g")
+
+    def set_bottom_label(self, text):
+        self.bottom_label.setText(text)
+
+    def select_prev(self):
+        pass  # No navigation needed
+
+    def select_next(self):
+        pass  # No navigation needed
+
+    def activate_selected(self):
+        self.accept()
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
