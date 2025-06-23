@@ -217,7 +217,7 @@ def log_final_weight(station_index, final_weight):
 
 # ========== STARTUP ==========
 
-def startup(app):
+def startup(app, timer):
     global arduinos, scale_calibrations, station_enabled, station_serials
 
     if DEBUG:
@@ -383,6 +383,7 @@ def startup(app):
 
     # ========== Step 3: Calibration Check ==========
     print("[DEBUG] Step 3: Calibration Check dialog")
+    timer.stop()
     calib_dialog = CalibrationDialog(station_enabled, parent=app)
     calib_dialog.set_main_label("CALIBRATING")
     calib_dialog.set_sub_label("Clear all stations (including empty bottles), then press any button.")
@@ -393,22 +394,9 @@ def startup(app):
     QApplication.processEvents()
 
     print("[DEBUG] Waiting for first button press (empty stations)...")
-    while True:
+    while calib_dialog.result() == 0:
         QApplication.processEvents()
-        if (
-            GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-        ):
-            calib_dialog.activate_selected()
-            while (
-                GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-                GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-                GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-            ):
-                time.sleep(0.01)
-            break
-        time.sleep(0.1)
+        time.sleep(0.01)
 
 # Update dialog for full bottle step
     calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
@@ -529,6 +517,8 @@ def startup(app):
 
     app.active_dialog = None
     calib_dialog.accept()
+
+    timer.start(35)
 
 # ========== Final Setup ==========
     button_error_counts = [0] * NUM_STATIONS
@@ -963,7 +953,7 @@ def main():
         button_timer.timeout.connect(lambda: handle_button_presses(app))
         button_timer.start(50)
 
-        QTimer.singleShot(1000, lambda: startup(app))
+        QTimer.singleShot(1000, lambda: startup(app, timer))
 
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
