@@ -220,11 +220,17 @@ def log_final_weight(station_index, final_weight):
 def startup(app):
     global arduinos, scale_calibrations, station_enabled, station_serials
 
+    print("[DEBUG] === Startup sequence initiated ===")
+
     # ========== Load station serials and scale calibrations ==========
+    print("[DEBUG] Loading scale calibrations and station serials...")
     load_scale_calibrations()
     station_serials = load_station_serials()
+    print(f"[DEBUG] station_serials: {station_serials}")
+    print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
 
     # ========== Connect and Setup Arduinos ==========
+    print("[DEBUG] Connecting and setting up Arduinos...")
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
 
@@ -305,15 +311,19 @@ def startup(app):
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
     # ========== Load enabled states ==========
+    print("[DEBUG] Loading enabled states...")
     station_enabled = load_station_enabled("config.txt")
+    print(f"[DEBUG] station_enabled: {station_enabled}")
 
     # ========== Check E-STOP state ==========
+    print("[DEBUG] Checking E-STOP state...")
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
-# ========== Step 1: Verify Stations ==========
+    # ========== Step 1: Verify Stations ==========
+    print("[DEBUG] Step 1: Verify Stations dialog")
     dialog = StartupDialog("Are these the filling stations you are using?", parent=app)
-    app.active_dialog = dialog  # <-- Mark as active dialog
+    app.active_dialog = dialog
     dialog.showMaximized()
     QApplication.processEvents()
 
@@ -328,29 +338,32 @@ def startup(app):
             statuses.append("DISABLED & CONNECTED")
         else:
             statuses.append("DISABLED & DISCONNECTED")
+    print(f"[DEBUG] Station statuses: {statuses}")
 
     colors = app.bg_colors if hasattr(app, "bg_colors") else ["#444"] * NUM_STATIONS
 
     dialog.show_station_verification(station_names, statuses, colors)
     QApplication.processEvents()
 
-    # Wait for user to select YES/NO using hardware buttons (handled by handle_button_presses)
+    print("[DEBUG] Waiting for user to select YES/NO...")
     while dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
 
     result = dialog.result()
+    print(f"[DEBUG] Station verification dialog result: {result}")
     dialog.accept()
     app.active_dialog = None
 
     # YES selected: proceed to next step
     # ========== Step 2: Select Filling Mode ==========
+    print("[DEBUG] Step 2: Select Filling Mode dialog")
     filling_mode_dialog = FillingModeDialog(parent=app)
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.show()
     QApplication.processEvents()
 
-    # Wait for user to select and confirm using hardware buttons
+    print("[DEBUG] Waiting for user to select filling mode...")
     while filling_mode_dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
@@ -358,10 +371,11 @@ def startup(app):
     selected_index = filling_mode_dialog.selected_index
     filling_modes = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes[selected_index]
+    print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
     app.active_dialog = None
 
-# ========== Step 3: Calibration Check ==========
-
+    # ========== Step 3: Calibration Check ==========
+    print("[DEBUG] Step 3: Calibration Check dialog")
     calib_dialog = CalibrationDialog(station_enabled, parent=app)
     calib_dialog.set_main_label("CALIBRATING")
     calib_dialog.set_sub_label("Clear all stations (including empty bottles), then press any button.")
@@ -371,7 +385,7 @@ def startup(app):
     calib_dialog.show()
     QApplication.processEvents()
 
-# Wait for first button press (empty stations)
+    print("[DEBUG] Waiting for first button press (empty stations)...")
     while True:
         QApplication.processEvents()
         if (
@@ -394,6 +408,7 @@ def startup(app):
     QApplication.processEvents()
 
     # Wait for second button press (full bottles) with sanity check
+    print("[DEBUG] Waiting for second button press (full bottles) with sanity check...")
     while True:
         QApplication.processEvents()
         if (
@@ -461,6 +476,7 @@ def startup(app):
     calib_dialog.set_bottom_label("Press any button to continue")
     QApplication.processEvents()
 
+    print("[DEBUG] Waiting for empty bottle check...")
     while True:
         QApplication.processEvents()
         if (
