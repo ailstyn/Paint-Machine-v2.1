@@ -336,10 +336,15 @@ def startup(app):
 
     # Wait for user to select YES/NO using buttons
     while True:
-        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            dialog.select_next()  # Toggle selection
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            dialog.select_prev()  # Move selection left
             QApplication.processEvents()
-            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                time.sleep(0.01)
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            dialog.select_next()  # Move selection right
+            QApplication.processEvents()
+            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 time.sleep(0.01)
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             dialog.activate_selected()
