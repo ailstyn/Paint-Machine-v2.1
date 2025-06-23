@@ -220,17 +220,21 @@ def log_final_weight(station_index, final_weight):
 def startup(app):
     global arduinos, scale_calibrations, station_enabled, station_serials
 
-    print("[DEBUG] === Startup sequence initiated ===")
+    if DEBUG:
+        print("[DEBUG] === Startup sequence initiated ===")
 
     # ========== Load station serials and scale calibrations ==========
-    print("[DEBUG] Loading scale calibrations and station serials...")
+    if DEBUG:
+        print("[DEBUG] Loading scale calibrations and station serials...")
     load_scale_calibrations()
     station_serials = load_station_serials()
-    print(f"[DEBUG] station_serials: {station_serials}")
-    print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
+    if DEBUG:
+        print(f"[DEBUG] station_serials: {station_serials}")
+        print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
 
     # ========== Connect and Setup Arduinos ==========
-    print("[DEBUG] Connecting and setting up Arduinos...")
+    if DEBUG:
+        print("[DEBUG] Connecting and setting up Arduinos...")
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
 
@@ -311,17 +315,21 @@ def startup(app):
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
     # ========== Load enabled states ==========
-    print("[DEBUG] Loading enabled states...")
+    if DEBUG:
+        print("[DEBUG] Loading enabled states...")
     station_enabled = load_station_enabled("config.txt")
-    print(f"[DEBUG] station_enabled: {station_enabled}")
+    if DEBUG:
+        print(f"[DEBUG] station_enabled: {station_enabled}")
 
     # ========== Check E-STOP state ==========
-    print("[DEBUG] Checking E-STOP state...")
+    if DEBUG:
+        print("[DEBUG] Checking E-STOP state...")
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
     # ========== Step 1: Verify Stations ==========
-    print("[DEBUG] Step 1: Verify Stations dialog")
+    if DEBUG:
+        print("[DEBUG] Step 1: Verify Stations dialog")
     dialog = StartupDialog("Are these the filling stations you are using?", parent=app)
     app.active_dialog = dialog
     dialog.showMaximized()
@@ -338,32 +346,37 @@ def startup(app):
             statuses.append("DISABLED & CONNECTED")
         else:
             statuses.append("DISABLED & DISCONNECTED")
-    print(f"[DEBUG] Station statuses: {statuses}")
+    if DEBUG:
+        print(f"[DEBUG] Station statuses: {statuses}")
 
     colors = app.bg_colors if hasattr(app, "bg_colors") else ["#444"] * NUM_STATIONS
 
     dialog.show_station_verification(station_names, statuses, colors)
     QApplication.processEvents()
 
-    print("[DEBUG] Waiting for user to select YES/NO...")
+    if DEBUG:
+        print("[DEBUG] Waiting for user to select YES/NO...")
     while dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
 
     result = dialog.result()
-    print(f"[DEBUG] Station verification dialog result: {result}")
+    if DEBUG:
+        print(f"[DEBUG] Station verification dialog result: {result}")
     dialog.accept()
     app.active_dialog = None
 
     # YES selected: proceed to next step
     # ========== Step 2: Select Filling Mode ==========
-    print("[DEBUG] Step 2: Select Filling Mode dialog")
+    if DEBUG:
+        print("[DEBUG] Step 2: Select Filling Mode dialog")
     filling_mode_dialog = FillingModeDialog(parent=app)
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.show()
     QApplication.processEvents()
 
-    print("[DEBUG] Waiting for user to select filling mode...")
+    if DEBUG:
+        print("[DEBUG] Waiting for user to select filling mode...")
     while filling_mode_dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
@@ -371,7 +384,9 @@ def startup(app):
     selected_index = filling_mode_dialog.selected_index
     filling_modes = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes[selected_index]
-    print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
+    if DEBUG:
+        print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
+    filling_mode_dialog.accept()  # <-- Ensure dialog is closed
     app.active_dialog = None
 
     # ========== Step 3: Calibration Check ==========
