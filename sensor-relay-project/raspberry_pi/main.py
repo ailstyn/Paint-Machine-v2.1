@@ -534,8 +534,6 @@ def startup(app, timer):
             calib_dialog.done(0)  # Reset dialog so next button press will close it again
             continue
 
-    calib_dialog.accept()
-
     # ========== Final Setup ==========
     button_error_counts = [0] * NUM_STATIONS
     faulty_stations = set()
