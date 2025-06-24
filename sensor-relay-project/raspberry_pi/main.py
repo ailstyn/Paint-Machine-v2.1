@@ -565,36 +565,71 @@ def startup(app, timer):
         print("[DEBUG] Entering Final Setup after empty bottle check")
     button_error_counts = [0] * NUM_STATIONS
     faulty_stations = set()
-    start_time = time.time()
     timeout = 6  # seconds
+    start_time = time.time()
 
-    while time.time() - start_time < timeout:
-        print(f"[DEBUG] Final setup loop: {time.time() - start_time:.2f}s elapsed")
+    # Show the dialog for button check
+    calib_dialog.set_main_label("BUTTON CHECK")
+    calib_dialog.set_sub_label("Checking station buttons for faults...")
+    calib_dialog.set_bottom_label(f"Checking... {timeout} seconds remaining")
+    for i in range(NUM_STATIONS):
+        if station_enabled[i]:
+            calib_dialog.weight_labels[i].setText(f"STATION {i+1}: OK")
+            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+        else:
+            calib_dialog.weight_labels[i].setText(f"STATION {i+1}: DISABLED")
+            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px;")
+    calib_dialog.show()
+    QApplication.processEvents()
+
+    last_seconds_left = timeout
+    while True:
+        elapsed = time.time() - start_time
+        seconds_left = max(0, int(timeout - elapsed))
+        # Only update label if seconds_left changed
+        if seconds_left != last_seconds_left:
+            calib_dialog.set_bottom_label(f"Checking... {seconds_left} seconds remaining")
+            last_seconds_left = seconds_left
+            QApplication.processEvents()
+
         for i in range(NUM_STATIONS):
-            print(f"[DEBUG] Checking station {i+1}: enabled={station_enabled[i]}, arduino={arduinos[i] is not None}")
             if station_enabled[i] and arduinos[i] and arduinos[i].in_waiting > 0:
-                print(f"[DEBUG] Station {i+1} has data waiting: {arduinos[i].in_waiting}")
                 try:
                     byte = arduinos[i].read(1)
-                    print(f"[DEBUG] Read byte from station {i+1}: {byte}")
                     if byte == BUTTON_ERROR:
                         button_error_counts[i] += 1
-                        print(f"[DEBUG] BUTTON_ERROR for station {i+1}, count={button_error_counts[i]}")
                         if button_error_counts[i] >= 2 and i not in faulty_stations:
                             faulty_stations.add(i)
                             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: BUTTON ERROR")
                             calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
                             calib_dialog.set_sub_label(f"STATION {i+1} button is malfunctioning.")
-                            calib_dialog.set_bottom_label(f"For your safety, station {i+1} has been disabled")
+                            calib_dialog.set_bottom_label(f"For your safety, station {i+1} has been disabled<br>Checking... {seconds_left} seconds remaining")
                             station_enabled[i] = False
                             save_station_enabled(config_file, station_enabled)
                             QApplication.processEvents()
                 except Exception as e:
                     print(f"[DEBUG] Exception in button error check: {e}")
+
+        # Update all labels for stations that are still OK
+        for i in range(NUM_STATIONS):
+            if station_enabled[i] and i not in faulty_stations:
+                calib_dialog.weight_labels[i].setText(f"STATION {i+1}: OK")
+                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+            elif not station_enabled[i]:
+                calib_dialog.weight_labels[i].setText(f"STATION {i+1}: DISABLED")
+                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px;")
+        QApplication.processEvents()
+        time.sleep(0.05)
+        if elapsed >= timeout:
+            break
+
     if DEBUG:
         print("[DEBUG] Final Setup complete, showing final calibration message")
     # Show final message
-    calib_dialog.set_sub_label("Calibration complete." if not faulty_stations else "Some stations disabled due to button error.")
+    if not faulty_stations:
+        calib_dialog.set_sub_label("Calibration complete.")
+    else:
+        calib_dialog.set_sub_label("Some stations disabled due to button error.")
     calib_dialog.set_bottom_label("Press any button to continue.")
     QApplication.processEvents()
 
