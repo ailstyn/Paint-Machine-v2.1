@@ -448,6 +448,7 @@ def startup(app, timer):
                         calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
                     else:
                         calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                        failed_stations.append(str(i + 1))
                 except Exception:
                     failed_stations.append(str(i + 1))
 
@@ -496,12 +497,30 @@ def startup(app, timer):
         calib_dialog.show()
         QApplication.processEvents()
 
-        # Wait for any button press (handled by handle_button_presses)
+        # Live update loop: update colors and weights until a button is pressed
         while calib_dialog.result() == 0:
+            for i in range(NUM_STATIONS):
+                if station_enabled[i]:
+                    try:
+                        weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
+                        weight = float(weight_text) if weight_text not in ("--", "") else 0.0
+                        # Set color based on weight
+                        if app.target_weight == 400:
+                            in_range = 18 <= weight <= 22
+                        elif app.target_weight == 750:
+                            in_range = 29 <= weight <= 33
+                        else:
+                            in_range = False
+                        if in_range:
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                        else:
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                    except Exception:
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
             QApplication.processEvents()
-            time.sleep(0.01)
+            time.sleep(0.05)
 
-        # Check weights for each active station
+        # After button press, check weights for each active station
         failed_stations = []
         for i in range(NUM_STATIONS):
             if station_enabled[i]:
@@ -509,12 +528,19 @@ def startup(app, timer):
                     weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                     weight = float(weight_text) if weight_text not in ("--", "") else 0.0
                     if app.target_weight == 400:
-                        if not (18 <= weight <= 22):
-                            failed_stations.append(str(i + 1))
+                        in_range = 18 <= weight <= 22
                     elif app.target_weight == 750:
-                        if not (29 <= weight <= 33):
-                            failed_stations.append(str(i + 1))
+                        in_range = 29 <= weight <= 33
+                    else:
+                        in_range = False
+                    # Set color again for feedback
+                    if in_range:
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                    else:
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                        failed_stations.append(str(i + 1))
                 except Exception:
+                    calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
                     failed_stations.append(str(i + 1))
         if not failed_stations:
             print("[DEBUG] Empty Bottle Check - END")
@@ -535,6 +561,8 @@ def startup(app, timer):
             continue
 
     # ========== Final Setup ==========
+    if DEBUG:
+        print("[DEBUG] Entering Final Setup after empty bottle check")
     button_error_counts = [0] * NUM_STATIONS
     faulty_stations = set()
     start_time = time.time()
@@ -558,21 +586,26 @@ def startup(app, timer):
                             save_station_enabled(config_file, station_enabled)
                             QApplication.processEvents()
                 except Exception as e:
-                    if DEBUG:
-                        print(f"Error reading from station {i+1}: {e}")
+                    print(f"[DEBUG] Exception in button error check: {e}")
         QApplication.processEvents()
         time.sleep(0.05)
 
+    if DEBUG:
+        print("[DEBUG] Final Setup complete, showing final calibration message")
     # Show final message
     calib_dialog.set_sub_label("Calibration complete." if not faulty_stations else "Some stations disabled due to button error.")
     calib_dialog.set_bottom_label("Press any button to continue.")
     QApplication.processEvents()
 
+    if DEBUG:
+        print("[DEBUG] Waiting for user to acknowledge calibration complete")
     # Wait for user to acknowledge (handled by handle_button_presses)
     while calib_dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
 
+    if DEBUG:
+        print("[DEBUG] Calibration dialog accepted, finishing calibration setup")
     app.active_dialog = None
     calib_dialog.accept()
 
