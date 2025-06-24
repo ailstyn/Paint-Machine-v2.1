@@ -569,14 +569,18 @@ def startup(app, timer):
     timeout = 6  # seconds
 
     while time.time() - start_time < timeout:
+        print(f"[DEBUG] Final setup loop: {time.time() - start_time:.2f}s elapsed")
         for i in range(NUM_STATIONS):
+            print(f"[DEBUG] Checking station {i+1}: enabled={station_enabled[i]}, arduino={arduinos[i] is not None}")
             if station_enabled[i] and arduinos[i] and arduinos[i].in_waiting > 0:
+                print(f"[DEBUG] Station {i+1} has data waiting: {arduinos[i].in_waiting}")
                 try:
                     byte = arduinos[i].read(1)
+                    print(f"[DEBUG] Read byte from station {i+1}: {byte}")
                     if byte == BUTTON_ERROR:
                         button_error_counts[i] += 1
+                        print(f"[DEBUG] BUTTON_ERROR for station {i+1}, count={button_error_counts[i]}")
                         if button_error_counts[i] >= 2 and i not in faulty_stations:
-                            # Mark as faulty, update dialog, and disable station
                             faulty_stations.add(i)
                             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: BUTTON ERROR")
                             calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
@@ -587,9 +591,6 @@ def startup(app, timer):
                             QApplication.processEvents()
                 except Exception as e:
                     print(f"[DEBUG] Exception in button error check: {e}")
-        QApplication.processEvents()
-        time.sleep(0.05)
-
     if DEBUG:
         print("[DEBUG] Final Setup complete, showing final calibration message")
     # Show final message
