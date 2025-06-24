@@ -214,10 +214,10 @@ void loop() {
         }
     }
 
-    // Read and send current weight to Raspberry Pi
+    // Read and send current weight to Raspberry Pi as binary (4 bytes, little endian)
     long weight = scale.get_units(3);
     Serial.write(CURRENT_WEIGHT);
-    Serial.println(weight);
+    Serial.write((byte*)&weight, sizeof(weight));
 }
 
 // Function to handle the fill process
@@ -349,7 +349,7 @@ void recalibrate() {
     while (true) {
         long weight = scale.get_units(3);
         Serial.write(CURRENT_WEIGHT);
-        Serial.println(weight);
+        Serial.write((byte*)&weight, sizeof(weight));
 
         // Check for "step complete" message from Pi
         if (Serial.available() > 0) {
@@ -412,7 +412,7 @@ void manual_fill() {
         while (digitalRead(BUTTON_PIN) == HIGH) {
             long weight = scale.get_units(3);
             Serial.write(CURRENT_WEIGHT);
-            Serial.println(weight);
+            Serial.write((byte*)&weight, sizeof(weight));
 
             if (Serial.available() > 0) {
                 byte msg = Serial.read();
@@ -427,7 +427,7 @@ void manual_fill() {
         while (digitalRead(BUTTON_PIN) == LOW) {
             long weight = scale.get_units(3);
             Serial.write(CURRENT_WEIGHT);
-            Serial.println(weight);
+            Serial.write((byte*)&weight, sizeof(weight));
 
             if (Serial.available() > 0) {
                 // Example: exit manual fill if a specific byte is received
@@ -505,7 +505,7 @@ void smart_fill() {
     while (true) {
         long weight = scale.get_units(3);
         Serial.write(CURRENT_WEIGHT);
-        Serial.println(weight);
+        Serial.write((byte*)&weight, sizeof(weight));
 
         if (weight >= (targetWeight * 0.5)) {
             halfWeight = weight;
@@ -536,7 +536,7 @@ void smart_fill() {
     while (millis() < predictedEnd) {
         long weight = scale.get_units(3);
         Serial.write(CURRENT_WEIGHT);
-        Serial.println(weight);
+        Serial.write((byte*)&weight, sizeof(weight));
         delay(10); // Don't hammer the scale
     }
     Serial.print("Final weight: ");

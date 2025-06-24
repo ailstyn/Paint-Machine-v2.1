@@ -737,19 +737,19 @@ def poll_hardware(app):
                         arduino.write(REQUEST_TIME_LIMIT)
                         arduino.write(f"{time_limit}\n".encode('utf-8'))
                     elif message_type == CURRENT_WEIGHT:
-                        current_weight = arduino.readline().decode('utf-8').strip()
-                        try:
-                            weight = float(current_weight)
+                        # Read 4 bytes for the weight (little-endian, signed)
+                        weight_bytes = arduino.read(4)
+                        if len(weight_bytes) == 4:
+                            weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
                             if weight < 0:
                                 weight = 0.0
-                            # If CalibrationDialog is active, update only it
                             dialog = getattr(app, "active_dialog", None)
                             if dialog is not None and dialog.__class__.__name__ == "CalibrationDialog":
                                 dialog.set_weight(station_index, weight)
                             else:
                                 app.update_station_weight(station_index, weight)
-                        except Exception as e:
-                            logging.error(f"Invalid weight value for station {station_index}: {current_weight} ({e})")
+                        else:
+                            logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
                             dialog = getattr(app, "active_dialog", None)
                             if dialog is not None and dialog.__class__.__name__ == "CalibrationDialog":
                                 dialog.set_weight(station_index, 0.0)
