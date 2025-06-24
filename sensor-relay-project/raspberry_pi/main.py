@@ -480,7 +480,9 @@ def startup(app, timer):
             continue  # Repeat the loop for another attempt
         else:
             print("[DEBUG] Full Bottle Check - END")
-            break
+            # Properly close the dialog before moving on
+            calib_dialog.accept()
+            break  # All stations OK, continue to next step
 
 # ========== Step 4: Empty Bottle Check ==========
     calib_dialog.set_sub_label("Place an empty bottle in each active station")
@@ -516,6 +518,7 @@ def startup(app, timer):
                     failed_stations.append(str(i + 1))
         if not failed_stations:
             print("[DEBUG] Empty Bottle Check - END")
+            calib_dialog.accept()
             break  # All stations OK, continue to next step
         else:
             calib_dialog.set_bottom_label(
@@ -531,7 +534,6 @@ def startup(app, timer):
             calib_dialog.done(0)  # Reset dialog so next button press will close it again
             continue
 
-    app.active_dialog = None
     calib_dialog.accept()
 
     # ========== Final Setup ==========
