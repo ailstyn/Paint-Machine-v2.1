@@ -409,7 +409,6 @@ def startup(app, timer):
     print("[DEBUG] Waiting for full bottle check (live weight/color updates)...")
 
     while True:
-        # Reset dialog result so the next button press will close it again
         calib_dialog.done(0)
         calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
         calib_dialog.set_bottom_label("")
@@ -444,6 +443,11 @@ def startup(app, timer):
                     weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                     weight = float(weight_text) if weight_text not in ("--", "") else 0.0
                     weights.append((i, weight))
+                    # Set color again for feedback
+                    if 375 <= weight <= 425 or 725 <= weight <= 775:
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                    else:
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
                 except Exception:
                     failed_stations.append(str(i + 1))
 
@@ -472,7 +476,6 @@ def startup(app, timer):
                 " " + ", ".join(failed_stations) +
                 "<br>ALL STATIONS MUST USE THE SAME SIZE<br>Press any button to try again."
             )
-            # Optionally beep or give feedback here
             calib_dialog.done(0)
             continue  # Repeat the loop for another attempt
         else:
