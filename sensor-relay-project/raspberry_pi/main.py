@@ -595,8 +595,9 @@ def startup(app, timer):
             QApplication.processEvents()
 
         for i in range(NUM_STATIONS):
-            print(f"[DEBUG] Checking station {i+1}: enabled={station_enabled[i]}, arduino={arduinos[i] is not None}")
-            if station_enabled[i] and arduinos[i] and arduinos[i].in_waiting > 0:
+            # Only check stations that are enabled and not already faulty
+            if station_enabled[i] and i not in faulty_stations and arduinos[i] and arduinos[i].in_waiting > 0:
+                print(f"[DEBUG] Checking station {i+1}: enabled={station_enabled[i]}, arduino={arduinos[i] is not None}")
                 print(f"[DEBUG] Station {i+1} has {arduinos[i].in_waiting} bytes waiting")
                 try:
                     byte = arduinos[i].read(1)
@@ -613,6 +614,12 @@ def startup(app, timer):
                             station_enabled[i] = False
                             save_station_enabled(config_file, station_enabled)
                             QApplication.processEvents()
+                    elif byte == CURRENT_WEIGHT:
+                        # Discard the next 4 bytes (the weight value)
+                        extra = arduinos[i].read(4)
+                        print(f"[DEBUG] Discarded 4 bytes after CURRENT_WEIGHT: {extra}")
+                    else:
+                        print(f"[DEBUG] Unhandled byte from station {i+1}: {byte}")
                 except Exception as e:
                     print(f"[DEBUG] Exception in button error check for station {i+1}: {e}")
 
