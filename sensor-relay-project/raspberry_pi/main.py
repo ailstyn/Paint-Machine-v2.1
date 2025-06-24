@@ -382,7 +382,7 @@ def startup(app, timer):
     app.active_dialog = None
 
     # ========== Step 3: Calibration Check ==========
-    print("[DEBUG] Step 3: Calibration Check dialog")
+    print("[DEBUG] Step 3: Calibration Check dialog - BEGIN")
     calib_dialog = CalibrationDialog(station_enabled, parent=app)
     calib_dialog.set_main_label("CALIBRATING")
     calib_dialog.set_sub_label("Clear all stations (including empty bottles), then press any button.")
@@ -396,8 +396,10 @@ def startup(app, timer):
     while calib_dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
+    print("[DEBUG] Step 3: Calibration Check dialog - END")
 
-# Update dialog for full bottle step
+    # ========== Empty Bottle Check ==========
+    print("[DEBUG] Empty Bottle Check - BEGIN")
     calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
     calib_dialog.set_bottom_label("")
     QApplication.processEvents()
@@ -461,60 +463,61 @@ def startup(app, timer):
         else:
             # All stations are in the same valid range, step is complete
             break
+    print("[DEBUG] Empty Bottle Check - END")
 
-# ========== Step 4: Empty Bottle Check ==========
+# ========== Step 4: Full Bottle Check ==========
     calib_dialog.set_sub_label("Place an empty bottle in each active station")
     calib_dialog.set_bottom_label("Press any button to continue")
     QApplication.processEvents()
 
     print("[DEBUG] Waiting for empty bottle check...")
     while True:
+        calib_dialog.set_sub_label("Place an empty bottle in each active station")
+        calib_dialog.set_bottom_label("Press any button to continue")
+        calib_dialog.show()
         QApplication.processEvents()
-        if (
-            GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-        ):
-            # Check weights for each active station
-            failed_stations = []
-            for i in range(NUM_STATIONS):
-                if station_enabled[i]:
-                    try:
-                        weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
-                        weight = float(weight_text) if weight_text not in ("--", "") else 0.0
-                        if app.target_weight == 400:
-                            if not (18 <= weight <= 22):
-                                failed_stations.append(str(i + 1))
-                        elif app.target_weight == 750:
-                            if not (29 <= weight <= 33):
-                                failed_stations.append(str(i + 1))
-                    except Exception:
-                        failed_stations.append(str(i + 1))
-            if not failed_stations:
-                calib_dialog.activate_selected()
-                while (
-                    GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-                    GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-                    GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-                ):
-                    time.sleep(0.01)
-                break
-            else:
-                calib_dialog.set_bottom_label(
-                    "ERROR ON STATION" +
-                    ("S" if len(failed_stations) > 1 else "") +
-                    " " + ", ".join(failed_stations)
-                )
-                # Beep buzzer three times
-                for _ in range(3):
-                    ping_buzzer()
-                    time.sleep(0.15)
-                calib_dialog.set_bottom_label("Press any button to continue")
+
+        # Wait for any button press (handled by handle_button_presses)
+        while calib_dialog.result() == 0:
+            QApplication.processEvents()
+            time.sleep(0.01)
+
+        # Check weights for each active station
+        failed_stations = []
+        for i in range(NUM_STATIONS):
+            if station_enabled[i]:
+                try:
+                    weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
+                    weight = float(weight_text) if weight_text not in ("--", "") else 0.0
+                    if app.target_weight == 400:
+                        if not (18 <= weight <= 22):
+                            failed_stations.append(str(i + 1))
+                    elif app.target_weight == 750:
+                        if not (29 <= weight <= 33):
+                            failed_stations.append(str(i + 1))
+                except Exception:
+                    failed_stations.append(str(i + 1))
+        if not failed_stations:
+            print("[DEBUG] Full Bottle Check - END")
+            break  # All stations OK, continue to next step
+        else:
+            calib_dialog.set_bottom_label(
+                "ERROR ON STATION" +
+                ("S" if len(failed_stations) > 1 else "") +
+                " " + ", ".join(failed_stations)
+            )
+            # Beep buzzer three times
+            for _ in range(3):
+                ping_buzzer()
+                time.sleep(0.15)
+            calib_dialog.set_bottom_label("Press any button to continue")
+            calib_dialog.done(0)  # Reset dialog so next button press will close it again
+            continue
 
     app.active_dialog = None
     calib_dialog.accept()
 
-# ========== Final Setup ==========
+    # ========== Final Setup ==========
     button_error_counts = [0] * NUM_STATIONS
     faulty_stations = set()
     start_time = time.time()
@@ -543,92 +546,18 @@ def startup(app, timer):
         QApplication.processEvents()
         time.sleep(0.05)
 
-    # Optionally, after the timeout, you can clear the dialog or proceed to the next step
+    # Show final message
     calib_dialog.set_sub_label("Calibration complete." if not faulty_stations else "Some stations disabled due to button error.")
     calib_dialog.set_bottom_label("Press any button to continue.")
     QApplication.processEvents()
 
-    # Wait for user to acknowledge
-    while True:
+    # Wait for user to acknowledge (handled by handle_button_presses)
+    while calib_dialog.result() == 0:
         QApplication.processEvents()
-        if (
-            GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-        ):
-            calib_dialog.activate_selected()
-            while (
-                GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-                GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-                GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-            ):
-                time.sleep(0.01)
-            break
-        time.sleep(0.1)
+        time.sleep(0.01)
 
     app.active_dialog = None
     calib_dialog.accept()
-
-# ========== Final Setup: Button Error Check ==========
-    calib_dialog.set_sub_label("Checking start button status")
-    calib_dialog.set_bottom_label("")
-    QApplication.processEvents()
-
-    BUTTON_ERROR = b'\xE0'
-    button_error_counts = [0] * NUM_STATIONS
-    faulty_stations = set()
-    start_time = time.time()
-    timeout = 6  # seconds
-
-    while time.time() - start_time < timeout:
-        for i in range(NUM_STATIONS):
-            if station_enabled[i] and arduinos[i] and arduinos[i].in_waiting > 0:
-                try:
-                    byte = arduinos[i].read(1)
-                    if byte == BUTTON_ERROR:
-                        button_error_counts[i] += 1
-                        if button_error_counts[i] >= 2 and i not in faulty_stations:
-                            # Mark as faulty, update dialog, and disable station
-                            faulty_stations.add(i)
-                            calib_dialog.weight_labels[i].setText(f"STATION {i+1}: BUTTON ERROR")
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
-                            calib_dialog.set_sub_label(f"STATION {i+1} button is malfunctioning.")
-                            calib_dialog.set_bottom_label(f"For your safety, station {i+1} has been disabled")
-                            station_enabled[i] = False
-                            save_station_enabled(config_file, station_enabled)
-                            QApplication.processEvents()
-                except Exception as e:
-                    if DEBUG:
-                        print(f"Error reading from station {i+1}: {e}")
-        QApplication.processEvents()
-        time.sleep(0.05)
-
-    # Optionally, after the timeout, you can clear the dialog or proceed to the next step
-    calib_dialog.set_sub_label("Calibration complete." if not faulty_stations else "Some stations disabled due to button error.")
-    calib_dialog.set_bottom_label("Press any button to continue.")
-    QApplication.processEvents()
-
-    # Wait for user to acknowledge
-    while True:
-        QApplication.processEvents()
-        if (
-            GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-        ):
-            calib_dialog.activate_selected()
-            while (
-                GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-                GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-                GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-            ):
-                time.sleep(0.01)
-            break
-        time.sleep(0.1)
-
-    app.active_dialog = None
-    calib_dialog.accept()
-
 
 def reconnect_arduino(station_index, port):
     if DEBUG:
