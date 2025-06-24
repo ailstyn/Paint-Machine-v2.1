@@ -394,30 +394,48 @@ def startup(app, timer):
 
     print("[DEBUG] Waiting for first button press (empty stations)...")
     while calib_dialog.result() == 0:
+        # arduino.Write(TARE_SCALE)
         QApplication.processEvents()
         time.sleep(0.01)
     print("[DEBUG] Step 3: Calibration Check dialog - END")
 
-    # ========== Empty Bottle Check ==========
-    print("[DEBUG] Empty Bottle Check - BEGIN")
+    # ========== Full Bottle Check ==========
+    print("[DEBUG] Full Bottle Check - BEGIN")
     calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
     calib_dialog.set_bottom_label("")
+    calib_dialog.show()
     QApplication.processEvents()
 
-    print("[DEBUG] Waiting for second button press (full bottles) with sanity check...")
+    print("[DEBUG] Waiting for full bottle check (live weight/color updates)...")
+
     while True:
-        # Show the dialog for this step
+        # Reset dialog result so the next button press will close it again
+        calib_dialog.done(0)
         calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
         calib_dialog.set_bottom_label("")
         calib_dialog.show()
         QApplication.processEvents()
 
-        # Wait for any button press (handled by handle_button_presses)
+        # Live update loop: update colors and weights until a button is pressed
         while calib_dialog.result() == 0:
+            for i in range(NUM_STATIONS):
+                if station_enabled[i]:
+                    try:
+                        weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
+                        weight = float(weight_text) if weight_text not in ("--", "") else 0.0
+                        # Set color based on weight
+                        if 375 <= weight <= 425 or 725 <= weight <= 775:
+                            # In valid range: green
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                        else:
+                            # Out of range: red
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                    except Exception:
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
             QApplication.processEvents()
-            time.sleep(0.01)
+            time.sleep(0.05)
 
-        # Gather current weights for enabled stations
+        # After button press, gather weights and check ranges
         weights = []
         failed_stations = []
         for i in range(NUM_STATIONS):
@@ -429,24 +447,21 @@ def startup(app, timer):
                 except Exception:
                     failed_stations.append(str(i + 1))
 
-        # Check if all enabled stations are in the same valid range
         in_first_range = [i for i, w in weights if 375 <= w <= 425]
         in_second_range = [i for i, w in weights if 725 <= w <= 775]
 
         if len(in_first_range) == len(weights):
-            failed_stations = []  # All OK in first range
+            failed_stations = []
             app.target_weight = 400
         elif len(in_second_range) == len(weights):
-            failed_stations = []  # All OK in second range
+            failed_stations = []
             app.target_weight = 750
         else:
-            # Find which stations are not in the majority range (or just not in any valid range)
             failed_stations = [
                 str(i + 1)
                 for i, w in weights
                 if not (375 <= w <= 425 or 725 <= w <= 775)
             ]
-            # If all are in a valid range but not the same, mark all as failed
             if not failed_stations and len(weights) > 0:
                 failed_stations = [str(i + 1) for i, _ in weights]
 
@@ -457,15 +472,14 @@ def startup(app, timer):
                 " " + ", ".join(failed_stations) +
                 "<br>ALL STATIONS MUST USE THE SAME SIZE<br>Press any button to try again."
             )
-            # Reset dialog result so the next button press will close it again
+            # Optionally beep or give feedback here
             calib_dialog.done(0)
             continue  # Repeat the loop for another attempt
         else:
-            # All stations are in the same valid range, step is complete
+            print("[DEBUG] Full Bottle Check - END")
             break
-    print("[DEBUG] Empty Bottle Check - END")
 
-# ========== Step 4: Full Bottle Check ==========
+# ========== Step 4: Empty Bottle Check ==========
     calib_dialog.set_sub_label("Place an empty bottle in each active station")
     calib_dialog.set_bottom_label("Press any button to continue")
     QApplication.processEvents()
