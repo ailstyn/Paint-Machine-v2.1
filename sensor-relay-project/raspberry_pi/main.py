@@ -399,71 +399,68 @@ def startup(app, timer):
 
 # Update dialog for full bottle step
     calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
+    calib_dialog.set_bottom_label("")
     QApplication.processEvents()
 
-    # Wait for second button press (full bottles) with sanity check
     print("[DEBUG] Waiting for second button press (full bottles) with sanity check...")
     while True:
+        # Show the dialog for this step
+        calib_dialog.set_sub_label("Place a full bottle in each active station, then press any button.")
+        calib_dialog.set_bottom_label("")
+        calib_dialog.show()
         QApplication.processEvents()
-        if (
-            GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-            GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-        ):
-            # Gather current weights for enabled stations
-            weights = []
-            failed_stations = []
-            for i in range(NUM_STATIONS):
-                if station_enabled[i]:
-                    try:
-                        weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
-                        weight = float(weight_text) if weight_text not in ("--", "") else 0.0
-                        weights.append((i, weight))
-                    except Exception:
-                        failed_stations.append(str(i + 1))
 
-            # Check if all enabled stations are in the same valid range
-            in_first_range = [i for i, w in weights if 375 <= w <= 425]
-            in_second_range = [i for i, w in weights if 725 <= w <= 775]
+        # Wait for any button press (handled by handle_button_presses)
+        while calib_dialog.result() == 0:
+            QApplication.processEvents()
+            time.sleep(0.01)
 
-            if len(in_first_range) == len(weights):
-                failed_stations = []  # All OK in first range
-            elif len(in_second_range) == len(weights):
-                failed_stations = []  # All OK in second range
-            else:
-                # Find which stations are not in the majority range (or just not in any valid range)
-                failed_stations = [
-                    str(i + 1)
-                    for i, w in weights
-                    if not (375 <= w <= 425 or 725 <= w <= 775)
-                ]
-                # If all are in a valid range but not the same, mark all as failed
-                if not failed_stations and len(weights) > 0:
-                    failed_stations = [str(i + 1) for i, _ in weights]
+        # Gather current weights for enabled stations
+        weights = []
+        failed_stations = []
+        for i in range(NUM_STATIONS):
+            if station_enabled[i]:
+                try:
+                    weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
+                    weight = float(weight_text) if weight_text not in ("--", "") else 0.0
+                    weights.append((i, weight))
+                except Exception:
+                    failed_stations.append(str(i + 1))
 
-            if failed_stations:
-                calib_dialog.set_bottom_label(
-                    "ERROR ON STATION" +
-                    ("S" if len(failed_stations) > 1 else "") +
-                    " " + ", ".join(failed_stations) +
-                    "<br>ALL STATIONS MUST USE THE SAME SIZE"
-                )
-            else:
-                # All stations are in the same valid range, set target_weight accordingly
-                if len(in_first_range) == len(weights):
-                    app.target_weight = 400
-                elif len(in_second_range) == len(weights):
-                    app.target_weight = 750
+        # Check if all enabled stations are in the same valid range
+        in_first_range = [i for i, w in weights if 375 <= w <= 425]
+        in_second_range = [i for i, w in weights if 725 <= w <= 775]
 
-                calib_dialog.activate_selected()
-                while (
-                    GPIO.input(UP_BUTTON_PIN) == GPIO.LOW or
-                    GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW or
-                    GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW
-                ):
-                    time.sleep(0.01)
-                break
-        time.sleep(0.1)
+        if len(in_first_range) == len(weights):
+            failed_stations = []  # All OK in first range
+            app.target_weight = 400
+        elif len(in_second_range) == len(weights):
+            failed_stations = []  # All OK in second range
+            app.target_weight = 750
+        else:
+            # Find which stations are not in the majority range (or just not in any valid range)
+            failed_stations = [
+                str(i + 1)
+                for i, w in weights
+                if not (375 <= w <= 425 or 725 <= w <= 775)
+            ]
+            # If all are in a valid range but not the same, mark all as failed
+            if not failed_stations and len(weights) > 0:
+                failed_stations = [str(i + 1) for i, _ in weights]
+
+        if failed_stations:
+            calib_dialog.set_bottom_label(
+                "ERROR ON STATION" +
+                ("S" if len(failed_stations) > 1 else "") +
+                " " + ", ".join(failed_stations) +
+                "<br>ALL STATIONS MUST USE THE SAME SIZE<br>Press any button to try again."
+            )
+            # Reset dialog result so the next button press will close it again
+            calib_dialog.done(0)
+            continue  # Repeat the loop for another attempt
+        else:
+            # All stations are in the same valid range, step is complete
+            break
 
 # ========== Step 4: Empty Bottle Check ==========
     calib_dialog.set_sub_label("Place an empty bottle in each active station")

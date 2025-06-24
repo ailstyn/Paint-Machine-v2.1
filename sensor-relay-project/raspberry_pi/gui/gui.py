@@ -1293,13 +1293,13 @@ class CalibrationDialog(QDialog):
         self.bottom_label.setText(text)
 
     def select_prev(self):
-        pass  # No navigation needed
+        self.done(1)  # Continue to next step
 
     def select_next(self):
-        pass  # No navigation needed
+        self.done(1)  # Continue to next step
 
     def activate_selected(self):
-        self.accept()
+        self.done(1)  # Continue to next step
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
