@@ -515,7 +515,7 @@ def startup(app, timer):
                 except Exception:
                     failed_stations.append(str(i + 1))
         if not failed_stations:
-            print("[DEBUG] Full Bottle Check - END")
+            print("[DEBUG] Empty Bottle Check - END")
             break  # All stations OK, continue to next step
         else:
             calib_dialog.set_bottom_label(
