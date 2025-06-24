@@ -453,7 +453,7 @@ def startup(app, timer):
                     failed_stations.append(str(i + 1))
 
         in_first_range = [i for i, w in weights if 375 <= w <= 425]
-        in_second_range = [i for i, w in weights if 725 <= w <= 775]
+        in_second_range = [i for i, w in weights if 715 <= w <= 765]
 
         if len(in_first_range) == len(weights):
             failed_stations = []
@@ -575,52 +575,59 @@ def startup(app, timer):
     for i in range(NUM_STATIONS):
         if station_enabled[i]:
             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: OK")
-            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px; font-size: 32px;")
         else:
             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: DISABLED")
-            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px;")
-    calib_dialog.show()
+            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px; font-size: 32px;")
+    calib_dialog.showMaximized()
     QApplication.processEvents()
 
     last_seconds_left = timeout
     while True:
         elapsed = time.time() - start_time
         seconds_left = max(0, int(timeout - elapsed))
+        print(f"[DEBUG] Final setup loop: elapsed={elapsed:.2f}s, seconds_left={seconds_left}")
         # Only update label if seconds_left changed
         if seconds_left != last_seconds_left:
+            print(f"[DEBUG] Updating bottom label: Checking... {seconds_left} seconds remaining")
             calib_dialog.set_bottom_label(f"Checking... {seconds_left} seconds remaining")
             last_seconds_left = seconds_left
             QApplication.processEvents()
 
         for i in range(NUM_STATIONS):
+            print(f"[DEBUG] Checking station {i+1}: enabled={station_enabled[i]}, arduino={arduinos[i] is not None}")
             if station_enabled[i] and arduinos[i] and arduinos[i].in_waiting > 0:
+                print(f"[DEBUG] Station {i+1} has {arduinos[i].in_waiting} bytes waiting")
                 try:
                     byte = arduinos[i].read(1)
+                    print(f"[DEBUG] Read byte from station {i+1}: {byte}")
                     if byte == BUTTON_ERROR:
                         button_error_counts[i] += 1
+                        print(f"[DEBUG] BUTTON_ERROR for station {i+1}, count={button_error_counts[i]}")
                         if button_error_counts[i] >= 2 and i not in faulty_stations:
                             faulty_stations.add(i)
                             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: BUTTON ERROR")
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px; font-size: 32px;")
                             calib_dialog.set_sub_label(f"STATION {i+1} button is malfunctioning.")
                             calib_dialog.set_bottom_label(f"For your safety, station {i+1} has been disabled<br>Checking... {seconds_left} seconds remaining")
                             station_enabled[i] = False
                             save_station_enabled(config_file, station_enabled)
                             QApplication.processEvents()
                 except Exception as e:
-                    print(f"[DEBUG] Exception in button error check: {e}")
+                    print(f"[DEBUG] Exception in button error check for station {i+1}: {e}")
 
         # Update all labels for stations that are still OK
         for i in range(NUM_STATIONS):
             if station_enabled[i] and i not in faulty_stations:
                 calib_dialog.weight_labels[i].setText(f"STATION {i+1}: OK")
-                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px; font-size: 32px;")
             elif not station_enabled[i]:
                 calib_dialog.weight_labels[i].setText(f"STATION {i+1}: DISABLED")
-                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px;")
+                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px; font-size: 32px;")
         QApplication.processEvents()
         time.sleep(0.05)
         if elapsed >= timeout:
+            print(f"[DEBUG] Timeout reached, breaking loop")
             break
 
     if DEBUG:
