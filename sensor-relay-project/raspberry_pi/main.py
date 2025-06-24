@@ -423,7 +423,7 @@ def startup(app, timer):
                         weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                         weight = float(weight_text) if weight_text not in ("--", "") else 0.0
                         # Set color based on weight
-                        if 375 <= weight <= 425 or 725 <= weight <= 775:
+                        if 375 <= weight <= 425 or 715 <= weight <= 765:
                             # In valid range: green
                             calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
                         else:
@@ -575,11 +575,18 @@ def startup(app, timer):
     for i in range(NUM_STATIONS):
         if station_enabled[i]:
             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: OK")
-            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px; font-size: 32px;")
+            calib_dialog.weight_labels[i].setStyleSheet(
+                "color: #fff; background: #228B22; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
+            )
+            calib_dialog.weight_labels[i].setFixedWidth(180)
         else:
             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: DISABLED")
-            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px; font-size: 32px;")
-    calib_dialog.showMaximized()
+            calib_dialog.weight_labels[i].setStyleSheet(
+                "color: #fff; background: #888; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
+            )
+            calib_dialog.weight_labels[i].setFixedWidth(180)
+    calib_dialog.resize(1200, 400)  # Match the size used in full/empty bottle checks
+    calib_dialog.show()
     QApplication.processEvents()
 
     last_seconds_left = timeout
@@ -608,7 +615,10 @@ def startup(app, timer):
                         if button_error_counts[i] >= 2 and i not in faulty_stations:
                             faulty_stations.add(i)
                             calib_dialog.weight_labels[i].setText(f"STATION {i+1}: BUTTON ERROR")
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px; font-size: 32px;")
+                            calib_dialog.weight_labels[i].setStyleSheet(
+                                "color: #fff; background: #B22222; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
+                            )
+                            calib_dialog.weight_labels[i].setFixedWidth(180)
                             calib_dialog.set_sub_label(f"STATION {i+1} button is malfunctioning.")
                             calib_dialog.set_bottom_label(f"For your safety, station {i+1} has been disabled<br>Checking... {seconds_left} seconds remaining")
                             station_enabled[i] = False
@@ -627,10 +637,16 @@ def startup(app, timer):
         for i in range(NUM_STATIONS):
             if station_enabled[i] and i not in faulty_stations:
                 calib_dialog.weight_labels[i].setText(f"STATION {i+1}: OK")
-                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px; font-size: 32px;")
+                calib_dialog.weight_labels[i].setStyleSheet(
+                    "color: #fff; background: #228B22; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
+                )
+                calib_dialog.weight_labels[i].setFixedWidth(180)
             elif not station_enabled[i]:
                 calib_dialog.weight_labels[i].setText(f"STATION {i+1}: DISABLED")
-                calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #888; border-radius: 8px; font-size: 32px;")
+                calib_dialog.weight_labels[i].setStyleSheet(
+                    "color: #fff; background: #888; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
+                )
+                calib_dialog.weight_labels[i].setFixedWidth(180)
         QApplication.processEvents()
         time.sleep(0.05)
         if elapsed >= timeout:
