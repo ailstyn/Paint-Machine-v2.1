@@ -1006,17 +1006,17 @@ class StationStatusDialog(QDialog):
             name_label = QLabel()
             name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            enabled_label = QLabel()
-            enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            enabled_label.setFont(QFont("Arial", 18))
-            enabled_label.setStyleSheet("color: #fff;")
             connected_label = QLabel()
             connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             connected_label.setFont(QFont("Arial", 18))
             connected_label.setStyleSheet("color: #fff;")
+            enabled_label = QLabel()
+            enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            enabled_label.setFont(QFont("Arial", 18))
+            enabled_label.setStyleSheet("color: #fff;")
             box_layout.addWidget(name_label)
-            box_layout.addWidget(enabled_label)
             box_layout.addWidget(connected_label)
+            box_layout.addWidget(enabled_label)
             box.name_label = name_label
             box.enabled_label = enabled_label
             box.connected_label = connected_label
@@ -1136,17 +1136,17 @@ class StartupDialog(QDialog):
             name_label = QLabel()
             name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            enabled_label = QLabel()
-            enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            enabled_label.setFont(QFont("Arial", 18))
-            enabled_label.setStyleSheet("color: #fff;")
             connected_label = QLabel()
             connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             connected_label.setFont(QFont("Arial", 18))
             connected_label.setStyleSheet("color: #fff;")
+            enabled_label = QLabel()
+            enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            enabled_label.setFont(QFont("Arial", 18))
+            enabled_label.setStyleSheet("color: #fff;")
             box_layout.addWidget(name_label)
-            box_layout.addWidget(enabled_label)
             box_layout.addWidget(connected_label)
+            box_layout.addWidget(enabled_label)
             box_widget.name_label = name_label
             box_widget.enabled_label = enabled_label
             box_widget.connected_label = connected_label
@@ -1154,15 +1154,8 @@ class StartupDialog(QDialog):
             box_widget.setFixedSize(250, 220)
 
             self.station_boxes.append(box_widget)
-            # Arrange as: 0: (0,0), 1: (1,0), 2: (0,1), 3: (1,1)
-            if i == 0:
-                row, col = 0, 0  # Station 1: top left
-            elif i == 1:
-                row, col = 1, 0  # Station 2: bottom left
-            elif i == 2:
-                row, col = 0, 1  # Station 3: top right
-            elif i == 3:
-                row, col = 1, 1  # Station 4: bottom right
+            # Arrange horizontally: all in row 0, columns 0-3
+            row, col = 0, i
             self.grid.addWidget(box_widget, row, col)
         self.layout.addLayout(self.grid)
 
@@ -1214,6 +1207,11 @@ class StartupDialog(QDialog):
                 connected = ""
             box_widget.enabled_label.setText(enabled)
             box_widget.connected_label.setText(connected)
+            if self.station_connected and self.station_connected[i]:
+                connected = "CONNECTED"
+            else:
+                connected = "DISCONNECTED"
+            box_widget.connected_label.setText(connected)
             if self.station_connected and not self.station_connected[i]:
                 bg = "#333"
             else:
@@ -1221,18 +1219,56 @@ class StartupDialog(QDialog):
             if self.selection_indices[self.selected_index] == i:
                 border = "6px solid #F6EB61"
             else:
-                border = "2px solid #fff"
+                border = "2px solid #444"  # Use a subtle but visible border
+
             box_widget.setStyleSheet(
                 f"""
                 QWidget#stationBox{i+1} {{
                     border: {border};
                     border-radius: 12px;
                     background: {bg};
-                    margin: 8px;
                 }}
                 """
             )
-
+        for i, box_widget in enumerate(self.station_boxes):
+            box_widget.name_label.setText(self.station_names[i] if i < len(self.station_names) else "")
+            color = self.colors[i] if i < len(self.colors) else "#444"
+            box_widget.name_label.setStyleSheet(
+                f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
+            )
+        
+            # Determine connection/enabled status
+            is_connected = self.station_connected[i] if self.station_connected and i < len(self.station_connected) else False
+            is_enabled = False
+            if i < len(self.statuses):
+                status = self.statuses[i]
+                is_enabled = "ENABLED" in status
+        
+            # Set CONNECTED label
+            if is_connected:
+                box_widget.connected_label.setText("CONNECTED")
+                box_widget.connected_label.setStyleSheet(
+                    f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
+                )
+            else:
+                box_widget.connected_label.setText("DISCONNECTED")
+                box_widget.connected_label.setStyleSheet(
+                    "background: #000; color: #fff; border-radius: 8px; padding: 4px;"
+                )
+        
+            # Set ENABLED label
+            if is_enabled:
+                box_widget.enabled_label.setText("ENABLED")
+                box_widget.enabled_label.setStyleSheet(
+                    f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
+                )
+            else:
+                box_widget.enabled_label.setText("DISABLED")
+                box_widget.enabled_label.setStyleSheet(
+                    "background: #000; color: #fff; border-radius: 8px; padding: 4px;"
+                )
+        
+            # ...rest of your box_widget styling code...
         # Update accept button
         if self.selection_indices[self.selected_index] == "accept":
             self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
