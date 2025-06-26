@@ -1396,6 +1396,10 @@ class CalibrationDialog(QDialog):
     def activate_selected(self):
         self.done(1)  # Continue to next step
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.showFullScreen()
+
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
         def keyPressEvent(self, event):
