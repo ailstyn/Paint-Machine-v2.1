@@ -11,6 +11,13 @@ from app_config import DEBUG, NUM_STATIONS, target_weight, time_limit
 
 logging.basicConfig(level=logging.INFO)
 
+STATION_COLORS = [
+    "#CB1212",  # Station 1: Red
+    "#2E4BA8",  # Station 2: Blue
+    "#3f922e",  # Station 3: Green
+    "#EDE021",  # Station 4: Yellow
+]
+
 class OutlinedLabel(QLabel):
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)
@@ -293,7 +300,7 @@ class RelayControlApp(QWidget):
         self.setStyleSheet("background-color: #222222;")
 
         # Define station colors
-        self.bg_colors = ["#CB1212", "#2E4BA8", "#3f922e", "#EDE021"]  # Red, Blue, Green, Yellow
+        self.bg_colors = STATION_COLORS
 
         # Example enabled state (replace with your actual config loading)
         if station_enabled is not None:
@@ -993,48 +1000,46 @@ class StationStatusDialog(QDialog):
         # Add four station boxes
         for i in range(4):
             box = QWidget()
+            box.setObjectName(f"stationBox{i+1}")  # Assign unique object name
             box_layout = QVBoxLayout(box)
-            box_layout.setContentsMargins(8, 8, 8, 8)
-            box_layout.setSpacing(8)
+            box_layout.setContentsMargins(0, 0, 0, 0)
+            name_label = QLabel()
+            name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
+            enabled_label = QLabel()
+            enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            enabled_label.setFont(QFont("Arial", 18))
+            enabled_label.setStyleSheet("color: #fff;")
+            connected_label = QLabel()
+            connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            connected_label.setFont(QFont("Arial", 18))
+            connected_label.setStyleSheet("color: #fff;")
+            box_layout.addWidget(name_label)
+            box_layout.addWidget(enabled_label)
+            box_layout.addWidget(connected_label)
+            box.name_label = name_label
+            box.enabled_label = enabled_label
+            box.connected_label = connected_label
 
-            header = QLabel(f"Station {i+1}")
-            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            header.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            header.setStyleSheet("color: #fff;")
-            box_layout.addWidget(header)
+            box_widget = QWidget()
+            box_widget.setLayout(box_layout)
+            box_widget.setStyleSheet(
+                "border: 2px solid #fff; border-radius: 12px; background: #333; margin: 8px;"
+            )
+            self.boxes.append(box_widget)
+            # Arrange horizontally: all in row 0, columns 0-3
+            row, col = 0, i
+            self.grid.addWidget(box_widget, row, col)
+        layout.addLayout(self.grid)
 
-            status = QLabel("OK" if station_enabled is None or station_enabled[i] else "DISABLED")
-            status.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            status.setFont(QFont("Arial", 18))
-            status.setStyleSheet("color: #fff;")
-            box_layout.addWidget(status)
-
-            color = bg_colors[i] if bg_colors is not None else "#444444"
-            self.colors.append(color)
-            box.setStyleSheet(f"background-color: {color}; border-radius: 16px;")
-            layout.addWidget(box)
-            self.boxes.append(box)
-
-        # Add EXIT box as the fifth option
-        exit_box = QWidget()
-        exit_layout = QVBoxLayout(exit_box)
-        exit_layout.setContentsMargins(8, 8, 8, 8)
-        exit_layout.setSpacing(8)
-
-        exit_label = QLabel("EXIT")
-        exit_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        exit_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-        exit_label.setStyleSheet("color: #fff;")
-        exit_layout.addWidget(exit_label)
-
-        exit_status = QLabel("")  # Empty label for spacing
-        exit_layout.addWidget(exit_status)
-
-        exit_color = "#444"  # Gray for exit
-        self.colors.append(exit_color)
-        exit_box.setStyleSheet(f"background-color: {exit_color}; border-radius: 16px;")
-        layout.addWidget(exit_box)
-        self.boxes.append(exit_box)
+        # Accept button
+        self.accept_label = QLabel("ACCEPT")
+        self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.accept_label.setFixedWidth(220)
+        accept_layout = QHBoxLayout()
+        accept_layout.addWidget(self.accept_label)
+        layout.addLayout(accept_layout)
 
         self.setLayout(layout)
         self.setModal(True)
@@ -1048,7 +1053,14 @@ class StationStatusDialog(QDialog):
                 )
             else:
                 box.setStyleSheet(
-                    f"background-color: {self.colors[i]}; border: 6px solid transparent; border-radius: 16px;"
+                    f"""
+                    QWidget#stationBox{i+1} {{
+                        border: 6px solid transparent;
+                        border-radius: 16px;
+                        background: {self.colors[i]};
+                        margin: 8px;
+                    }}
+                    """
                 )
 
     def select_prev(self):
@@ -1118,6 +1130,7 @@ class StartupDialog(QDialog):
         self.station_boxes = []
         for i in range(4):
             box_widget = QWidget()
+            box_widget.setObjectName(f"stationBox{i+1}")  # Assign unique object name
             box_layout = QVBoxLayout(box_widget)
             box_layout.setContentsMargins(0, 0, 0, 0)
             name_label = QLabel()
@@ -1180,9 +1193,13 @@ class StartupDialog(QDialog):
         # Update station boxes
         for i, box_widget in enumerate(self.station_boxes):
             box_widget.name_label.setText(self.station_names[i] if i < len(self.station_names) else "")
+            # Always set the background color of the name label to the station color
+            color = self.colors[i] if i < len(self.colors) else "#444"
+            box_widget.name_label.setStyleSheet(
+                f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
+            )
             # Split status into two lines
             if i < len(self.statuses):
-                # Parse status string for backward compatibility
                 status = self.statuses[i]
                 if "ENABLED" in status:
                     enabled = "ENABLED"
@@ -1200,13 +1217,20 @@ class StartupDialog(QDialog):
             if self.station_connected and not self.station_connected[i]:
                 bg = "#333"
             else:
-                bg = self.colors[i] if i < len(self.colors) else "#444"
+                bg = color
             if self.selection_indices[self.selected_index] == i:
                 border = "6px solid #F6EB61"
             else:
                 border = "2px solid #fff"
             box_widget.setStyleSheet(
-                f"border: {border}; border-radius: 12px; background: {bg}; margin: 8px;"
+                f"""
+                QWidget#stationBox{i+1} {{
+                    border: {border};
+                    border-radius: 12px;
+                    background: {bg};
+                    margin: 8px;
+                }}
+                """
             )
 
         # Update accept button
