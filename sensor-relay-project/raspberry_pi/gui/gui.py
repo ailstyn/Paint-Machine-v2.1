@@ -1099,6 +1099,11 @@ class StartupDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setStyleSheet("background-color: #222; color: #fff;")
+        self.selected_station = 0
+        self.station_names = []
+        self.statuses = []
+        self.colors = []
+        self.station_connected = []
 
         layout = QVBoxLayout(self)
         self.label = QLabel(message)
@@ -1109,12 +1114,12 @@ class StartupDialog(QDialog):
 
         self.setLayout(layout)
 
-    def show_station_verification(self, station_names, statuses, colors):
-        """
-        station_names: list of str, e.g. ["Station 1", ...]
-        statuses: list of str, e.g. ["ENABLED", "DISABLED", ...]
-        colors: list of str, e.g. ["#CB1212", ...]
-        """
+    def show_station_verification(self, station_names, statuses, colors, station_connected=None):
+        self.station_names = station_names
+        self.statuses = statuses
+        self.colors = colors
+        if station_connected is not None:
+            self.station_connected = station_connected
         # Remove previous widgets except the main label
         while self.layout().count() > 1:
             item = self.layout().takeAt(1)
@@ -1137,8 +1142,15 @@ class StartupDialog(QDialog):
             box.addWidget(status_label)
             box_widget = QWidget()
             box_widget.setLayout(box)
+            # Highlight selected station if connected
+            if i == self.selected_station and self.station_connected[i]:
+                border = "6px solid #F6EB61"
+            else:
+                border = "2px solid #fff"
+            # Dim disconnected stations
+            bg = colors[i] if self.station_connected[i] else "#333"
             box_widget.setStyleSheet(
-                f"border: 2px solid #fff; border-radius: 12px; background: {colors[i]}; margin: 8px;"
+                f"border: {border}; border-radius: 12px; background: {bg}; margin: 8px;"
             )
             row = i // 2
             col = i % 2
@@ -1159,6 +1171,29 @@ class StartupDialog(QDialog):
         self._update_yesno_selection()
         self.layout().addLayout(button_row)
 
+    def _find_next_connected(self, direction):
+        # direction: +1 for next, -1 for prev
+        n = len(self.station_names)
+        idx = self.selected_station
+        for _ in range(n):
+            idx = (idx + direction) % n
+            if self.station_connected[idx]:
+                return idx
+        return self.selected_station  # fallback
+
+    def select_prev(self):
+        # Move selection UP (previous connected station)
+        self.selected_station = self._find_next_connected(-1)
+        self._update_station_highlight()
+
+    def select_next(self):
+        # Move selection DOWN (next connected station)
+        self.selected_station = self._find_next_connected(1)
+        self._update_station_highlight()
+
+    def _update_station_highlight(self):
+        self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
+
     def _update_yesno_selection(self):
         if getattr(self, "yes_label", None) and getattr(self, "no_label", None):
             if self.selected_option == 0:
@@ -1168,19 +1203,36 @@ class StartupDialog(QDialog):
                 self.yes_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
                 self.no_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
 
-    def select_prev(self):
-        # Move selection LEFT (YES <-> NO)
-        self.selected_option = (self.selected_option - 1) % 2
-        self._update_yesno_selection()
-
-    def select_next(self):
-        # Move selection RIGHT (YES <-> NO)
-        self.selected_option = (self.selected_option + 1) % 2
-        self._update_yesno_selection()
-
     def activate_selected(self):
-        # 0 = YES, 1 = NO
-        self.done(1 if self.selected_option == 0 else 0)
+        parent = self.parent()
+        # Only allow toggling if station is connected
+        if self.station_connected and self.station_connected[self.selected_station]:
+            if hasattr(parent, "station_enabled") and hasattr(parent, "save_station_enabled"):
+                parent.station_enabled[self.selected_station] = not parent.station_enabled[self.selected_station]
+                parent.save_station_enabled(parent.config_file, parent.station_enabled)
+                # Update statuses/colors for UI
+                statuses = []
+                for i in range(len(parent.station_enabled)):
+                    if parent.station_enabled[i] and parent.station_connected[i]:
+                        statuses.append("ENABLED & CONNECTED")
+                    elif parent.station_enabled[i] and not parent.station_connected[i]:
+                        statuses.append("ENABLED & DISCONNECTED")
+                    elif not parent.station_enabled[i] and parent.station_connected[i]:
+                        statuses.append("DISABLED & CONNECTED")
+                    else:
+                        statuses.append("DISABLED & DISCONNECTED")
+                self.statuses = statuses
+                self._update_station_highlight()
+                # Optionally, show a message
+                message = "Station {} is now {}".format(
+                    self.selected_station + 1,
+                    "ENABLED" if parent.station_enabled[self.selected_station] else "DISABLED"
+                )
+                if hasattr(parent, "show_timed_info"):
+                    parent.show_timed_info("STATION STATUS", message, timeout_ms=2000)
+        else:
+            # If not toggling a station, fall back to YES/NO
+            self.done(1 if self.selected_option == 0 else 0)
 
 class FillingModeDialog(QDialog):
     def __init__(self, parent=None):

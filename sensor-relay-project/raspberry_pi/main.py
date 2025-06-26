@@ -351,7 +351,7 @@ def startup(app, timer):
 
     colors = app.bg_colors if hasattr(app, "bg_colors") else ["#444"] * NUM_STATIONS
 
-    dialog.show_station_verification(station_names, statuses, colors)
+    dialog.show_station_verification(station_names, statuses, colors, station_connected)
     QApplication.processEvents()
 
     if DEBUG:
@@ -361,6 +361,8 @@ def startup(app, timer):
         time.sleep(0.01)
 
     result = dialog.result()
+    # Always save the current station_enabled state before continuing
+    save_station_enabled(config_file, station_enabled)
     if DEBUG:
         print(f"[DEBUG] Station verification dialog result: {result}")
     dialog.accept()
