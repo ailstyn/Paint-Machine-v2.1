@@ -1121,13 +1121,14 @@ class StartupDialog(QDialog):
         if station_connected is not None:
             self.station_connected = station_connected
 
-        # Remove previous widgets except the main label
+        # Remove previous widgets and layouts except the main label
         while self.layout().count() > 1:
             item = self.layout().takeAt(1)
             if item.widget():
                 item.widget().deleteLater()
             elif item.layout():
-                item.layout().deleteLater()
+                # Recursively delete all child widgets/layouts
+                self._delete_layout(item.layout())
 
         # Build selection_indices: all connected stations + "accept" at the end
         self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
@@ -1175,6 +1176,16 @@ class StartupDialog(QDialog):
             accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
         accept_layout.addWidget(accept_label)
         self.layout().addLayout(accept_layout)
+
+    def _delete_layout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+                elif item.layout():
+                    self._delete_layout(item.layout())
+            layout.deleteLater()
 
     def select_prev(self):
         self.selected_index = (self.selected_index - 1) % len(self.selection_indices)
