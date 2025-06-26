@@ -1138,7 +1138,7 @@ class StartupDialog(QDialog):
             box_widget.enabled_label = enabled_label
             box_widget.connected_label = connected_label
 
-            box_widget.setFixedSize(220, 120)
+            box_widget.setFixedSize(400, 320)
 
             self.station_boxes.append(box_widget)
             # Arrange as: 0: (0,0), 1: (1,0), 2: (0,1), 3: (1,1)
