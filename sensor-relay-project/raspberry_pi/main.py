@@ -332,7 +332,7 @@ def startup(app, timer):
         print("[DEBUG] Step 1: Verify Stations dialog")
     dialog = StartupDialog("Are these the filling stations you are using?", parent=app)
     app.active_dialog = dialog
-    dialog.showMaximized()
+    dialog.showFullScreen()
     QApplication.processEvents()
 
     station_names = [f"Station {i+1}" for i in range(NUM_STATIONS)]
