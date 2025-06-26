@@ -1103,16 +1103,50 @@ class StartupDialog(QDialog):
         self.statuses = []
         self.colors = []
         self.station_connected = []
-        self.selection_indices = []  # List of station indices (connected) + "accept"
-        self.selected_index = 0      # Index in selection_indices
+        self.selection_indices = []
+        self.selected_index = 0
 
-        layout = QVBoxLayout(self)
+        self.layout = QVBoxLayout(self)
         self.label = QLabel(message)
         self.label.setWordWrap(True)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-        layout.addWidget(self.label)
-        self.setLayout(layout)
+        self.layout.addWidget(self.label)
+
+        # Pre-create station boxes and accept button
+        self.grid = QGridLayout()
+        self.station_boxes = []
+        for i in range(4):
+            box_widget = QWidget()
+            box_layout = QVBoxLayout(box_widget)
+            box_layout.setContentsMargins(0, 0, 0, 0)
+            name_label = QLabel()
+            name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
+            status_label = QLabel()
+            status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            status_label.setFont(QFont("Arial", 18))
+            status_label.setStyleSheet("color: #fff;")
+            box_layout.addWidget(name_label)
+            box_layout.addWidget(status_label)
+            box_widget.name_label = name_label
+            box_widget.status_label = status_label
+            self.station_boxes.append(box_widget)
+            row = i // 2
+            col = i % 2
+            self.grid.addWidget(box_widget, row, col)
+        self.layout.addLayout(self.grid)
+
+        # Accept button
+        self.accept_label = QLabel("ACCEPT")
+        self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.accept_label.setFixedWidth(220)
+        accept_layout = QHBoxLayout()
+        accept_layout.addWidget(self.accept_label)
+        self.layout.addLayout(accept_layout)
+
+        self.setLayout(self.layout)
 
     def show_station_verification(self, station_names, statuses, colors, station_connected=None):
         self.station_names = station_names
@@ -1121,81 +1155,40 @@ class StartupDialog(QDialog):
         if station_connected is not None:
             self.station_connected = station_connected
 
-        # Remove previous widgets and layouts except the main label
-        while self.layout().count() > 1:
-            item = self.layout().takeAt(1)
-            if item.widget():
-                item.widget().deleteLater()
-            elif item.layout():
-                # Recursively delete all child widgets/layouts
-                self._delete_layout(item.layout())
-
         # Build selection_indices: all connected stations + "accept" at the end
         self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
         self.selection_indices.append("accept")
         if self.selected_index >= len(self.selection_indices):
             self.selected_index = 0
 
-        grid = QGridLayout()
-        for i in range(len(station_names)):
-            box = QVBoxLayout()
-            name_label = QLabel(station_names[i])
-            name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            status_label = QLabel(self.statuses[i])
-            status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            status_label.setFont(QFont("Arial", 18))
-            status_label.setStyleSheet("color: #fff;")
-            box.addWidget(name_label)
-            box.addWidget(status_label)
-            box_widget = QWidget()
-            box_widget.setLayout(box)
-            # Highlight if this is the selected station
+        # Update station boxes
+        for i, box_widget in enumerate(self.station_boxes):
+            box_widget.name_label.setText(self.station_names[i] if i < len(self.station_names) else "")
+            box_widget.status_label.setText(self.statuses[i] if i < len(self.statuses) else "")
+            if self.station_connected and not self.station_connected[i]:
+                bg = "#333"
+            else:
+                bg = self.colors[i] if i < len(self.colors) else "#444"
             if self.selection_indices[self.selected_index] == i:
                 border = "6px solid #F6EB61"
             else:
                 border = "2px solid #fff"
-            bg = colors[i] if self.station_connected[i] else "#333"
             box_widget.setStyleSheet(
                 f"border: {border}; border-radius: 12px; background: {bg}; margin: 8px;"
             )
-            row = i // 2
-            col = i % 2
-            grid.addWidget(box_widget, row, col)
-        self.layout().addLayout(grid)
 
-        # Add ACCEPT button as a selectable item
-        accept_layout = QHBoxLayout()
-        accept_label = QLabel("ACCEPT")
-        accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-        accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        accept_label.setFixedWidth(220)
+        # Update accept button
         if self.selection_indices[self.selected_index] == "accept":
-            accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
+            self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
         else:
-            accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
-        accept_layout.addWidget(accept_label)
-        self.layout().addLayout(accept_layout)
-
-    def _delete_layout(self, layout):
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-                elif item.layout():
-                    self._delete_layout(item.layout())
-            layout.deleteLater()
+            self.accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
 
     def select_prev(self):
         self.selected_index = (self.selected_index - 1) % len(self.selection_indices)
-        self._update_selection()
+        self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
 
     def select_next(self):
         self.selected_index = (self.selected_index + 1) % len(self.selection_indices)
-        self._update_selection()
-
-    def _update_selection(self):
         self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
 
     def activate_selected(self):
@@ -1204,7 +1197,6 @@ class StartupDialog(QDialog):
         if sel == "accept":
             self.accept()
         else:
-            # Only allow toggling if station is connected
             if self.station_connected[sel]:
                 if hasattr(parent, "station_enabled") and hasattr(parent, "save_station_enabled"):
                     parent.station_enabled[sel] = not parent.station_enabled[sel]
@@ -1221,8 +1213,7 @@ class StartupDialog(QDialog):
                         else:
                             statuses.append("DISABLED & DISCONNECTED")
                     self.statuses = statuses
-                    self._update_selection()
-                    # Optionally, show a message
+                    self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
                     message = "Station {} is now {}".format(
                         sel + 1,
                         "ENABLED" if parent.station_enabled[sel] else "DISABLED"
