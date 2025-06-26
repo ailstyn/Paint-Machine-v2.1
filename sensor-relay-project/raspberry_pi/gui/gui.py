@@ -1099,11 +1099,12 @@ class StartupDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setStyleSheet("background-color: #222; color: #fff;")
-        self.selected_station = 0
         self.station_names = []
         self.statuses = []
         self.colors = []
         self.station_connected = []
+        self.selection_indices = []  # List of station indices (connected) + "accept"
+        self.selected_index = 0      # Index in selection_indices
 
         layout = QVBoxLayout(self)
         self.label = QLabel(message)
@@ -1111,7 +1112,6 @@ class StartupDialog(QDialog):
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         layout.addWidget(self.label)
-
         self.setLayout(layout)
 
     def show_station_verification(self, station_names, statuses, colors, station_connected=None):
@@ -1120,6 +1120,7 @@ class StartupDialog(QDialog):
         self.colors = colors
         if station_connected is not None:
             self.station_connected = station_connected
+
         # Remove previous widgets except the main label
         while self.layout().count() > 1:
             item = self.layout().takeAt(1)
@@ -1128,13 +1129,19 @@ class StartupDialog(QDialog):
             elif item.layout():
                 item.layout().deleteLater()
 
+        # Build selection_indices: all connected stations + "accept" at the end
+        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
+        self.selection_indices.append("accept")
+        if self.selected_index >= len(self.selection_indices):
+            self.selected_index = 0
+
         grid = QGridLayout()
         for i in range(len(station_names)):
             box = QVBoxLayout()
             name_label = QLabel(station_names[i])
             name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            status_label = QLabel(statuses[i])
+            status_label = QLabel(self.statuses[i])
             status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             status_label.setFont(QFont("Arial", 18))
             status_label.setStyleSheet("color: #fff;")
@@ -1142,12 +1149,11 @@ class StartupDialog(QDialog):
             box.addWidget(status_label)
             box_widget = QWidget()
             box_widget.setLayout(box)
-            # Highlight selected station if connected
-            if i == self.selected_station and self.station_connected[i]:
+            # Highlight if this is the selected station
+            if self.selection_indices[self.selected_index] == i:
                 border = "6px solid #F6EB61"
             else:
                 border = "2px solid #fff"
-            # Dim disconnected stations
             bg = colors[i] if self.station_connected[i] else "#333"
             box_widget.setStyleSheet(
                 f"border: {border}; border-radius: 12px; background: {bg}; margin: 8px;"
@@ -1157,82 +1163,61 @@ class StartupDialog(QDialog):
             grid.addWidget(box_widget, row, col)
         self.layout().addLayout(grid)
 
-        # Add YES/NO buttons below the row
-        button_row = QHBoxLayout()
-        self.yes_label = QLabel("<YES>")
-        self.no_label = QLabel("<NO>")
-        for lbl in (self.yes_label, self.no_label):
-            lbl.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setFixedWidth(160)
-            lbl.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
-            button_row.addWidget(lbl)
-        self.selected_option = 0  # 0 = YES, 1 = NO
-        self._update_yesno_selection()
-        self.layout().addLayout(button_row)
-
-    def _find_next_connected(self, direction):
-        # direction: +1 for next, -1 for prev
-        n = len(self.station_names)
-        idx = self.selected_station
-        for _ in range(n):
-            idx = (idx + direction) % n
-            if self.station_connected[idx]:
-                return idx
-        return self.selected_station  # fallback
+        # Add ACCEPT button as a selectable item
+        accept_layout = QHBoxLayout()
+        accept_label = QLabel("ACCEPT")
+        accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        accept_label.setFixedWidth(220)
+        if self.selection_indices[self.selected_index] == "accept":
+            accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
+        else:
+            accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
+        accept_layout.addWidget(accept_label)
+        self.layout().addLayout(accept_layout)
 
     def select_prev(self):
-        # Move selection UP (previous connected station)
-        self.selected_station = self._find_next_connected(-1)
-        self._update_station_highlight()
+        self.selected_index = (self.selected_index - 1) % len(self.selection_indices)
+        self._update_selection()
 
     def select_next(self):
-        # Move selection DOWN (next connected station)
-        self.selected_station = self._find_next_connected(1)
-        self._update_station_highlight()
+        self.selected_index = (self.selected_index + 1) % len(self.selection_indices)
+        self._update_selection()
 
-    def _update_station_highlight(self):
+    def _update_selection(self):
         self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
 
-    def _update_yesno_selection(self):
-        if getattr(self, "yes_label", None) and getattr(self, "no_label", None):
-            if self.selected_option == 0:
-                self.yes_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
-                self.no_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
-            else:
-                self.yes_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
-                self.no_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
-
     def activate_selected(self):
+        sel = self.selection_indices[self.selected_index]
         parent = self.parent()
-        # Only allow toggling if station is connected
-        if self.station_connected and self.station_connected[self.selected_station]:
-            if hasattr(parent, "station_enabled") and hasattr(parent, "save_station_enabled"):
-                parent.station_enabled[self.selected_station] = not parent.station_enabled[self.selected_station]
-                parent.save_station_enabled(parent.config_file, parent.station_enabled)
-                # Update statuses/colors for UI
-                statuses = []
-                for i in range(len(parent.station_enabled)):
-                    if parent.station_enabled[i] and parent.station_connected[i]:
-                        statuses.append("ENABLED & CONNECTED")
-                    elif parent.station_enabled[i] and not parent.station_connected[i]:
-                        statuses.append("ENABLED & DISCONNECTED")
-                    elif not parent.station_enabled[i] and parent.station_connected[i]:
-                        statuses.append("DISABLED & CONNECTED")
-                    else:
-                        statuses.append("DISABLED & DISCONNECTED")
-                self.statuses = statuses
-                self._update_station_highlight()
-                # Optionally, show a message
-                message = "Station {} is now {}".format(
-                    self.selected_station + 1,
-                    "ENABLED" if parent.station_enabled[self.selected_station] else "DISABLED"
-                )
-                if hasattr(parent, "show_timed_info"):
-                    parent.show_timed_info("STATION STATUS", message, timeout_ms=2000)
+        if sel == "accept":
+            self.accept()
         else:
-            # If not toggling a station, fall back to YES/NO
-            self.done(1 if self.selected_option == 0 else 0)
+            # Only allow toggling if station is connected
+            if self.station_connected[sel]:
+                if hasattr(parent, "station_enabled") and hasattr(parent, "save_station_enabled"):
+                    parent.station_enabled[sel] = not parent.station_enabled[sel]
+                    parent.save_station_enabled(parent.config_file, parent.station_enabled)
+                    # Update statuses/colors for UI
+                    statuses = []
+                    for i in range(len(parent.station_enabled)):
+                        if parent.station_enabled[i] and parent.station_connected[i]:
+                            statuses.append("ENABLED & CONNECTED")
+                        elif parent.station_enabled[i] and not parent.station_connected[i]:
+                            statuses.append("ENABLED & DISCONNECTED")
+                        elif not parent.station_enabled[i] and parent.station_connected[i]:
+                            statuses.append("DISABLED & CONNECTED")
+                        else:
+                            statuses.append("DISABLED & DISCONNECTED")
+                    self.statuses = statuses
+                    self._update_selection()
+                    # Optionally, show a message
+                    message = "Station {} is now {}".format(
+                        sel + 1,
+                        "ENABLED" if parent.station_enabled[sel] else "DISABLED"
+                    )
+                    if hasattr(parent, "show_timed_info"):
+                        parent.show_timed_info("STATION STATUS", message, timeout_ms=2000)
 
 class FillingModeDialog(QDialog):
     def __init__(self, parent=None):
