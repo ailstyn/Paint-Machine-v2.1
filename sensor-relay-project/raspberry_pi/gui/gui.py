@@ -1123,17 +1123,33 @@ class StartupDialog(QDialog):
             name_label = QLabel()
             name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             name_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            status_label = QLabel()
-            status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            status_label.setFont(QFont("Arial", 18))
-            status_label.setStyleSheet("color: #fff;")
+            enabled_label = QLabel()
+            enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            enabled_label.setFont(QFont("Arial", 18))
+            enabled_label.setStyleSheet("color: #fff;")
+            connected_label = QLabel()
+            connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            connected_label.setFont(QFont("Arial", 18))
+            connected_label.setStyleSheet("color: #fff;")
             box_layout.addWidget(name_label)
-            box_layout.addWidget(status_label)
+            box_layout.addWidget(enabled_label)
+            box_layout.addWidget(connected_label)
             box_widget.name_label = name_label
-            box_widget.status_label = status_label
+            box_widget.enabled_label = enabled_label
+            box_widget.connected_label = connected_label
+
+            box_widget.setFixedSize(220, 120)
+
             self.station_boxes.append(box_widget)
-            row = i // 2
-            col = i % 2
+            # Arrange as: 0: (0,0), 1: (1,0), 2: (0,1), 3: (1,1)
+            if i == 0:
+                row, col = 0, 0  # Station 1: top left
+            elif i == 1:
+                row, col = 1, 0  # Station 2: bottom left
+            elif i == 2:
+                row, col = 0, 1  # Station 3: top right
+            elif i == 3:
+                row, col = 1, 1  # Station 4: bottom right
             self.grid.addWidget(box_widget, row, col)
         self.layout.addLayout(self.grid)
 
@@ -1164,7 +1180,23 @@ class StartupDialog(QDialog):
         # Update station boxes
         for i, box_widget in enumerate(self.station_boxes):
             box_widget.name_label.setText(self.station_names[i] if i < len(self.station_names) else "")
-            box_widget.status_label.setText(self.statuses[i] if i < len(self.statuses) else "")
+            # Split status into two lines
+            if i < len(self.statuses):
+                # Parse status string for backward compatibility
+                status = self.statuses[i]
+                if "ENABLED" in status:
+                    enabled = "ENABLED"
+                else:
+                    enabled = "DISABLED"
+                if "CONNECTED" in status:
+                    connected = "CONNECTED"
+                else:
+                    connected = "DISCONNECTED"
+            else:
+                enabled = ""
+                connected = ""
+            box_widget.enabled_label.setText(enabled)
+            box_widget.connected_label.setText(connected)
             if self.station_connected and not self.station_connected[i]:
                 bg = "#333"
             else:
