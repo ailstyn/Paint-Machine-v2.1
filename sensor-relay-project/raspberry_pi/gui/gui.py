@@ -357,29 +357,42 @@ class SimpleStationWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(4)
+        # Main horizontal layout
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(8)
+
+        # Bottle progress bar
+        self.progress_bar = BottleProgressBar(max_value=100, value=0, bar_color="#F6EB61")
+        self.progress_bar.setFixedHeight(160)
+        self.progress_bar.setFixedWidth(48)
+
+        # Vertical layout for labels
+        label_layout = QVBoxLayout()
+        label_layout.setSpacing(4)
 
         # Large weight label with outline, much bigger
         self.weight_label = OutlinedLabel("0 / 0 g")
-        self.weight_label.setFont(QFont("Arial", 72, QFont.Weight.Bold))  # Double the size
+        self.weight_label.setFont(QFont("Arial", 72, QFont.Weight.Bold))
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.weight_label)
+        label_layout.addWidget(self.weight_label)
 
         # Small status label
         self.status_label = QLabel("READY" if enabled else "OFFLINE")
         self.status_label.setFont(QFont("Arial", 18))
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.status_label.setStyleSheet("color: #fff;")
-        layout.addWidget(self.status_label)
+        label_layout.addWidget(self.status_label)
 
-        # Use BottleProgressBar instead of VerticalProgressBar
-        self.progress_bar = BottleProgressBar(max_value=100, value=0, bar_color="#F6EB61")
-        self.progress_bar.setFixedHeight(120)
-        layout.addWidget(self.progress_bar)
+        # Add widgets to main layout based on station number
+        if station_number in (1, 2):
+            main_layout.addWidget(self.progress_bar)
+            main_layout.addLayout(label_layout)
+        else:
+            main_layout.addLayout(label_layout)
+            main_layout.addWidget(self.progress_bar)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
 
     def set_weight(self, current_weight, target_weight, unit="g"):
         if unit == "g":
