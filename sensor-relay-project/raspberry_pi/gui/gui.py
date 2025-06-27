@@ -62,7 +62,7 @@ class StationBoxWidget(QWidget):
         # Station name label with outline
         name_label = OutlinedLabel(name)
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        name_label.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         # No background for outlined text, but you can add a subtle background if desired:
         name_label.setStyleSheet("background: transparent; padding: 4px;")
         layout.addWidget(name_label)
@@ -1075,8 +1075,7 @@ class StationStatusDialog(QDialog):
             frame.layout().setContentsMargins(0, 0, 0, 0)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
-            frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-            frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             self.grid.addWidget(frame)
             self.station_frames.append(frame)
         layout.addLayout(stations_layout)
@@ -1191,8 +1190,9 @@ class StartupDialog(QDialog):
             frame.layout().setContentsMargins(0, 0, 0, 0)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
-            frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-            frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)  # Dynamic sizing
+            # Remove or comment out the setFixedSize line for the frame!
+            # frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
             self.grid.addWidget(frame)
             self.station_frames.append(frame)
         self.layout.addLayout(self.grid)
@@ -1411,8 +1411,9 @@ class CalibrationDialog(QDialog):
             frame.layout().setContentsMargins(0, 0, 0, 0)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
-            frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-            frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)  # Dynamic sizing
+            # Remove or comment out the setFixedSize line for the frame!
+            # frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
             weights_layout.addWidget(frame)
         layout.addLayout(weights_layout)
 
