@@ -59,11 +59,12 @@ class StationBoxWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        # Station name label
-        name_label = QLabel(name)
+        # Station name label with outline
+        name_label = OutlinedLabel(name)
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         name_label.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        name_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;")
+        # No background for outlined text, but you can add a subtle background if desired:
+        name_label.setStyleSheet("background: transparent; padding: 4px;")
         layout.addWidget(name_label)
 
         # Connected/Enabled labels (optional)
@@ -71,7 +72,7 @@ class StationBoxWidget(QWidget):
             connected_label = QLabel("CONNECTED" if connected else "DISCONNECTED")
             connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             connected_label.setFont(QFont("Arial", 16))
-            connected_label.setStyleSheet(f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;")
+            connected_label.setStyleSheet(f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
             layout.addWidget(connected_label)
         else:
             connected_label = None
@@ -80,7 +81,7 @@ class StationBoxWidget(QWidget):
             enabled_label = QLabel("ENABLED" if enabled else "DISABLED")
             enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             enabled_label.setFont(QFont("Arial", 16))
-            enabled_label.setStyleSheet(f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;")
+            enabled_label.setStyleSheet(f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
             layout.addWidget(enabled_label)
         else:
             enabled_label = None
@@ -90,7 +91,7 @@ class StationBoxWidget(QWidget):
             weight_label = QLabel(weight_text)
             weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             weight_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-            weight_label.setStyleSheet("color: #0f0;" if enabled else "color: #888;")
+            weight_label.setStyleSheet("color: #0f0; border: none;" if enabled else "color: #888; border: none;")
             layout.addWidget(weight_label)
         else:
             weight_label = None
@@ -100,7 +101,6 @@ class StationBoxWidget(QWidget):
         self.enabled_label = enabled_label
         self.weight_label = weight_label
 
-        # Reduce the fixed size:
         self.setFixedSize(180, 160)
 
 class StationWidget(QWidget):
@@ -1235,21 +1235,21 @@ class StartupDialog(QDialog):
             # Update name label
             box_widget.name_label.setText(name)
             box_widget.name_label.setStyleSheet(
-                f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
+                f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
             )
 
             # Update connected label
             if box_widget.connected_label is not None:
                 box_widget.connected_label.setText("CONNECTED" if is_connected else "DISCONNECTED")
                 box_widget.connected_label.setStyleSheet(
-                    f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
+                    f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
                 )
             else:
                 connected_label = QLabel("CONNECTED" if is_connected else "DISCONNECTED")
                 connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 connected_label.setFont(QFont("Arial", 16))
                 connected_label.setStyleSheet(
-                    f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
+                    f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
                 )
                 box_widget.layout().insertWidget(1, connected_label)
                 box_widget.connected_label = connected_label
@@ -1258,14 +1258,14 @@ class StartupDialog(QDialog):
             if box_widget.enabled_label is not None:
                 box_widget.enabled_label.setText("ENABLED" if is_enabled else "DISABLED")
                 box_widget.enabled_label.setStyleSheet(
-                    f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
+                    f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
                 )
             else:
                 enabled_label = QLabel("ENABLED" if is_enabled else "DISABLED")
                 enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 enabled_label.setFont(QFont("Arial", 16))
                 enabled_label.setStyleSheet(
-                    f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
+                    f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
                 )
                 box_widget.layout().insertWidget(2, enabled_label)
                 box_widget.enabled_label = enabled_label
