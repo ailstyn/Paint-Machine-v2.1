@@ -1077,9 +1077,12 @@ class StationStatusDialog(QDialog):
             frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
             frame.setLayout(QVBoxLayout())
             frame.layout().setContentsMargins(0, 0, 0, 0)
+            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
-            self.station_frames.append(frame)
+            frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
             stations_layout.addWidget(frame)
+            self.station_frames.append(frame)
         layout.addLayout(stations_layout)
 
         # Accept button
@@ -1399,7 +1402,10 @@ class CalibrationDialog(QDialog):
             frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
             frame.setLayout(QVBoxLayout())
             frame.layout().setContentsMargins(0, 0, 0, 0)
+            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
+            frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
             weights_layout.addWidget(frame)
         layout.addLayout(weights_layout)
 
