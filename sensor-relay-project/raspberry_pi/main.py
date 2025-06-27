@@ -954,15 +954,15 @@ def poll_hardware(app):
                         handler(station_index, arduino, **ctx)
                     else:
                         handle_unknown(station_index, arduino, message_type, **ctx)
-    except serial.SerialException as e:
-        if DEBUG:
-            print(f"Lost connection to Arduino {station_index+1}: {e}")
-        port = arduino_ports[station_index]
-        reconnect_arduino(station_index, port)
-    except Exception as e:
-        logging.error(f"Error in poll_hardware: {e}")
-        if DEBUG:
-            print(f"Error in poll_hardware: {e}")
+            except serial.SerialException as e:
+                if DEBUG:
+                    print(f"Lost connection to Arduino {station_index+1}: {e}")
+                port = arduino_ports[station_index]
+                reconnect_arduino(station_index, port)
+            except Exception as e:
+                logging.error(f"Error in poll_hardware: {e}")
+                if DEBUG:
+                    print(f"Error in poll_hardware: {e}")
 
 # ========== GUI/BUTTON HANDLING ==========
 
