@@ -303,25 +303,24 @@ void fill() {
     // After receiving targetWeight and timeLimit, before starting the fill
     Serial.write(BEGIN_FILL);
 
-    while (scale.get_units(3) < targetWeight) { // Use 5 samples for faster response
+    while (scale.get_units(3) < targetWeight) {
         unsigned long now = millis();
         long currentWeight = scale.get_units(3);
-        Serial.write((byte*)&currentWeight, sizeof(currentWeight)); // Correct: sends 4 bytes, not ASCII
+        Serial.write(CURRENT_WEIGHT);
+        Serial.write((byte*)&currentWeight, sizeof(currentWeight));
         if (now >= fillEndTime) {
-            Serial.write(VERBOSE_DEBUG);
-            Serial.println("TIME LIMIT REACHED");
             digitalWrite(RELAY_PIN, HIGH); // Turn relay OFF
             digitalWrite(LED_PIN, LOW);    // Turn LED OFF at end of fill
 
             // Report final weight
             long finalWeight = scale.get_units(3);
             Serial.write(FINAL_WEIGHT);
-            Serial.println(finalWeight);
+            Serial.write((byte*)&finalWeight, sizeof(finalWeight)); // <-- send as binary
 
             // Report fill time
             unsigned long fillTime = now - fillStartTime;
             Serial.write(FILL_TIME);
-            Serial.println(fillTime);
+            Serial.write((byte*)&fillTime, sizeof(fillTime)); // <-- send as binary
 
             return;
         }
