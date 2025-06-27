@@ -201,6 +201,7 @@ void loop() {
         else if (messageType == MANUAL_FILL_START) {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Manual fill started.");
+            manual_fill();
         }
         // Handle handshake reset
         if (messageType == RESET_HANDSHAKE) {
@@ -419,9 +420,8 @@ void manual_fill() {
                 if (msg == EXIT_MANUAL_END) return;
             }
         }
-
-        // Button pressed, open relay
-        digitalWrite(RELAY_PIN, LOW); // Relay ON (active low)
+            // Button pressed, open relay
+            digitalWrite(RELAY_PIN, LOW); // Relay ON (active low)
 
         // Keep relay open while button is held, send weight updates
         while (digitalRead(BUTTON_PIN) == LOW) {

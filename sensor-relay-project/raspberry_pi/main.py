@@ -81,7 +81,7 @@ arduinos = [None] * NUM_STATIONS
 DEBUG = True  # Set to False to disable debug prints
 station_connected = [arduino is not None for arduino in arduinos]
 serial_numbers = [arduino.serial_number if arduino else None for arduino in arduinos]
-filling_mode = None
+filling_mode = "AUTO"  # Default mode
 
 
 # ========== UTILITY FUNCTIONS ==========
@@ -678,6 +678,20 @@ def startup(app, timer):
         print("[DEBUG] Calibration dialog accepted, finishing calibration setup")
     app.active_dialog = None
     calib_dialog.accept()
+
+    # ========== If MANUAL mode, send MANUAL_FILL_START to all connected stations ==========
+    if getattr(app, "filling_mode", "AUTO") == "MANUAL":
+        MANUAL_FILL_START = b'\x20'
+        for i, arduino in enumerate(arduinos):
+            if arduino and station_enabled[i]:
+                try:
+                    arduino.write(MANUAL_FILL_START)
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[DEBUG] Sent MANUAL_FILL_START to station {i+1}")
+                except Exception as e:
+                    if DEBUG:
+                        print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
 
 def reconnect_arduino(station_index, port):
     if DEBUG:

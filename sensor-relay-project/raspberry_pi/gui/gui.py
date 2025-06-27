@@ -1364,7 +1364,13 @@ class FillingModeDialog(QDialog):
         self.update_selection_box()
 
     def activate_selected(self):
-        print(f"[DEBUG] activate_selected called with index {self.selected_index}")
+        modes = ["AUTO", "MANUAL", "SMART"]
+        selected_mode = modes[self.selected_index]
+        parent = self.parent()
+        if parent is not None:
+            parent.filling_mode = selected_mode
+        if DEBUG:
+            print(f"[DEBUG] Filling mode set to: {selected_mode}")
         self.done(self.selected_index)
 
 class CalibrationDialog(QDialog):
