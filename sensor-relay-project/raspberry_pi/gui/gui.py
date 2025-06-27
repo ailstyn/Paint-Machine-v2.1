@@ -71,9 +71,7 @@ class StationBoxWidget(QWidget):
             connected_label = QLabel("CONNECTED" if connected else "DISCONNECTED")
             connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             connected_label.setFont(QFont("Arial", 16))
-            connected_label.setStyleSheet(
-                f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
-            )
+            connected_label.setStyleSheet(f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;")
             layout.addWidget(connected_label)
         else:
             connected_label = None
@@ -82,9 +80,7 @@ class StationBoxWidget(QWidget):
             enabled_label = QLabel("ENABLED" if enabled else "DISABLED")
             enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             enabled_label.setFont(QFont("Arial", 16))
-            enabled_label.setStyleSheet(
-                f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
-            )
+            enabled_label.setStyleSheet(f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;")
             layout.addWidget(enabled_label)
         else:
             enabled_label = None
@@ -1102,7 +1098,7 @@ class StationStatusDialog(QDialog):
         # Highlight station frames
         for i, frame in enumerate(self.station_frames):
             if self.selected_index == i:
-                frame.setStyleSheet("border: 4px solid #F6EB61; border-radius: 14px; background: transparent;")
+                frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent;")
             else:
                 frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
         # Highlight accept button
