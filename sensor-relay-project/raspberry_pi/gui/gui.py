@@ -525,8 +525,8 @@ class InfoDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setStyleSheet("""
             QDialog {
-                background-color: #222;
-                border: none;
+                background-color: #444;      /* Medium grey */
+                border: 6px solid #fff;      /* White border */
                 border-radius: 24px;
             }
             QLabel#titleLabel {
