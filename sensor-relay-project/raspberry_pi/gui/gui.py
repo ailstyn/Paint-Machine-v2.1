@@ -1297,20 +1297,19 @@ class StartupDialog(QDialog):
         sel = self.selection_indices[self.selected_index]
         parent = self.parent()
         if sel == "accept":
-            # Save config here if needed
             self.accept()
         else:
             # Toggle enabled state for the selected station
             if hasattr(parent, "station_enabled"):
                 parent.station_enabled[sel] = not parent.station_enabled[sel]
-                # Update statuses/colors for UI
+                # Update statuses/colors for UI (use self.station_connected for connection status)
                 statuses = []
                 for i in range(len(parent.station_enabled)):
-                    if parent.station_enabled[i] and parent.station_connected[i]:
+                    if parent.station_enabled[i] and self.station_connected[i]:
                         statuses.append("ENABLED & CONNECTED")
-                    elif parent.station_enabled[i] and not parent.station_connected[i]:
+                    elif parent.station_enabled[i] and not self.station_connected[i]:
                         statuses.append("ENABLED & DISCONNECTED")
-                    elif not parent.station_enabled[i] and parent.station_connected[i]:
+                    elif not parent.station_enabled[i] and self.station_connected[i]:
                         statuses.append("DISABLED & CONNECTED")
                     else:
                         statuses.append("DISABLED & DISCONNECTED")
