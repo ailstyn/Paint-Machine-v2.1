@@ -1081,7 +1081,7 @@ class StationStatusDialog(QDialog):
             frame.layout().addWidget(box_widget)
             frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
             frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
-            stations_layout.addWidget(frame)
+            self.grid.addWidget(frame)
             self.station_frames.append(frame)
         layout.addLayout(stations_layout)
 
@@ -1171,9 +1171,11 @@ class StartupDialog(QDialog):
         self.label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.layout.addWidget(self.label)
 
-        # StationBoxWidgets for each station, initially blank
+        # StationBoxWidgets for each station, each inside a QFrame
         self.station_boxes = []
+        self.station_frames = []
         self.grid = QHBoxLayout()
+        self.grid.setSpacing(24)
         for i in range(4):
             box_widget = StationBoxWidget(
                 station_index=i,
@@ -1184,7 +1186,19 @@ class StartupDialog(QDialog):
                 weight_text=None
             )
             self.station_boxes.append(box_widget)
-            self.grid.addWidget(box_widget)
+
+            frame = QFrame()
+            frame.setFrameShape(QFrame.Shape.StyledPanel)
+            frame.setLineWidth(0)
+            frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
+            frame.setLayout(QVBoxLayout())
+            frame.layout().setContentsMargins(0, 0, 0, 0)
+            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
+            frame.layout().addWidget(box_widget)
+            frame.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
+            self.grid.addWidget(frame)
+            self.station_frames.append(frame)
         self.layout.addLayout(self.grid)
 
         # Accept button
@@ -1211,8 +1225,8 @@ class StartupDialog(QDialog):
         if self.selected_index >= len(self.selection_indices):
             self.selected_index = 0
 
-        # Update each StationBoxWidget
-        for i, box_widget in enumerate(self.station_boxes):
+        # Update each StationBoxWidget and its frame
+        for i, (box_widget, frame) in enumerate(zip(self.station_boxes, self.station_frames)):
             # Name and color
             name = self.station_names[i] if i < len(self.station_names) else f"Station {i+1}"
             color = self.colors[i] if i < len(self.colors) else "#444"
@@ -1235,7 +1249,6 @@ class StartupDialog(QDialog):
                     f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
                 )
             else:
-                # If label missing, add it
                 connected_label = QLabel("CONNECTED" if is_connected else "DISCONNECTED")
                 connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 connected_label.setFont(QFont("Arial", 16))
@@ -1258,18 +1271,16 @@ class StartupDialog(QDialog):
                 enabled_label.setStyleSheet(
                     f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
                 )
-                # Insert after connected_label (index 2)
                 box_widget.layout().insertWidget(2, enabled_label)
                 box_widget.enabled_label = enabled_label
 
-            # Highlight selection
+            # Highlight selection (frame border)
             if self.selection_indices[self.selected_index] == i:
                 border = "6px solid #F6EB61"
             else:
                 border = "2px solid #444"
-            bg = color if is_connected else "#333"
-            box_widget.setStyleSheet(
-                f"border: {border}; border-radius: 12px; background: {bg}; margin: 8px;"
+            frame.setStyleSheet(
+                f"border: {border}; border-radius: 14px; background: transparent;"
             )
 
         # Accept button highlight
@@ -1489,8 +1500,3 @@ if __name__ == "__main__":
     # Patch show_menu to use the testable dialog
     def show_test_menu():
         menu = TestableMenuDialog(self)
-        menu.exec()
-    window.show_menu = show_test_menu.__get__(window)
-    window.show()
-    print("Press 'm' to open the menu, left/right arrows to move selection, enter to select.")
-    sys.exit(app.exec())
