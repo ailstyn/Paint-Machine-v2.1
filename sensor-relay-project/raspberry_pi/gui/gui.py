@@ -361,9 +361,9 @@ class SimpleStationWidget(QWidget):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(4)
 
-        # Large weight label
-        self.weight_label = QLabel("0 / 0 g")
-        self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+        # Large weight label with outline, much bigger
+        self.weight_label = OutlinedLabel("0 / 0 g")
+        self.weight_label.setFont(QFont("Arial", 72, QFont.Weight.Bold))  # Double the size
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.weight_label)
 
@@ -374,8 +374,8 @@ class SimpleStationWidget(QWidget):
         self.status_label.setStyleSheet("color: #fff;")
         layout.addWidget(self.status_label)
 
-        # Vertical progress bar
-        self.progress_bar = VerticalProgressBar(max_value=100, value=0, bar_color="#F6EB61")
+        # Use BottleProgressBar instead of VerticalProgressBar
+        self.progress_bar = BottleProgressBar(max_value=100, value=0, bar_color="#F6EB61")
         self.progress_bar.setFixedHeight(120)
         layout.addWidget(self.progress_bar)
 
