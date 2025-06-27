@@ -959,7 +959,7 @@ def poll_hardware(app):
                     print(f"Lost connection to Arduino {station_index+1}: {e}")
                 port = arduino_ports[station_index]
                 reconnect_arduino(station_index, port)
-            except Exception as e:
+    except Exception as e:
                 logging.error(f"Error in poll_hardware: {e}")
                 if DEBUG:
                     print(f"Error in poll_hardware: {e}")
