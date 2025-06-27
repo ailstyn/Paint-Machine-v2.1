@@ -104,7 +104,8 @@ class StationBoxWidget(QWidget):
         self.enabled_label = enabled_label
         self.weight_label = weight_label
 
-        self.setFixedSize(250, 220)
+        # Reduce the fixed size:
+        self.setFixedSize(180, 160)
 
 class StationWidget(QWidget):
     def __init__(self, station_number, bg_color, enabled=True, *args, **kwargs):
@@ -1167,7 +1168,7 @@ class StartupDialog(QDialog):
         self.label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.layout.addWidget(self.label)
 
-        # StationBoxWidgets for each station
+        # StationBoxWidgets for each station, initially blank
         self.station_boxes = []
         self.grid = QHBoxLayout()
         for i in range(4):
@@ -1175,8 +1176,8 @@ class StartupDialog(QDialog):
                 station_index=i,
                 name=f"Station {i+1}",
                 color=STATION_COLORS[i],
-                connected=None,
-                enabled=None,
+                connected=False,
+                enabled=False,
                 weight_text=None
             )
             self.station_boxes.append(box_widget)
@@ -1212,30 +1213,51 @@ class StartupDialog(QDialog):
             # Name and color
             name = self.station_names[i] if i < len(self.station_names) else f"Station {i+1}"
             color = self.colors[i] if i < len(self.colors) else "#444"
-            box_widget.name_label.setText(name)
-            box_widget.name_label.setStyleSheet(
-                f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
-            )
-
-            # Determine connection/enabled status
             is_connected = self.station_connected[i] if self.station_connected and i < len(self.station_connected) else False
             is_enabled = False
             if i < len(self.statuses):
                 status = self.statuses[i]
                 is_enabled = "ENABLED" in status
 
-            # Connected label
+            # Update name label
+            box_widget.name_label.setText(name)
+            box_widget.name_label.setStyleSheet(
+                f"background: {color}; color: #fff; border-radius: 8px; padding: 4px;"
+            )
+
+            # Update connected label
             if box_widget.connected_label is not None:
                 box_widget.connected_label.setText("CONNECTED" if is_connected else "DISCONNECTED")
                 box_widget.connected_label.setStyleSheet(
                     f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
                 )
-            # Enabled label
+            else:
+                # If label missing, add it
+                connected_label = QLabel("CONNECTED" if is_connected else "DISCONNECTED")
+                connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                connected_label.setFont(QFont("Arial", 16))
+                connected_label.setStyleSheet(
+                    f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
+                )
+                box_widget.layout().insertWidget(1, connected_label)
+                box_widget.connected_label = connected_label
+
+            # Update enabled label
             if box_widget.enabled_label is not None:
                 box_widget.enabled_label.setText("ENABLED" if is_enabled else "DISABLED")
                 box_widget.enabled_label.setStyleSheet(
                     f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
                 )
+            else:
+                enabled_label = QLabel("ENABLED" if is_enabled else "DISABLED")
+                enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                enabled_label.setFont(QFont("Arial", 16))
+                enabled_label.setStyleSheet(
+                    f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; padding: 4px;"
+                )
+                # Insert after connected_label (index 2)
+                box_widget.layout().insertWidget(2, enabled_label)
+                box_widget.enabled_label = enabled_label
 
             # Highlight selection
             if self.selection_indices[self.selected_index] == i:
