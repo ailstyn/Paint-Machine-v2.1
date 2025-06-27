@@ -1297,31 +1297,32 @@ class StartupDialog(QDialog):
         sel = self.selection_indices[self.selected_index]
         parent = self.parent()
         if sel == "accept":
+            # Save config here if needed
             self.accept()
         else:
-            if self.station_connected[sel]:
-                if hasattr(parent, "station_enabled") and hasattr(parent, "save_station_enabled"):
-                    parent.station_enabled[sel] = not parent.station_enabled[sel]
-                    parent.save_station_enabled(parent.config_file, parent.station_enabled)
-                    # Update statuses/colors for UI
-                    statuses = []
-                    for i in range(len(parent.station_enabled)):
-                        if parent.station_enabled[i] and parent.station_connected[i]:
-                            statuses.append("ENABLED & CONNECTED")
-                        elif parent.station_enabled[i] and not parent.station_connected[i]:
-                            statuses.append("ENABLED & DISCONNECTED")
-                        elif not parent.station_enabled[i] and parent.station_connected[i]:
-                            statuses.append("DISABLED & CONNECTED")
-                        else:
-                            statuses.append("DISABLED & DISCONNECTED")
-                    self.statuses = statuses
-                    self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
-                    message = "Station {} is now {}".format(
-                        sel + 1,
-                        "ENABLED" if parent.station_enabled[sel] else "DISABLED"
+            # Toggle enabled state for the selected station
+            if hasattr(parent, "station_enabled"):
+                parent.station_enabled[sel] = not parent.station_enabled[sel]
+                # Update statuses/colors for UI
+                statuses = []
+                for i in range(len(parent.station_enabled)):
+                    if parent.station_enabled[i] and parent.station_connected[i]:
+                        statuses.append("ENABLED & CONNECTED")
+                    elif parent.station_enabled[i] and not parent.station_connected[i]:
+                        statuses.append("ENABLED & DISCONNECTED")
+                    elif not parent.station_enabled[i] and parent.station_connected[i]:
+                        statuses.append("DISABLED & CONNECTED")
+                    else:
+                        statuses.append("DISABLED & DISCONNECTED")
+                self.statuses = statuses
+                self.show_station_verification(self.station_names, self.statuses, self.colors, self.station_connected)
+                # Optionally show a message
+                if hasattr(parent, "show_timed_info"):
+                    parent.show_timed_info(
+                        "STATION STATUS",
+                        f"Station {sel+1} is now {'ENABLED' if parent.station_enabled[sel] else 'DISABLED'}",
+                        timeout_ms=1500
                     )
-                    if hasattr(parent, "show_timed_info"):
-                        parent.show_timed_info("STATION STATUS", message, timeout_ms=2000)
 
 class FillingModeDialog(QDialog):
     def __init__(self, parent=None):

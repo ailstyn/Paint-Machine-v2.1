@@ -335,6 +335,7 @@ def startup(app, timer):
     dialog.showFullScreen()
     QApplication.processEvents()
 
+    # Prepare station names, statuses, and colors
     station_names = [f"Station {i+1}" for i in range(NUM_STATIONS)]
     statuses = []
     for i in range(NUM_STATIONS):
@@ -349,8 +350,9 @@ def startup(app, timer):
     if DEBUG:
         print(f"[DEBUG] Station statuses: {statuses}")
 
-    colors = app.bg_colors if hasattr(app, "bg_colors") else ["#444"] * NUM_STATIONS
+    colors = getattr(app, "bg_colors", ["#444"] * NUM_STATIONS)
 
+    # Show the verification dialog with current station info
     dialog.show_station_verification(station_names, statuses, colors, station_connected)
     QApplication.processEvents()
 
