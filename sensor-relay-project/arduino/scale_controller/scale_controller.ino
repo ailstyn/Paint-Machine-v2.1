@@ -407,6 +407,7 @@ void recalibrate() {
 // Manual fill function: allows repeated press/release cycles without restarting the function
 void manual_fill() {
     digitalWrite(RELAY_PIN, HIGH); // Ensure relay is OFF initially
+    digitalWrite(LED_PIN, LOW);    // LED OFF initially
 
     while (true) {
         // Wait for button press, send weight updates while waiting
@@ -414,6 +415,7 @@ void manual_fill() {
             long weight = scale.get_units(3);
             Serial.write(CURRENT_WEIGHT);
             Serial.write((byte*)&weight, sizeof(weight));
+            digitalWrite(LED_PIN, LOW); // LED OFF while waiting
 
             if (Serial.available() > 0) {
                 byte msg = Serial.read();

@@ -194,10 +194,16 @@ class StationWidget(QWidget):
 
     def set_fill_time(self, value):
         if self.fill_time_label is not None:
-            tr = self.tr if hasattr(self, "tr") else (
-                self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
-            )
-            self.fill_time_label.setText(self.tr("FILL_TIME").format(value))
+            # Show "MANUAL FILL ENABLED" if in manual mode
+            parent = self.parent()
+            filling_mode = getattr(parent, "filling_mode", "AUTO") if parent else "AUTO"
+            if filling_mode == "MANUAL":
+                self.fill_time_label.setText("MANUAL FILL ENABLED")
+            else:
+                tr = self.tr if hasattr(self, "tr") else (
+                    parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+                )
+                self.fill_time_label.setText(tr("FILL_TIME").format(value))
 
     def update_language(self):
         parent = self.parent()
