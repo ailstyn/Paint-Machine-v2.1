@@ -315,12 +315,12 @@ void fill() {
             // Report final weight
             long finalWeight = scale.get_units(3);
             Serial.write(FINAL_WEIGHT);
-            Serial.write((byte*)&finalWeight, sizeof(finalWeight)); // <-- send as binary
+            Serial.write((byte*)&finalWeight, sizeof(finalWeight)); // send as 4-byte binary
 
             // Report fill time
             unsigned long fillTime = now - fillStartTime;
             Serial.write(FILL_TIME);
-            Serial.write((byte*)&fillTime, sizeof(fillTime)); // <-- send as binary
+            Serial.write((byte*)&fillTime, sizeof(fillTime)); // send as 4-byte binary
 
             return;
         }

@@ -141,16 +141,26 @@ def handle_begin_smart_fill(station_index, arduino, **ctx):
         print(f"Station {station_index+1}: BEGIN_SMART_FILL received, status set.")
 
 def handle_final_weight(station_index, arduino, **ctx):
-    final_weight = arduino.readline().decode('utf-8').strip()
-    if ctx['DEBUG']:
-        print(f"Station {station_index+1}: Final weight: {final_weight}")
-    pass  # GUI update commented out
+    weight_bytes = arduino.read(4)
+    if len(weight_bytes) == 4:
+        final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Final weight: {final_weight}")
+        # Optionally: ctx['station_widgets'][station_index].set_final_weight(final_weight)
+    else:
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
 
 def handle_fill_time(station_index, arduino, **ctx):
-    fill_time = arduino.readline().decode('utf-8').strip()
-    if ctx['DEBUG']:
-        print(f"Station {station_index+1}: Fill time: {fill_time}")
-    pass  # GUI update commented out
+    time_bytes = arduino.read(4)
+    if len(time_bytes) == 4:
+        fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Fill time: {fill_time} ms")
+        # Optionally: ctx['station_widgets'][station_index].set_fill_time(fill_time)
+    else:
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Incomplete fill time bytes: {time_bytes!r}")
 
 def handle_unknown(station_index, arduino, message_type, **ctx):
     if arduino.in_waiting > 0:
