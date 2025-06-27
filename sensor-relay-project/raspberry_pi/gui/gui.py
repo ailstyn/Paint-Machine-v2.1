@@ -119,8 +119,7 @@ class StationWidget(QWidget):
 
         # Always define these attributes
         self.weight_label = None
-        self.final_weight_label = None
-        self.fill_time_label = None
+        self.status_label = None
         self.progress_bar = None
         self.offline_label = None
 
@@ -132,25 +131,26 @@ class StationWidget(QWidget):
             bar_on_left = station_number in (1, 2)
             self.progress_bar = BottleProgressBar(max_value=100, value=0, bar_color="#4FC3F7")
             self.progress_bar.setFixedWidth(64)
+            self.progress_bar.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
 
             content_layout = QVBoxLayout()
             content_layout.setContentsMargins(0, 0, 0, 0)
             content_layout.setSpacing(0)
 
+            # Large weight label
             self.weight_label = OutlinedLabel("0.0 / 0.0 g")
-            self.weight_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
-            content_layout.addWidget(self.weight_label)
+            self.weight_label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
+            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            content_layout.addWidget(self.weight_label, stretch=2)  # 67%
 
-            self.final_weight_label = QLabel(self.tr("FINAL_WEIGHT").format("--"))
-            self.final_weight_label.setFont(QFont("Arial", 18))
-            self.final_weight_label.setStyleSheet("color: #fff;")
-            content_layout.addWidget(self.final_weight_label)
+            # Status label (smaller, below weight)
+            self.status_label = QLabel("READY")
+            self.status_label.setFont(QFont("Arial", 20))
+            self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.status_label.setStyleSheet("color: #fff;")
+            content_layout.addWidget(self.status_label, stretch=1)  # 33%
 
-            self.fill_time_label = QLabel(self.tr("FILL_TIME").format("--"))
-            self.fill_time_label.setFont(QFont("Arial", 18))
-            self.fill_time_label.setStyleSheet("color: #fff;")
-            content_layout.addWidget(self.fill_time_label)
-
+            # Add widgets to layout
             if bar_on_left:
                 main_layout.addWidget(self.progress_bar)
                 main_layout.addLayout(content_layout)
@@ -174,44 +174,22 @@ class StationWidget(QWidget):
             if unit == "g":
                 new_text = f"{int(round(current_weight))} / {int(round(target_weight))} g"
             else:  # "oz"
-                # Convert grams to ounces (1 oz = 28.3495 g)
                 current_oz = current_weight / 28.3495
                 target_oz = target_weight / 28.3495
                 new_text = f"{current_oz:.1f} / {target_oz:.1f} oz"
             if self.weight_label.text() != new_text:
                 self.weight_label.setText(new_text)
         if self.progress_bar is not None:
-            # Always use grams for the progress bar fill math
             self.progress_bar.set_max(target_weight)
             self.progress_bar.set_value(current_weight)
 
-    def set_final_weight(self, value):
-        if self.final_weight_label is not None:
-            tr = self.tr if hasattr(self, "tr") else (
-                self.parent().tr if self.parent() and hasattr(self.parent(), "tr") else (lambda k: LANGUAGES["en"].get(k, k))
-            )
-            self.final_weight_label.setText(self.tr("FINAL_WEIGHT").format(value))
-
-    def set_fill_time(self, value):
-        if self.fill_time_label is not None:
-            # Show "MANUAL FILL ENABLED" if in manual mode
-            parent = self.parent()
-            filling_mode = getattr(parent, "filling_mode", "AUTO") if parent else "AUTO"
-            if filling_mode == "MANUAL":
-                self.fill_time_label.setText("MANUAL FILL ENABLED")
-            else:
-                tr = self.tr if hasattr(self, "tr") else (
-                    parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
-                )
-                self.fill_time_label.setText(tr("FILL_TIME").format(value))
+    def set_status(self, status):
+        if self.status_label is not None:
+            self.status_label.setText(status)
 
     def update_language(self):
         parent = self.parent()
         tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
-        if self.final_weight_label is not None:
-            self.final_weight_label.setText(tr("FINAL_WEIGHT").format("--"))
-        if self.fill_time_label is not None:
-            self.fill_time_label.setText(tr("FILL_TIME").format("--"))
         if self.offline_label is not None:
             self.offline_label.setText(tr("STATION_OFFLINE"))
 
@@ -377,7 +355,7 @@ class RelayControlApp(QWidget):
         # Explicitly assign widgets to grid positions with color and opacity
         self.station_widgets = [None] * 4
         for i in range(4):
-            widget = SimpleStationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
+            widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
             # Set initial color with opacity based on enabled state
             if self.station_enabled[i]:
                 color = self.bg_colors[i]
