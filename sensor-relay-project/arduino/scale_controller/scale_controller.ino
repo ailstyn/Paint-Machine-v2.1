@@ -300,6 +300,9 @@ void fill() {
     unsigned long fillStartTime = millis();
     unsigned long fillEndTime = fillStartTime + timeLimit;
 
+    // After receiving targetWeight and timeLimit, before starting the fill
+    Serial.write(BEGIN_FILL);
+
     while (scale.get_units(3) < targetWeight) { // Use 5 samples for faster response
         unsigned long now = millis();
         long currentWeight = scale.get_units(3);
@@ -428,6 +431,7 @@ void manual_fill() {
         // Keep relay open while button is held, send weight updates
         while (digitalRead(BUTTON_PIN) == LOW) {
             long weight = scale.get_units(3);
+            digitalWrite(LED_PIN, HIGH); // LED ON while filling
             Serial.write(CURRENT_WEIGHT);
             Serial.write((byte*)&weight, sizeof(weight));
 

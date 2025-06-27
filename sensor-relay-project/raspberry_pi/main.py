@@ -83,6 +83,96 @@ station_connected = [arduino is not None for arduino in arduinos]
 serial_numbers = [arduino.serial_number if arduino else None for arduino in arduinos]
 filling_mode = "AUTO"  # Default mode
 
+# ========== MESSAGE HANDLERS ==========
+def handle_request_target_weight(station_index, arduino, **ctx):
+    if ctx['FILL_LOCKED']:
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
+        arduino.write(STOP)
+    else:
+        arduino.write(TARGET_WEIGHT)
+        arduino.write(f"{ctx['target_weight']}\n".encode('utf-8'))
+
+def handle_request_calibration(station_index, arduino, **ctx):
+    if ctx['DEBUG']:
+        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {ctx['scale_calibrations'][station_index]}")
+    arduino.write(REQUEST_CALIBRATION)
+    arduino.write(f"{ctx['scale_calibrations'][station_index]}\n".encode('utf-8'))
+
+def handle_request_time_limit(station_index, arduino, **ctx):
+    if ctx['DEBUG']:
+        print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
+    arduino.write(REQUEST_TIME_LIMIT)
+    arduino.write(f"{ctx['time_limit']}\n".encode('utf-8'))
+
+def handle_current_weight(station_index, arduino, **ctx):
+    weight_bytes = arduino.read(4)
+    if len(weight_bytes) == 4:
+        weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+        if weight < 0:
+            weight = 0.0
+        if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
+            ctx['active_dialog'].set_weight(station_index, weight)
+        elif ctx['update_station_weight']:
+            ctx['update_station_weight'](station_index, weight)
+    else:
+        logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
+        if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
+            ctx['active_dialog'].set_weight(station_index, 0.0)
+        elif ctx['update_station_weight']:
+            ctx['update_station_weight'](station_index, 0.0)
+
+def handle_begin_auto_fill(station_index, arduino, **ctx):
+    widgets = ctx['station_widgets']
+    if widgets:
+        widget = widgets[station_index]
+        if hasattr(widget, "set_status"):
+            widget.set_status("AUTO FILL RUNNING")
+    if ctx['DEBUG']:
+        print(f"Station {station_index+1}: BEGIN_AUTO_FILL received, status set.")
+
+def handle_begin_smart_fill(station_index, arduino, **ctx):
+    widgets = ctx['station_widgets']
+    if widgets:
+        widget = widgets[station_index]
+        if hasattr(widget, "set_status"):
+            widget.set_status("SMART FILL RUNNING")
+    if ctx['DEBUG']:
+        print(f"Station {station_index+1}: BEGIN_SMART_FILL received, status set.")
+
+def handle_final_weight(station_index, arduino, **ctx):
+    final_weight = arduino.readline().decode('utf-8').strip()
+    if ctx['DEBUG']:
+        print(f"Station {station_index+1}: Final weight: {final_weight}")
+    pass  # GUI update commented out
+
+def handle_fill_time(station_index, arduino, **ctx):
+    fill_time = arduino.readline().decode('utf-8').strip()
+    if ctx['DEBUG']:
+        print(f"Station {station_index+1}: Fill time: {fill_time}")
+    pass  # GUI update commented out
+
+def handle_unknown(station_index, arduino, message_type, **ctx):
+    if arduino.in_waiting > 0:
+        extra = arduino.readline().decode('utf-8', errors='replace').strip()
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
+    else:
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
+        if ctx['refresh_ui']:
+            ctx['refresh_ui']()
+
+MESSAGE_HANDLERS = {
+    REQUEST_TARGET_WEIGHT: handle_request_target_weight,
+    REQUEST_CALIBRATION: handle_request_calibration,
+    REQUEST_TIME_LIMIT: handle_request_time_limit,
+    CURRENT_WEIGHT: handle_current_weight,
+    BEGIN_AUTO_FILL: handle_begin_auto_fill,
+    BEGIN_SMART_FILL: handle_begin_smart_fill,
+    FINAL_WEIGHT: handle_final_weight,
+    FILL_TIME: handle_fill_time,
+}
 
 # ========== UTILITY FUNCTIONS ==========
 
@@ -531,13 +621,13 @@ def startup(app, timer):
                 try:
                     weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                     weight = float(weight_text) if weight_text not in ("--", "") else 0.0
+                    # Set color again for feedback
                     if app.target_weight == 400:
                         in_range = 18 <= weight <= 22
                     elif app.target_weight == 750:
                         in_range = 29 <= weight <= 33
                     else:
                         in_range = False
-                    # Set color again for feedback
                     if in_range:
                         calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
                     else:
@@ -796,6 +886,14 @@ def try_connect_station(station_index):
 def poll_hardware(app):
     global E_STOP, FILL_LOCKED
     try:
+        # Localize frequently accessed attributes
+        station_widgets = getattr(app, "station_widgets", None)
+        active_dialog = getattr(app, "active_dialog", None)
+        filling_mode = getattr(app, "filling_mode", "AUTO")
+        overlay_widget = getattr(app, "overlay_widget", None)
+        refresh_ui = getattr(app, "refresh_ui", None)
+        update_station_weight = getattr(app, "update_station_weight", None)
+
         estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
 
         # Handle E-STOP state change
@@ -804,18 +902,19 @@ def poll_hardware(app):
                 print("E-STOP pressed")
             E_STOP = True
             FILL_LOCKED = True
-            if getattr(app, "active_dialog", None) is not None:
+            if active_dialog is not None:
                 try:
-                    app.active_dialog.reject()
+                    active_dialog.reject()
                 except Exception as e:
                     logging.error(f"Error rejecting active dialog: {e}")
                 app.active_dialog = None
 
-            app.overlay_widget.show_overlay(
-                f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
-                f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
-                color="#CD0A0A"
-            )
+            if overlay_widget:
+                overlay_widget.show_overlay(
+                    f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
+                    f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
+                    color="#CD0A0A"
+                )
             for arduino in arduinos:
                 if arduino:
                     arduino.write(E_STOP_ACTIVATED)
@@ -825,7 +924,8 @@ def poll_hardware(app):
                 print("E-STOP released")
             E_STOP = False
             FILL_LOCKED = False
-            app.overlay_widget.hide_overlay()
+            if overlay_widget:
+                overlay_widget.hide_overlay()
 
         for station_index, arduino in enumerate(arduinos):
             if arduino is None or not station_enabled[station_index]:
@@ -838,85 +938,27 @@ def poll_hardware(app):
 
                 while arduino.in_waiting > 0:
                     message_type = arduino.read(1)
-                    if message_type == REQUEST_TARGET_WEIGHT:
-                        if FILL_LOCKED:
-                            if DEBUG:
-                                print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
-                            arduino.write(STOP)
-                        else:
-                            arduino.write(TARGET_WEIGHT)
-                            arduino.write(f"{target_weight}\n".encode('utf-8'))
-                    elif message_type == REQUEST_CALIBRATION:
-                        if DEBUG:
-                            print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
-                        arduino.write(REQUEST_CALIBRATION)
-                        arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
-                    elif message_type == REQUEST_TIME_LIMIT:
-                        if DEBUG:
-                            print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
-                        arduino.write(REQUEST_TIME_LIMIT)
-                        arduino.write(f"{time_limit}\n".encode('utf-8'))
-                    elif message_type == CURRENT_WEIGHT:
-                        # Read 4 bytes for the weight (little-endian, signed)
-                        weight_bytes = arduino.read(4)
-                        if len(weight_bytes) == 4:
-                            weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-                            if weight < 0:
-                                weight = 0.0
-                            dialog = getattr(app, "active_dialog", None)
-                            if dialog is not None and dialog.__class__.__name__ == "CalibrationDialog":
-                                dialog.set_weight(station_index, weight)
-                            else:
-                                app.update_station_weight(station_index, weight)
-                        else:
-                            logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
-                            dialog = getattr(app, "active_dialog", None)
-                            if dialog is not None and dialog.__class__.__name__ == "CalibrationDialog":
-                                dialog.set_weight(station_index, 0.0)
-                            else:
-                                app.update_station_weight(station_index, 0.0)
-                    elif message_type == FINAL_WEIGHT:
-                        final_weight = arduino.readline().decode('utf-8').strip()
-                        if DEBUG:
-                            print(f"Station {station_index+1}: Final weight: {final_weight}")
-                        try:
-                            grams = float(final_weight)
-                            log_final_weight(station_index, grams)
-                        except Exception as e:
-                            if DEBUG:
-                                print(f"Could not log final weight: {e}")
-                        if hasattr(app, "update_station_final_weight"):
-                            app.update_station_final_weight(station_index, final_weight)
-                        else:
-                            if hasattr(app, "station_widgets"):
-                                widget = app.station_widgets[station_index]
-                                if hasattr(widget, "set_final_weight"):
-                                    widget.set_final_weight(final_weight)
-                    elif message_type == FILL_TIME:
-                        fill_time = arduino.readline().decode('utf-8').strip()
-                        if DEBUG:
-                            print(f"Station {station_index+1}: Fill time: {fill_time}")
-                        if hasattr(app, "update_station_fill_time"):
-                            app.update_station_fill_time(station_index, fill_time)
-                        else:
-                            if hasattr(app, "station_widgets"):
-                                widget = app.station_widgets[station_index]
-                                if hasattr(widget, "set_fill_time"):
-                                    widget.set_fill_time(fill_time)
+                    handler = MESSAGE_HANDLERS.get(message_type)
+                    ctx = {
+                        'FILL_LOCKED': FILL_LOCKED,
+                        'DEBUG': DEBUG,
+                        'target_weight': target_weight,
+                        'scale_calibrations': scale_calibrations,
+                        'time_limit': time_limit,
+                        'active_dialog': active_dialog,
+                        'update_station_weight': update_station_weight,
+                        'station_widgets': station_widgets,
+                        'refresh_ui': refresh_ui,
+                    }
+                    if handler:
+                        handler(station_index, arduino, **ctx)
                     else:
-                        if arduino.in_waiting > 0:
-                            extra = arduino.readline().decode('utf-8', errors='replace').strip()
-                            if DEBUG:
-                                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
-                        else:
-                            if DEBUG:
-                                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
-                            app.refresh_ui()
-            except serial.SerialException as e:
-                if DEBUG:
-                    print(f"Lost connection to Arduino {station_index+1}: {e}")
-                port = arduino_ports[station_index]
-                reconnect_arduino(station_index, port)
+                        handle_unknown(station_index, arduino, message_type, **ctx)
+    except serial.SerialException as e:
+        if DEBUG:
+            print(f"Lost connection to Arduino {station_index+1}: {e}")
+        port = arduino_ports[station_index]
+        reconnect_arduino(station_index, port)
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
         if DEBUG:
