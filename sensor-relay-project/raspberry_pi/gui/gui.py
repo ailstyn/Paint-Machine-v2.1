@@ -478,6 +478,54 @@ class RelayControlApp(QWidget):
             current_weight = 0
             widget.set_weight(current_weight, self.target_weight, self.units)
 
+    def open_units_dialog(self):
+        dlg = SelectionDialog(
+            options=[("g", "Grams"), ("oz", "Ounces")],
+            parent=self,
+            title="Change Units",
+            on_select=self.set_units
+        )
+        self.active_dialog = dlg
+        dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+        dlg.exec()
+
+    def open_language_dialog(self):
+        def set_language(lang_code):
+            self.set_language(lang_code)
+            for widget in self.station_widgets:
+                widget.update_language()
+        dlg = SelectionDialog(
+            options=[("en", "English"), ("es", "Español")],
+            parent=self,
+            title="Set Language",
+            on_select=set_language
+        )
+        self.active_dialog = dlg
+        dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+        dlg.exec()
+
+    def open_filling_mode_dialog(self):
+        def set_filling_mode(mode):
+            self.filling_mode = mode
+            # Optionally update the global filling_mode if used elsewhere
+            try:
+                import main
+                main.filling_mode = mode
+            except Exception:
+                pass
+            if DEBUG:
+                print(f"[DEBUG] Filling mode set to: {mode}")
+            self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
+        dlg = SelectionDialog(
+            options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
+            parent=self,
+            title="Filling Mode",
+            on_select=set_filling_mode
+        )
+        self.active_dialog = dlg
+        dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+        dlg.exec()
+
     def show_timed_info(self, title, message, timeout_ms=2000):
         dialog = InfoDialog(title, message, self)
         dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -541,38 +589,6 @@ class InfoDialog(QDialog):
 
     def set_message(self, message):
         self.label.setText(message)
-
-class VerticalProgressBar(QWidget):
-    def __init__(self, max_value=100, value=0, bar_color="#F6EB61", parent=None):
-        super().__init__(parent)
-        self.max_value = max_value
-        self.value = value
-        self.bar_color = bar_color
-
-    def set_value(self, value):
-        self.value = value
-        self.update()
-
-    def set_max(self, max_value):
-        self.max_value = max_value
-        self.update()
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        rect = self.rect()
-        # Draw background
-        painter.setBrush(QColor("#333"))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(rect)
-        # Draw bar
-        if self.max_value > 0:
-            fill_ratio = min(max(self.value / self.max_value, 0), 1)
-        else:
-            fill_ratio = 0
-        bar_height = int(rect.height() * fill_ratio)
-        bar_rect = rect.adjusted(4, rect.height() - bar_height + 4, -4, -4)
-        painter.setBrush(QColor(self.bar_color))
-        painter.drawRect(bar_rect)
 
 class BottleProgressBar(QWidget):
     def __init__(self, max_value=100, value=0, bar_color="#4FC3F7", parent=None):
@@ -1339,50 +1355,6 @@ class CalibrationDialog(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
         self.showFullScreen()
-
-def open_units_dialog(self):
-    dlg = SelectionDialog(
-        options=[("g", "Grams"), ("oz", "Ounces")],
-        parent=self,
-        title="Change Units",
-        label_text="Choose Units",
-        on_select=self.set_units
-    )
-    dlg.exec()
-
-def open_language_dialog(self):
-    def set_language(lang_code):
-        self.set_language(lang_code)
-        for widget in self.station_widgets:
-            widget.update_language()
-    dlg = SelectionDialog(
-        options=[("en", "English"), ("es", "Español")],
-        parent=self,
-        title="Set Language",
-        label_text="Choose Language",
-        on_select=set_language
-    )
-    dlg.exec()
-
-def open_filling_mode_dialog(self):
-    def set_filling_mode(mode):
-        self.filling_mode = mode
-        # Optionally update the global filling_mode if used elsewhere
-        try:
-            import main
-            main.filling_mode = mode
-        except Exception:
-            pass
-        if DEBUG:
-            print(f"[DEBUG] Filling mode set to: {mode}")
-        self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
-    dlg = SelectionDialog(
-        options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
-        parent=self,
-        title="Filling Mode",
-        on_select=set_filling_mode
-    )
-    dlg.exec()
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
