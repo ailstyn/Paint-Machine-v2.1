@@ -18,6 +18,13 @@ STATION_COLORS = [
     "#EDE021",  # Station 4: Yellow
 ]
 
+
+def qt_exception_hook(exctype, value, traceback):
+    logging.error("Uncaught Qt exception", exc_info=(exctype, value, traceback))
+    print("Uncaught Qt exception:", value)
+
+sys.excepthook = qt_exception_hook
+
 class OutlinedLabel(QLabel):
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)
@@ -479,52 +486,63 @@ class RelayControlApp(QWidget):
             widget.set_weight(current_weight, self.target_weight, self.units)
 
     def open_units_dialog(self):
-        dlg = SelectionDialog(
-            options=[("g", "Grams"), ("oz", "Ounces")],
-            parent=self,
-            title="Change Units",
-            on_select=self.set_units
-        )
-        self.active_dialog = dlg
-        dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-        dlg.exec()
+        try:
+            dlg = SelectionDialog(
+                options=[("g", "Grams"), ("oz", "Ounces")],
+                parent=self,
+                title="Change Units",
+                on_select=self.set_units
+            )
+            self.active_dialog = dlg
+            dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+            dlg.exec()
+        except Exception as e:
+            logging.error("Error in open_units_dialog", exc_info=True)
+            self.show_timed_info("ERROR", f"Failed to open units dialog: {e}", timeout_ms=2000)
 
     def open_language_dialog(self):
-        def set_language(lang_code):
-            self.set_language(lang_code)
-            for widget in self.station_widgets:
-                widget.update_language()
-        dlg = SelectionDialog(
-            options=[("en", "English"), ("es", "Español")],
-            parent=self,
-            title="Set Language",
-            on_select=set_language
-        )
-        self.active_dialog = dlg
-        dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-        dlg.exec()
+        try:
+            def set_language(lang_code):
+                self.set_language(lang_code)
+                for widget in self.station_widgets:
+                    widget.update_language()
+            dlg = SelectionDialog(
+                options=[("en", "English"), ("es", "Español")],
+                parent=self,
+                title="Set Language",
+                on_select=set_language
+            )
+            self.active_dialog = dlg
+            dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+            dlg.exec()
+        except Exception as e:
+            logging.error("Error in open_language_dialog", exc_info=True)
+            self.show_timed_info("ERROR", f"Failed to open language dialog: {e}", timeout_ms=2000)
 
     def open_filling_mode_dialog(self):
-        def set_filling_mode(mode):
-            self.filling_mode = mode
-            # Optionally update the global filling_mode if used elsewhere
-            try:
-                import main
-                main.filling_mode = mode
-            except Exception:
-                pass
-            if DEBUG:
-                print(f"[DEBUG] Filling mode set to: {mode}")
-            self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
-        dlg = SelectionDialog(
-            options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
-            parent=self,
-            title="Filling Mode",
-            on_select=set_filling_mode
-        )
-        self.active_dialog = dlg
-        dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-        dlg.exec()
+        try:
+            def set_filling_mode(mode):
+                self.filling_mode = mode
+                try:
+                    import main
+                    main.filling_mode = mode
+                except Exception:
+                    pass
+                if DEBUG:
+                    print(f"[DEBUG] Filling mode set to: {mode}")
+                self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
+            dlg = SelectionDialog(
+                options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
+                parent=self,
+                title="Filling Mode",
+                on_select=set_filling_mode
+            )
+            self.active_dialog = dlg
+            dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+            dlg.exec()
+        except Exception as e:
+            logging.error("Error in open_filling_mode_dialog", exc_info=True)
+            self.show_timed_info("ERROR", f"Failed to open filling mode dialog: {e}", timeout_ms=2000)
 
     def show_timed_info(self, title, message, timeout_ms=2000):
         dialog = InfoDialog(title, message, self)
