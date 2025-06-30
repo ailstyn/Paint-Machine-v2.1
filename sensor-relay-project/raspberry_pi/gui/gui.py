@@ -292,21 +292,39 @@ class MenuDialog(QDialog):
         elif selected_key == "SET LANGUAGE":
             print("[MenuDialog] Opening Language Dialog.")
             self.hide()
-            parent.open_language_dialog()
-            print(f"[MenuDialog] After open_language_dialog, active_dialog: {getattr(parent, 'active_dialog', None)}")
-            self.show_again()
+            parent.language_dialog = SelectionDialog(
+                options=[("en", "English"), ("es", "Español")],
+                parent=parent,
+                title="Set Language",
+                on_select=parent.set_language
+            )
+            parent.active_dialog = parent.language_dialog
+            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.language_dialog.show()
         elif selected_key == "CHANGE UNITS":
             print("[MenuDialog] Opening Units Dialog.")
             self.hide()
-            parent.open_units_dialog()
-            print(f"[MenuDialog] After open_units_dialog, active_dialog: {getattr(parent, 'active_dialog', None)}")
-            self.show_again()
+            parent.change_units_dialog = SelectionDialog(
+                options=[("g", "Grams"), ("oz", "Ounces")],
+                parent=parent,
+                title="Change Units",
+                on_select=parent.set_units
+            )
+            parent.active_dialog = parent.change_units_dialog
+            parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.change_units_dialog.show()
         elif selected_key == "SET FILLING MODE":
             print("[MenuDialog] Opening Filling Mode Dialog.")
             self.hide()
-            parent.open_filling_mode_dialog()
-            print(f"[MenuDialog] After open_filling_mode_dialog, active_dialog: {getattr(parent, 'active_dialog', None)}")
-            self.show_again()
+            parent.filling_mode_dialog = SelectionDialog(
+                options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
+                parent=parent,
+                title="Filling Mode",
+                on_select=lambda mode: setattr(parent, "filling_mode", mode)
+            )
+            parent.active_dialog = parent.filling_mode_dialog
+            parent.filling_mode_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.filling_mode_dialog.show()
 
     def show_again(self):
         self.show()
