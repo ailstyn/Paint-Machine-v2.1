@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF
-from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor  # <-- Add QPixmap here
+from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics  # <-- Add QFontMetrics here
 import sys
 import logging
 import os
@@ -186,9 +186,40 @@ class StationWidget(QWidget):
                 new_text = f"{current_oz:.1f} / {target_oz:.1f} oz"
             if self.weight_label.text() != new_text:
                 self.weight_label.setText(new_text)
+                self.adjust_weight_label_font()
         if self.progress_bar is not None:
             self.progress_bar.set_max(target_weight)
             self.progress_bar.set_value(current_weight)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.adjust_weight_label_font()
+
+    def adjust_weight_label_font(self):
+        """Dynamically scale the font size of the weight label to fit the widget."""
+        if not self.weight_label:
+            return
+        label = self.weight_label
+        rect = label.contentsRect()
+        text = label.text()
+        if not text:
+            return
+        # Start with a large font size and decrease until it fits
+        font = label.font()
+        min_size = 10
+        max_size = 200
+        step = 2
+        for size in range(max_size, min_size, -step):
+            font.setPointSize(size)
+            metrics = QFontMetrics(font)
+            text_width = metrics.horizontalAdvance(text)
+            text_height = metrics.height()
+            if text_width <= rect.width() - 8 and text_height <= rect.height() - 8:
+                label.setFont(font)
+                break
+        else:
+            font.setPointSize(min_size)
+            label.setFont(font)
 
     def set_status(self, status):
         if self.status_label is not None:
@@ -555,14 +586,19 @@ class RelayControlApp(QWidget):
         print("[RelayControlApp] open_filling_mode_dialog called")
         try:
             def set_filling_mode(mode):
+                prev_mode = getattr(self, "filling_mode", "AUTO")
                 self.filling_mode = mode
-                try:
-                    import main
-                    main.filling_mode = mode
-                except Exception:
-                    pass
                 if DEBUG:
                     print(f"[DEBUG] Filling mode set to: {mode}")
+                # Only send EXIT_MANUAL_END if switching away from MANUAL
+                if prev_mode == "MANUAL" and mode != "MANUAL":
+                    for arduino in getattr(self, "arduino_ports", []):
+                        try:
+                            arduino.write(bytes([0x22]))  # EXIT_MANUAL_END
+                            if DEBUG:
+                                print("[DEBUG] Sent EXIT_MANUAL_END to Arduino")
+                        except Exception as e:
+                            print(f"[ERROR] Failed to send EXIT_MANUAL_END: {e}")
                 self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
             dlg = SelectionDialog(
                 options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
@@ -571,9 +607,8 @@ class RelayControlApp(QWidget):
                 on_select=set_filling_mode
             )
             self.active_dialog = dlg
-            print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-            dlg.show()  # Use show() instead of exec()
+            dlg.show()
         except Exception as e:
             logging.error("Error in open_filling_mode_dialog", exc_info=True)
             self.show_timed_info("ERROR", f"Failed to open filling mode dialog: {e}", timeout_ms=2000)
@@ -1409,44 +1444,7 @@ class CalibrationDialog(QDialog):
         self.showFullScreen()
 
 if __name__ == "__main__":
-    class TestableRelayControlApp(RelayControlApp):
-        def keyPressEvent(self, event):
-            # Open menu with 'm' key for testing
-            if event.key() == Qt.Key.Key_M:
-                self.show_menu()
-            else:
-                super().keyPressEvent(event)
-
-    class TestableMenuDialog(MenuDialog):
-        def __init__(self, parent=None):
-            super().__init__(parent)
-            self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            self.setFocus()
-            if event.key() == Qt.Key.Key_M:
-                self.show_menu()
-            else:
-                super().keyPressEvent(event)
-
-    class TestableMenuDialog(MenuDialog):
-        def __init__(self, parent=None):
-            super().__init__(parent)
-            self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-            self.setFocus()
-
-        def keyPressEvent(self, event):
-            if event.key() == Qt.Key.Key_Right:
-                self.select_next()
-            elif event.key() == Qt.Key.Key_Left:
-                self.select_prev()
-            elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-                # Simulate selection (for now just close the dialog)
-                self.accept()
-            else:
-                super().keyPressEvent(event)
-
     app = QApplication(sys.argv)
-    # Use the testable versions for desktop testing
-    window = TestableRelayControlApp()
-    # Patch show_menu to use the testable dialog
-    def show_test_menu():
-        menu = TestableMenuDialog(self)
+    window = RelayControlApp()  # or your main QWidget/QDialog
+    window.show()
+    sys.exit(app.exec())

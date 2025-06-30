@@ -60,6 +60,7 @@ STOP = b'\xFD'
 CONFIRM_ID = b'\xA1'
 RESET_HANDSHAKE = b'\xB0'
 BUTTON_ERROR = b'\xE0'
+EXIT_MANUAL_END = b'\x22'  # Or import from your protocol/constants file
 
 # GPIO pins
 UP_BUTTON_PIN = 5
