@@ -258,10 +258,12 @@ class MenuDialog(QDialog):
     def activate_selected(self):
         selected_key = self.menu_keys[self.selected_index]
         parent = self.parent()
+        print(f"[MenuDialog] activate_selected: {selected_key}")
         if selected_key == "EXIT":
+            print("[MenuDialog] Exiting menu.")
             self.accept()
-            # Do NOT call self.show_again() here
         elif selected_key == "STATION STATUS":
+            print("[MenuDialog] Opening Station Status Dialog.")
             self.hide()
             parent.station_status_dialog = StationStatusDialog(
                 parent,
@@ -269,36 +271,41 @@ class MenuDialog(QDialog):
                 bg_colors=getattr(parent, "bg_colors", None),
             )
             parent.active_dialog = parent.station_status_dialog
-            parent.station_status_dialog.station_selected.connect(parent.handle_station_selected)  # Connect the signal
+            parent.station_status_dialog.station_selected.connect(parent.handle_station_selected)
             parent.station_status_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
             parent.station_status_dialog.show()
         elif selected_key == "SET TARGET WEIGHT":
+            print("[MenuDialog] Opening Set Target Weight Dialog.")
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
-            parent.active_dialog = parent.target_weight_dialog  # <-- Add this line!
+            parent.active_dialog = parent.target_weight_dialog
             parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
             parent.target_weight_dialog.finished.connect(self.show_again)
             parent.target_weight_dialog.show()
         elif selected_key == "SET TIME LIMIT":
+            print("[MenuDialog] Opening Set Time Limit Dialog.")
             self.hide()
             parent.time_limit_dialog = SetTimeLimitDialog(parent)
             parent.active_dialog = parent.time_limit_dialog
             parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
             parent.time_limit_dialog.show()
         elif selected_key == "SET LANGUAGE":
+            print("[MenuDialog] Opening Language Dialog.")
             self.hide()
             parent.open_language_dialog()
-            parent.active_dialog = parent.language_dialog  # <-- Add this line if you store the dialog
+            print(f"[MenuDialog] After open_language_dialog, active_dialog: {getattr(parent, 'active_dialog', None)}")
             self.show_again()
         elif selected_key == "CHANGE UNITS":
+            print("[MenuDialog] Opening Units Dialog.")
             self.hide()
             parent.open_units_dialog()
-            parent.active_dialog = parent.change_units_dialog  # <-- Add this line if you store the dialog
+            print(f"[MenuDialog] After open_units_dialog, active_dialog: {getattr(parent, 'active_dialog', None)}")
             self.show_again()
         elif selected_key == "SET FILLING MODE":
+            print("[MenuDialog] Opening Filling Mode Dialog.")
             self.hide()
             parent.open_filling_mode_dialog()
-            parent.active_dialog = parent.filling_mode_dialog  # <-- Add this line if you store the dialog
+            print(f"[MenuDialog] After open_filling_mode_dialog, active_dialog: {getattr(parent, 'active_dialog', None)}")
             self.show_again()
 
     def show_again(self):
@@ -489,6 +496,7 @@ class RelayControlApp(QWidget):
             widget.set_weight(current_weight, self.target_weight, self.units)
 
     def open_units_dialog(self):
+        print("[RelayControlApp] open_units_dialog called")
         try:
             dlg = SelectionDialog(
                 options=[("g", "Grams"), ("oz", "Ounces")],
@@ -497,6 +505,7 @@ class RelayControlApp(QWidget):
                 on_select=self.set_units
             )
             self.active_dialog = dlg
+            print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
             dlg.exec()
         except Exception as e:
@@ -504,6 +513,7 @@ class RelayControlApp(QWidget):
             self.show_timed_info("ERROR", f"Failed to open units dialog: {e}", timeout_ms=2000)
 
     def open_language_dialog(self):
+        print("[RelayControlApp] open_language_dialog called")
         try:
             def set_language(lang_code):
                 self.set_language(lang_code)
@@ -516,6 +526,7 @@ class RelayControlApp(QWidget):
                 on_select=set_language
             )
             self.active_dialog = dlg
+            print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
             dlg.exec()
         except Exception as e:
@@ -523,6 +534,7 @@ class RelayControlApp(QWidget):
             self.show_timed_info("ERROR", f"Failed to open language dialog: {e}", timeout_ms=2000)
 
     def open_filling_mode_dialog(self):
+        print("[RelayControlApp] open_filling_mode_dialog called")
         try:
             def set_filling_mode(mode):
                 self.filling_mode = mode
@@ -541,6 +553,7 @@ class RelayControlApp(QWidget):
                 on_select=set_filling_mode
             )
             self.active_dialog = dlg
+            print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
             dlg.exec()
         except Exception as e:
