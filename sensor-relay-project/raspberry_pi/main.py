@@ -502,8 +502,7 @@ def startup(app, timer):
     filling_mode_dialog = SelectionDialog(
         options=filling_modes,
         parent=app,
-        title="Filling Mode",
-        label_text="Select Filling Mode"
+        title="Select Filling Mode"
     )
     app.active_dialog = filling_mode_dialog
     result = filling_mode_dialog.exec()  # This blocks until the dialog is closed
@@ -511,14 +510,26 @@ def startup(app, timer):
     selected_index = filling_mode_dialog.selected_index
     filling_modes_list = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes_list[selected_index]
+    global filling_mode
+    filling_mode = app.filling_mode  # Always sync global with app
+
     if DEBUG:
         print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
     app.active_dialog = None
 
-    # If MANUAL mode, show popup and exit startup
-    if app.filling_mode == "MANUAL":
-        global filling_mode
-        filling_mode = "MANUAL"
+    # If MANUAL mode, show popup, send command, and exit startup
+    if filling_mode == "MANUAL":
+        MANUAL_FILL_START = b'\x20'
+        for i, arduino in enumerate(arduinos):
+            if arduino and station_enabled[i]:
+                try:
+                    arduino.write(MANUAL_FILL_START)
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[DEBUG] Sent MANUAL_FILL_START to station {i+1}")
+                except Exception as e:
+                    if DEBUG:
+                        print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
         info = InfoDialog("MANUAL FILLING MODE", "Manual filling mode selected.<br>Startup complete.", app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
         info.show()
