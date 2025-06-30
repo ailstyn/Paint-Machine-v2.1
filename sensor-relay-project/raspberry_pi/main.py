@@ -875,6 +875,24 @@ def startup(app, timer):
                     if DEBUG:
                         print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
 
+def filling_mode_callback(mode):
+    global filling_mode
+    prev_mode = filling_mode
+    filling_mode = mode
+    if DEBUG:
+        print(f"[main.py] Filling mode changed from {prev_mode} to {mode}")
+    # If switching away from MANUAL, send EXIT_MANUAL_END to all connected Arduinos
+    if prev_mode == "MANUAL" and mode != "MANUAL":
+        for i, arduino in enumerate(arduinos):
+            if arduino:
+                try:
+                    arduino.write(bytes([0x22]))  # EXIT_MANUAL_END
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[main.py] Sent EXIT_MANUAL_END to station {i+1}")
+                except Exception as e:
+                    print(f"[main.py] Failed to send EXIT_MANUAL_END to station {i+1}: {e}")
+
 def reconnect_arduino(station_index, port):
     if DEBUG:
         print(f"reconnect_arduino called for {port}")
@@ -1135,7 +1153,10 @@ def main():
         setup_gpio()
 
         app_qt = QApplication(sys.argv)
-        app = RelayControlApp(station_enabled=station_enabled)
+        app = RelayControlApp(
+            station_enabled=station_enabled,
+            filling_mode_callback=filling_mode_callback
+        )
         app.set_calibrate = None  # Set if you have a calibrate_scale function
 
         app.target_weight = target_weight

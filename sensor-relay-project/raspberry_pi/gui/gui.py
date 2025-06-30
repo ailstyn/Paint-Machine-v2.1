@@ -386,8 +386,9 @@ class MenuDialog(QDialog):
             label.setText(text)
 
 class RelayControlApp(QWidget):
-    def __init__(self, station_enabled=None):
+    def __init__(self, station_enabled=None, filling_mode_callback=None):
         super().__init__()
+        self.filling_mode_callback = filling_mode_callback
         if DEBUG:
             print(f"[DEBUG] RelayControlApp.__init__ called with station_enabled={station_enabled}")
         self.setWindowTitle("Four Station Control")
@@ -470,6 +471,9 @@ class RelayControlApp(QWidget):
         self.overlay_widget = OverlayWidget(self)
         self.overlay_widget.resize(self.size())
         self.overlay_widget.hide()
+
+        # Arduino serial ports (example initialization)
+        self.arduino_ports = []  # List of open serial.Serial objects
 
     def show_menu(self):
         self.active_menu = "main_menu"
@@ -578,16 +582,9 @@ class RelayControlApp(QWidget):
         print("[RelayControlApp] open_filling_mode_dialog called")
         try:
             def set_filling_mode(mode):
-                prev_mode = getattr(self, "filling_mode", "AUTO")
+                if self.filling_mode_callback:
+                    self.filling_mode_callback(mode)
                 self.filling_mode = mode
-                print(f"[DEBUG] Filling mode changed from {prev_mode} to {mode}")
-                if prev_mode == "MANUAL" and mode != "MANUAL":
-                    for arduino in getattr(self, "arduino_ports", []):
-                        try:
-                            arduino.write(bytes([0x22]))  # EXIT_MANUAL_END
-                            print("[DEBUG] Sent EXIT_MANUAL_END to Arduino")
-                        except Exception as e:
-                            print(f"[ERROR] Failed to send EXIT_MANUAL_END: {e}")
                 self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
             dlg = SelectionDialog(
                 options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
