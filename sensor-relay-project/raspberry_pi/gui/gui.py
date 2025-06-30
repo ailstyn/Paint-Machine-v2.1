@@ -347,15 +347,7 @@ class MenuDialog(QDialog):
         elif selected_key == "SET FILLING MODE":
             print("[MenuDialog] Opening Filling Mode Dialog.")
             self.hide()
-            parent.filling_mode_dialog = SelectionDialog(
-                options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
-                parent=parent,
-                title="Filling Mode",
-                on_select=lambda mode: setattr(parent, "filling_mode", mode)
-            )
-            parent.active_dialog = parent.filling_mode_dialog
-            parent.filling_mode_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
-            parent.filling_mode_dialog.show()
+            parent.open_filling_mode_dialog()
 
     def show_again(self):
         self.show()
