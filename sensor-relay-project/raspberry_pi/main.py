@@ -223,6 +223,7 @@ def handle_unknown(station_index, arduino, message_type, **ctx):
                 ctx['refresh_ui']()
     except Exception as e:
         logging.error("Error in handle_unknown", exc_info=True)
+        
 MESSAGE_HANDLERS = {
     REQUEST_TARGET_WEIGHT: handle_request_target_weight,
     REQUEST_CALIBRATION: handle_request_calibration,

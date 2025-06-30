@@ -288,14 +288,17 @@ class MenuDialog(QDialog):
         elif selected_key == "SET LANGUAGE":
             self.hide()
             parent.open_language_dialog()
+            parent.active_dialog = parent.language_dialog  # <-- Add this line if you store the dialog
             self.show_again()
         elif selected_key == "CHANGE UNITS":
             self.hide()
             parent.open_units_dialog()
+            parent.active_dialog = parent.change_units_dialog  # <-- Add this line if you store the dialog
             self.show_again()
         elif selected_key == "SET FILLING MODE":
             self.hide()
             parent.open_filling_mode_dialog()
+            parent.active_dialog = parent.filling_mode_dialog  # <-- Add this line if you store the dialog
             self.show_again()
 
     def show_again(self):
