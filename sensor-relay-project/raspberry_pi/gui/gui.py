@@ -507,7 +507,7 @@ class RelayControlApp(QWidget):
             self.active_dialog = dlg
             print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-            dlg.exec()
+            dlg.show()  # Use show() instead of exec()
         except Exception as e:
             logging.error("Error in open_units_dialog", exc_info=True)
             self.show_timed_info("ERROR", f"Failed to open units dialog: {e}", timeout_ms=2000)
@@ -528,7 +528,7 @@ class RelayControlApp(QWidget):
             self.active_dialog = dlg
             print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-            dlg.exec()
+            dlg.show()  # Use show() instead of exec()
         except Exception as e:
             logging.error("Error in open_language_dialog", exc_info=True)
             self.show_timed_info("ERROR", f"Failed to open language dialog: {e}", timeout_ms=2000)
@@ -555,7 +555,7 @@ class RelayControlApp(QWidget):
             self.active_dialog = dlg
             print(f"[RelayControlApp] active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
-            dlg.exec()
+            dlg.show()  # Use show() instead of exec()
         except Exception as e:
             logging.error("Error in open_filling_mode_dialog", exc_info=True)
             self.show_timed_info("ERROR", f"Failed to open filling mode dialog: {e}", timeout_ms=2000)
