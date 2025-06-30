@@ -14,7 +14,7 @@ import re
 from app_config import ERROR_LOG_FILE, STATS_LOG_FILE, ERROR_LOG_DIR, STATS_LOG_DIR
 
 # ========== CONFIG & CONSTANTS ==========
-LOG_DIR = "logs"
+LOG_DIR = "logs/errors"
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 logging.basicConfig(
@@ -85,118 +85,144 @@ filling_mode = "AUTO"  # Default mode
 
 # ========== MESSAGE HANDLERS ==========
 def handle_request_target_weight(station_index, arduino, **ctx):
-    if ctx['FILL_LOCKED']:
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
-        arduino.write(STOP)
-    else:
-        arduino.write(TARGET_WEIGHT)
-        arduino.write(f"{ctx['target_weight']}\n".encode('utf-8'))
+    try:
+        if ctx['FILL_LOCKED']:
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
+            arduino.write(STOP)
+        else:
+            arduino.write(TARGET_WEIGHT)
+            arduino.write(f"{ctx['target_weight']}\n".encode('utf-8'))
+    except Exception as e:
+        logging.error("Error in handle_request_target_weight", exc_info=True)
 
 def handle_request_calibration(station_index, arduino, **ctx):
-    if ctx['DEBUG']:
-        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {ctx['scale_calibrations'][station_index]}")
-    arduino.write(REQUEST_CALIBRATION)
-    arduino.write(f"{ctx['scale_calibrations'][station_index]}\n".encode('utf-8'))
+    try:
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {ctx['scale_calibrations'][station_index]}")
+        arduino.write(REQUEST_CALIBRATION)
+        arduino.write(f"{ctx['scale_calibrations'][station_index]}\n".encode('utf-8'))
+    except Exception as e:
+        logging.error("Error in handle_request_calibration", exc_info=True)
 
 def handle_request_time_limit(station_index, arduino, **ctx):
-    if ctx['DEBUG']:
-        print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
-    arduino.write(REQUEST_TIME_LIMIT)
-    arduino.write(f"{ctx['time_limit']}\n".encode('utf-8'))
+    try:
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
+        arduino.write(REQUEST_TIME_LIMIT)
+        arduino.write(f"{ctx['time_limit']}\n".encode('utf-8'))
+    except Exception as e:
+        logging.error("Error in handle_request_time_limit", exc_info=True)
 
 def handle_current_weight(station_index, arduino, **ctx):
-    weight_bytes = arduino.read(4)
-    if len(weight_bytes) == 4:
-        weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-        if weight < 0:
-            weight = 0.0
-        if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
-            ctx['active_dialog'].set_weight(station_index, weight)
-        elif ctx['update_station_weight']:
-            ctx['update_station_weight'](station_index, weight)
-    else:
-        logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
-        if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
-            ctx['active_dialog'].set_weight(station_index, 0.0)
-        elif ctx['update_station_weight']:
-            ctx['update_station_weight'](station_index, 0.0)
+    try:
+        weight_bytes = arduino.read(4)
+        if len(weight_bytes) == 4:
+            weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+            if weight < 0:
+                weight = 0.0
+            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
+                ctx['active_dialog'].set_weight(station_index, weight)
+            elif ctx['update_station_weight']:
+                ctx['update_station_weight'](station_index, weight)
+        else:
+            logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
+            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
+                ctx['active_dialog'].set_weight(station_index, 0.0)
+            elif ctx['update_station_weight']:
+                ctx['update_station_weight'](station_index, 0.0)
+    except Exception as e:
+        logging.error("Error in handle_current_weight", exc_info=True)
 
 def handle_begin_auto_fill(station_index, arduino, **ctx):
-    widgets = ctx['station_widgets']
-    if widgets:
-        widget = widgets[station_index]
-        if hasattr(widget, "set_status"):
-            widget.set_status("AUTO FILL RUNNING")
-    if ctx['DEBUG']:
-        print(f"Station {station_index+1}: BEGIN_AUTO_FILL received, status set.")
+    try:
+        widgets = ctx['station_widgets']
+        if widgets:
+            widget = widgets[station_index]
+            if hasattr(widget, "set_status"):
+                widget.set_status("AUTO FILL RUNNING")
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: BEGIN_AUTO_FILL received, status set.")
+    except Exception as e:
+        logging.error("Error in handle_begin_auto_fill", exc_info=True)
 
 def handle_begin_smart_fill(station_index, arduino, **ctx):
-    widgets = ctx['station_widgets']
-    if widgets:
-        widget = widgets[station_index]
-        if hasattr(widget, "set_status"):
-            widget.set_status("SMART FILL RUNNING")
-    if ctx['DEBUG']:
-        print(f"Station {station_index+1}: BEGIN_SMART_FILL received, status set.")
+    try:
+        widgets = ctx['station_widgets']
+        if widgets:
+            widget = widgets[station_index]
+            if hasattr(widget, "set_status"):
+                widget.set_status("SMART FILL RUNNING")
+        if ctx['DEBUG']:
+            print(f"Station {station_index+1}: BEGIN_SMART_FILL received, status set.")
+    except Exception as e:
+        logging.error("Error in handle_begin_smart_fill", exc_info=True)
 
 def handle_final_weight(station_index, arduino, **ctx):
-    weight_bytes = arduino.read(4)
-    if len(weight_bytes) == 4:
-        final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-        last_final_weight[station_index] = final_weight
-        # Try to update status if fill time is also available
-        fill_time = last_fill_time[station_index]
-        if fill_time is not None:
-            seconds = int(round(fill_time / 1000))
-            status = f"Filled {final_weight}g in {seconds}s"
-            widgets = ctx.get('station_widgets')
-            if widgets:
-                widget = widgets[station_index]
-                if hasattr(widget, "set_status"):
-                    widget.set_status(status)
-            last_fill_time[station_index] = None  # Reset after use
-            last_final_weight[station_index] = None
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Final weight: {final_weight}")
-    else:
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
+    try:
+        weight_bytes = arduino.read(4)
+        if len(weight_bytes) == 4:
+            final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+            last_final_weight[station_index] = final_weight
+            # Try to update status if fill time is also available
+            fill_time = last_fill_time[station_index]
+            if fill_time is not None:
+                seconds = int(round(fill_time / 1000))
+                status = f"Filled {final_weight}g in {seconds}s"
+                widgets = ctx.get('station_widgets')
+                if widgets:
+                    widget = widgets[station_index]
+                    if hasattr(widget, "set_status"):
+                        widget.set_status(status)
+                last_fill_time[station_index] = None  # Reset after use
+                last_final_weight[station_index] = None
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Final weight: {final_weight}")
+        else:
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
+    except Exception as e:
+        logging.error("Error in handle_final_weight", exc_info=True)
 
 def handle_fill_time(station_index, arduino, **ctx):
-    time_bytes = arduino.read(4)
-    if len(time_bytes) == 4:
-        fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
-        last_fill_time[station_index] = fill_time
-        # Try to update status if final weight is also available
-        final_weight = last_final_weight[station_index]
-        if final_weight is not None:
-            seconds = int(round(fill_time / 1000))
-            status = f"Filled {final_weight}g in {seconds}s"
-            widgets = ctx.get('station_widgets')
-            if widgets:
-                widget = widgets[station_index]
-                if hasattr(widget, "set_status"):
-                    widget.set_status(status)
-            last_fill_time[station_index] = None  # Reset after use
-            last_final_weight[station_index] = None
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Fill time: {fill_time} ms")
-    else:
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Incomplete fill time bytes: {time_bytes!r}")
+    try:
+        time_bytes = arduino.read(4)
+        if len(time_bytes) == 4:
+            fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
+            last_fill_time[station_index] = fill_time
+            # Try to update status if final weight is also available
+            final_weight = last_final_weight[station_index]
+            if final_weight is not None:
+                seconds = int(round(fill_time / 1000))
+                status = f"Filled {final_weight}g in {seconds}s"
+                widgets = ctx.get('station_widgets')
+                if widgets:
+                    widget = widgets[station_index]
+                    if hasattr(widget, "set_status"):
+                        widget.set_status(status)
+                last_fill_time[station_index] = None  # Reset after use
+                last_final_weight[station_index] = None
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Fill time: {fill_time} ms")
+        else:
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Incomplete fill time bytes: {time_bytes!r}")
+    except Exception as e:
+        logging.error("Error in handle_fill_time", exc_info=True)
 
 def handle_unknown(station_index, arduino, message_type, **ctx):
-    if arduino.in_waiting > 0:
-        extra = arduino.readline().decode('utf-8', errors='replace').strip()
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
-    else:
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
-        if ctx['refresh_ui']:
-            ctx['refresh_ui']()
-
+    try:
+        if arduino.in_waiting > 0:
+            extra = arduino.readline().decode('utf-8', errors='replace').strip()
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
+        else:
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
+            if ctx['refresh_ui']:
+                ctx['refresh_ui']()
+    except Exception as e:
+        logging.error("Error in handle_unknown", exc_info=True)
 MESSAGE_HANDLERS = {
     REQUEST_TARGET_WEIGHT: handle_request_target_weight,
     REQUEST_CALIBRATION: handle_request_calibration,
@@ -1075,7 +1101,12 @@ def handle_button_presses(app):
                 QApplication.processEvents()
                 time.sleep(0.01)
             if dialog is not None:
-                dialog.activate_selected()
+                try:
+                    dialog.activate_selected()
+                except Exception as e:
+                    logging.error("Error in dialog.activate_selected()", exc_info=True)
+                    if DEBUG:
+                        print(f"Error in dialog.activate_selected(): {e}")
             else:
                 if DEBUG:
                     print('select button pressed on main screen, opening menu')
@@ -1084,7 +1115,7 @@ def handle_button_presses(app):
             return
 
     except Exception as e:
-        logging.error(f"Error in handle_button_presses: {e}")
+        logging.error("Error in handle_button_presses", exc_info=True)
         if DEBUG:
             print(f"Error in handle_button_presses: {e}")
 
