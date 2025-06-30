@@ -204,6 +204,7 @@ class MenuDialog(QDialog):
             "SET TIME LIMIT",
             "SET LANGUAGE",
             "CHANGE UNITS",
+            "SET FILLING MODE",   # <-- Add this line
             "EXIT"
         ]
         self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
@@ -279,16 +280,16 @@ class MenuDialog(QDialog):
             parent.time_limit_dialog.show()
         elif selected_key == "SET LANGUAGE":
             self.hide()
-            parent.language_dialog = SetLanguageDialog(parent)
-            parent.active_dialog = parent.language_dialog  # <-- Make it the active dialog
-            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))  # <-- Reset on close
-            parent.language_dialog.show()
+            parent.open_language_dialog()
+            self.show_again()
         elif selected_key == "CHANGE UNITS":
             self.hide()
-            parent.change_units_dialog = ChangeUnitsDialog(parent)
-            parent.active_dialog = parent.change_units_dialog
-            parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))  # <-- Add this line
-            parent.change_units_dialog.show()
+            parent.open_units_dialog()
+            self.show_again()
+        elif selected_key == "SET FILLING MODE":
+            self.hide()
+            parent.open_filling_mode_dialog()
+            self.show_again()
 
     def show_again(self):
         self.show()
@@ -897,29 +898,29 @@ class SelectionDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.selected_index = 0
-        self.options = options  # List of (value, display_text) tuples
+        self.options = options
         self.on_select_callback = on_select
         layout = QVBoxLayout(self)
 
-        # Use OutlinedLabel for the title if provided
+        # Use OutlinedLabel for the title if provided, with smaller font
         if title:
             title_label = OutlinedLabel(title)
-            title_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+            title_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))  # Smaller font
             title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(title_label)
 
-        if label_text:
-            label = QLabel(label_text)
-            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            layout.addWidget(label)
+        # Center the option buttons
+        button_container = QWidget()
+        button_layout = QVBoxLayout(button_container)
+        button_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.labels = []
         for _, display_text in self.options:
             item_label = OutlinedLabel(display_text) if outlined else QLabel(display_text)
             item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             item_label.setFixedSize(320, 64)
             self.labels.append(item_label)
-            layout.addWidget(item_label)
+            button_layout.addWidget(item_label)
+        layout.addWidget(button_container)
         self.setLayout(layout)
         self.update_selection_box()
         self.setModal(True)
@@ -1366,13 +1367,19 @@ def open_language_dialog(self):
 def open_filling_mode_dialog(self):
     def set_filling_mode(mode):
         self.filling_mode = mode
+        # Optionally update the global filling_mode if used elsewhere
+        try:
+            import main
+            main.filling_mode = mode
+        except Exception:
+            pass
         if DEBUG:
             print(f"[DEBUG] Filling mode set to: {mode}")
+        self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
     dlg = SelectionDialog(
         options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
         parent=self,
         title="Filling Mode",
-        label_text="Select Filling Mode",
         on_select=set_filling_mode
     )
     dlg.exec()
