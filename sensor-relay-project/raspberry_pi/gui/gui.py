@@ -588,15 +588,12 @@ class RelayControlApp(QWidget):
             def set_filling_mode(mode):
                 prev_mode = getattr(self, "filling_mode", "AUTO")
                 self.filling_mode = mode
-                if DEBUG:
-                    print(f"[DEBUG] Filling mode set to: {mode}")
-                # Only send EXIT_MANUAL_END if switching away from MANUAL
+                print(f"[DEBUG] Filling mode changed from {prev_mode} to {mode}")
                 if prev_mode == "MANUAL" and mode != "MANUAL":
                     for arduino in getattr(self, "arduino_ports", []):
                         try:
                             arduino.write(bytes([0x22]))  # EXIT_MANUAL_END
-                            if DEBUG:
-                                print("[DEBUG] Sent EXIT_MANUAL_END to Arduino")
+                            print("[DEBUG] Sent EXIT_MANUAL_END to Arduino")
                         except Exception as e:
                             print(f"[ERROR] Failed to send EXIT_MANUAL_END: {e}")
                 self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
