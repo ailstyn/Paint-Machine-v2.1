@@ -875,16 +875,28 @@ def startup(app, timer):
                     if DEBUG:
                         print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
 
+EXIT_MANUAL_END = 0x22
+MANUAL_FILL_START = 0x20
+
 def filling_mode_callback(mode):
     global filling_mode
-    prev_mode = filling_mode
     filling_mode = mode
     if DEBUG:
-        print(f"[main.py] Filling mode changed from {prev_mode} to {mode}")
-    # If switching away from MANUAL, send EXIT_MANUAL_END to all connected Arduinos
-    if prev_mode == "MANUAL" and mode != "MANUAL":
+        print(f"[main.py] Filling mode set to: {mode}")
+
+    if mode == "MANUAL":
         for i, arduino in enumerate(arduinos):
-            if arduino:
+            if arduino and station_enabled[i]:
+                try:
+                    arduino.write(bytes([0x20]))  # MANUAL_FILL_START
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[main.py] Sent MANUAL_FILL_START to station {i+1}")
+                except Exception as e:
+                    print(f"[main.py] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+    else:
+        for i, arduino in enumerate(arduinos):
+            if arduino and station_enabled[i]:
                 try:
                     arduino.write(bytes([0x22]))  # EXIT_MANUAL_END
                     arduino.flush()
