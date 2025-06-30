@@ -7,8 +7,8 @@ import serial
 import RPi.GPIO as GPIO
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QTimer
-from gui.gui import RelayControlApp, MenuDialog, StartupDialog, FillingModeDialog, CalibrationDialog
+from PyQt6.QtCore import QTimer, Qt
+from gui.gui import RelayControlApp, MenuDialog, StartupDialog, CalibrationDialog, SelectionDialog, InfoDialog
 from gui.languages import LANGUAGES
 import re
 from app_config import ERROR_LOG_FILE, STATS_LOG_FILE, ERROR_LOG_DIR, STATS_LOG_DIR
@@ -59,7 +59,7 @@ GET_ID = b'\xA0'
 STOP = b'\xFD'
 CONFIRM_ID = b'\xA1'
 RESET_HANDSHAKE = b'\xB0'
-BUTTON_ERROR = b'\xE0'  # New: Button stuck/short error from Arduino
+BUTTON_ERROR = b'\xE0'
 
 # GPIO pins
 UP_BUTTON_PIN = 5
@@ -474,16 +474,33 @@ def startup(app, timer):
     # ========== Step 2: Select Filling Mode ==========
     if DEBUG:
         print("[DEBUG] Step 2: Select Filling Mode dialog")
-    filling_mode_dialog = FillingModeDialog(parent=app)
+    filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
+    filling_mode_dialog = SelectionDialog(
+        options=filling_modes,
+        parent=app,
+        title="Filling Mode",
+        label_text="Select Filling Mode"
+    )
     app.active_dialog = filling_mode_dialog
     result = filling_mode_dialog.exec()  # This blocks until the dialog is closed
 
     selected_index = filling_mode_dialog.selected_index
-    filling_modes = ["AUTO", "MANUAL", "SMART"]
-    app.filling_mode = filling_modes[selected_index]
+    filling_modes_list = ["AUTO", "MANUAL", "SMART"]
+    app.filling_mode = filling_modes_list[selected_index]
     if DEBUG:
         print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
     app.active_dialog = None
+
+    # If MANUAL mode, show popup and exit startup
+    if app.filling_mode == "MANUAL":
+        info = InfoDialog("MANUAL FILLING MODE", "Manual filling mode selected.<br>Startup complete.", app)
+        info.setWindowModality(Qt.WindowModality.ApplicationModal)
+        info.show()
+        QTimer.singleShot(2000, info.accept)
+        while info.result() == 0:
+            QApplication.processEvents()
+            time.sleep(0.01)
+        return
 
     # ========== Step 3: Calibration Check ==========
     print("[DEBUG] Step 3: Calibration Check dialog - BEGIN")

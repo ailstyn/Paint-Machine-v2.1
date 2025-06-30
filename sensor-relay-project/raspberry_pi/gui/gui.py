@@ -893,21 +893,21 @@ class SetTimeLimitDialog(QDialog):
                 parent.menu_dialog.accept()
 
 class SelectionDialog(QDialog):
-    def __init__(self, options, parent=None, title="", label_text="", outlined=True):
+    def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.selected_index = 0
         self.options = options  # List of (value, display_text) tuples
+        self.on_select_callback = on_select
         layout = QVBoxLayout(self)
         if label_text:
             label = QLabel(label_text)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
             layout.addWidget(label)
         self.labels = []
         for _, display_text in self.options:
-            if outlined:
-                item_label = OutlinedLabel(display_text)
-            else:
-                item_label = QLabel(display_text)
+            item_label = OutlinedLabel(display_text) if outlined else QLabel(display_text)
             item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             item_label.setFixedSize(320, 64)
             self.labels.append(item_label)
@@ -936,73 +936,9 @@ class SelectionDialog(QDialog):
         self.update_selection_box()
 
     def activate_selected(self):
-        self.on_select(self.options[self.selected_index][0])
-        self.accept()
-
-    def on_select(self, value):
-        """Override this in subclasses to handle selection."""
-        pass
-
-class SetLanguageDialog(SelectionDialog):
-    def __init__(self, parent=None):
-        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        options = [("en", "English"), ("es", "Español")]
-        super().__init__(options, parent, title=self.tr("SET_LANGUAGE_TITLE"), label_text=tr("CHOOSE_LANGUAGE"))
-        self.parent_app = parent
-
-    def on_select(self, lang_code):
-        if self.parent_app:
-            self.parent_app.set_language(lang_code)
-        for widget in self.parent_app.station_widgets:
-            widget.update_language()
-
-class ChangeUnitsDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
-        self.setWindowTitle(self.tr("CHANGE_UNITS"))
-        layout = QVBoxLayout(self)
-        label = QLabel(self.tr("CHOOSE_UNITS"))
-        layout.addWidget(label)
-
-        self.units_options = ["g", "oz"]
-        self.selected_index = 0
-
-        self.labels = []
-        for unit in self.units_options:
-            unit_label = OutlinedLabel(unit)
-            unit_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            unit_label.setFixedSize(320, 64)
-            self.labels.append(unit_label)
-            layout.addWidget(unit_label)
-        self.setLayout(layout)
-        self.update_selection_box()
-        self.setModal(True)
-
-    def update_selection_box(self):
-        for i, label in enumerate(self.labels):
-            if i == self.selected_index:
-                label.setStyleSheet(
-                    "font-size: 24px; border: 4px solid #F6EB61; border-radius: 16px; background: transparent;"
-                )
-            else:
-                label.setStyleSheet(
-                    "font-size: 24px; border: 4px solid transparent; border-radius: 16px; background: transparent;"
-                )
-
-    def select_next(self):
-        self.selected_index = (self.selected_index + 1) % len(self.labels)
-        self.update_selection_box()
-
-    def select_prev(self):
-        self.selected_index = (self.selected_index - 1) % len(self.labels)
-        self.update_selection_box()
-
-    def activate_selected(self):
-        units = self.units_options[self.selected_index]
-        if self.parent():
-            self.parent().set_units(units)
+        value = self.options[self.selected_index][0]
+        if self.on_select_callback:
+            self.on_select_callback(value)
         self.accept()
 
 class StationStatusDialog(QDialog):
@@ -1307,56 +1243,6 @@ class StartupDialog(QDialog):
                         timeout_ms=1500
                     )
 
-class FillingModeDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.setModal(True)
-        self.setStyleSheet("background-color: #222; color: #fff;")
-        layout = QVBoxLayout(self)
-        label = QLabel("SELECT FILLING MODE")
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-        layout.addWidget(label)
-
-        self.options = ["AUTO", "MANUAL", "SMART"]
-        self.selected_index = 0
-        self.labels = []
-        for opt in self.options:
-            opt_label = QLabel(opt)
-            opt_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            opt_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-            opt_label.setFixedHeight(64)
-            self.labels.append(opt_label)
-            layout.addWidget(opt_label)
-        self.setLayout(layout)
-        self.update_selection_box()
-
-    def update_selection_box(self):
-        for i, label in enumerate(self.labels):
-            if i == self.selected_index:
-                label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px; background: #333;")
-            else:
-                label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px; background: #222;")
-
-    def select_next(self):
-        self.selected_index = (self.selected_index + 1) % len(self.labels)
-        self.update_selection_box()
-
-    def select_prev(self):
-        self.selected_index = (self.selected_index - 1) % len(self.labels)
-        self.update_selection_box()
-
-    def activate_selected(self):
-        modes = ["AUTO", "MANUAL", "SMART"]
-        selected_mode = modes[self.selected_index]
-        parent = self.parent()
-        if parent is not None:
-            parent.filling_mode = selected_mode
-        if DEBUG:
-            print(f"[DEBUG] Filling mode set to: {selected_mode}")
-        self.done(self.selected_index)
-
 class CalibrationDialog(QDialog):
     def __init__(self, station_enabled, parent=None):
         super().__init__(parent)
@@ -1444,6 +1330,44 @@ class CalibrationDialog(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
         self.showFullScreen()
+
+def open_units_dialog(self):
+    dlg = SelectionDialog(
+        options=[("g", "Grams"), ("oz", "Ounces")],
+        parent=self,
+        title="Change Units",
+        label_text="Choose Units",
+        on_select=self.set_units
+    )
+    dlg.exec()
+
+def open_language_dialog(self):
+    def set_language(lang_code):
+        self.set_language(lang_code)
+        for widget in self.station_widgets:
+            widget.update_language()
+    dlg = SelectionDialog(
+        options=[("en", "English"), ("es", "Español")],
+        parent=self,
+        title="Set Language",
+        label_text="Choose Language",
+        on_select=set_language
+    )
+    dlg.exec()
+
+def open_filling_mode_dialog(self):
+    def set_filling_mode(mode):
+        self.filling_mode = mode
+        if DEBUG:
+            print(f"[DEBUG] Filling mode set to: {mode}")
+    dlg = SelectionDialog(
+        options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
+        parent=self,
+        title="Filling Mode",
+        label_text="Select Filling Mode",
+        on_select=set_filling_mode
+    )
+    dlg.exec()
 
 if __name__ == "__main__":
     class TestableRelayControlApp(RelayControlApp):
