@@ -73,8 +73,8 @@ RELAY_POWER_PIN = 17
 E_STOP = False
 PREV_E_STOP_STATE = GPIO.HIGH
 FILL_LOCKED = False
-last_fill_time = None
-last_final_weight = None
+last_fill_time = [None] * NUM_STATIONS
+last_final_weight = [None] * NUM_STATIONS
 fill_time_limit_reached = False
 SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 arduinos = [None] * NUM_STATIONS
@@ -144,9 +144,21 @@ def handle_final_weight(station_index, arduino, **ctx):
     weight_bytes = arduino.read(4)
     if len(weight_bytes) == 4:
         final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+        last_final_weight[station_index] = final_weight
+        # Try to update status if fill time is also available
+        fill_time = last_fill_time[station_index]
+        if fill_time is not None:
+            seconds = int(round(fill_time / 1000))
+            status = f"Filled {final_weight}g in {seconds}s"
+            widgets = ctx.get('station_widgets')
+            if widgets:
+                widget = widgets[station_index]
+                if hasattr(widget, "set_status"):
+                    widget.set_status(status)
+            last_fill_time[station_index] = None  # Reset after use
+            last_final_weight[station_index] = None
         if ctx['DEBUG']:
             print(f"Station {station_index+1}: Final weight: {final_weight}")
-        # Optionally: ctx['station_widgets'][station_index].set_final_weight(final_weight)
     else:
         if ctx['DEBUG']:
             print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
@@ -155,9 +167,21 @@ def handle_fill_time(station_index, arduino, **ctx):
     time_bytes = arduino.read(4)
     if len(time_bytes) == 4:
         fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
+        last_fill_time[station_index] = fill_time
+        # Try to update status if final weight is also available
+        final_weight = last_final_weight[station_index]
+        if final_weight is not None:
+            seconds = int(round(fill_time / 1000))
+            status = f"Filled {final_weight}g in {seconds}s"
+            widgets = ctx.get('station_widgets')
+            if widgets:
+                widget = widgets[station_index]
+                if hasattr(widget, "set_status"):
+                    widget.set_status(status)
+            last_fill_time[station_index] = None  # Reset after use
+            last_final_weight[station_index] = None
         if ctx['DEBUG']:
             print(f"Station {station_index+1}: Fill time: {fill_time} ms")
-        # Optionally: ctx['station_widgets'][station_index].set_fill_time(fill_time)
     else:
         if ctx['DEBUG']:
             print(f"Station {station_index+1}: Incomplete fill time bytes: {time_bytes!r}")
@@ -493,6 +517,8 @@ def startup(app, timer):
 
     # If MANUAL mode, show popup and exit startup
     if app.filling_mode == "MANUAL":
+        global filling_mode
+        filling_mode = "MANUAL"
         info = InfoDialog("MANUAL FILLING MODE", "Manual filling mode selected.<br>Startup complete.", app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
         info.show()

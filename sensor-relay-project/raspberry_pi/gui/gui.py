@@ -900,6 +900,14 @@ class SelectionDialog(QDialog):
         self.options = options  # List of (value, display_text) tuples
         self.on_select_callback = on_select
         layout = QVBoxLayout(self)
+
+        # Use OutlinedLabel for the title if provided
+        if title:
+            title_label = OutlinedLabel(title)
+            title_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(title_label)
+
         if label_text:
             label = QLabel(label_text)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
