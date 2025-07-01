@@ -23,6 +23,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+print(f"Logging to: {ERROR_LOG_FILE}")
+
 arduino_ports = [
     '/dev/ttyACM0',
     '/dev/ttyACM1',

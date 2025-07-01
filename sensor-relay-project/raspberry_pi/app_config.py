@@ -8,8 +8,8 @@ config_file = "config.txt"
 
 # Log directories
 LOG_DIR = "logs"
-ERROR_LOG_DIR = "logs/errors"
-STATS_LOG_DIR = "logs/stats"
+ERROR_LOG_DIR = "logs/errors/"
+STATS_LOG_DIR = "logs/stats/"
 
 from datetime import datetime
 SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
