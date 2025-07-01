@@ -1201,9 +1201,10 @@ class StationStatusDialog(QDialog):
         # Highlight station frames
         for i, frame in enumerate(self.station_frames):
             if self.selected_index == i:
-                frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent;")
+                # Always use 6px border, just change color
+                frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent; padding: 0px;")
             else:
-                frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
+                frame.setStyleSheet("border: 6px solid transparent; border-radius: 14px; background: transparent; padding: 0px;")
         # Highlight accept button
         if self.selected_index == self.num_stations:
             self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
