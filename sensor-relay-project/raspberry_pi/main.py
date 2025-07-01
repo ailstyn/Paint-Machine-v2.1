@@ -1,8 +1,24 @@
 import os
+import logging
+
+from app_config import ERROR_LOG_FILE, ERROR_LOG_DIR
+
+os.makedirs(ERROR_LOG_DIR, exist_ok=True)
+logging.basicConfig(
+    filename=ERROR_LOG_FILE,
+    level=logging.ERROR,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+print(f"Logging to: {ERROR_LOG_FILE}")
+
+# Test log entry
+logging.error("Test error log entry: If you see this, logging is working.")
+
+# Now import the rest
 import sys
 import time
 import signal
-import logging
 import serial
 import RPi.GPIO as GPIO
 from datetime import datetime
@@ -11,7 +27,7 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, StartupDialog, CalibrationDialog, SelectionDialog, InfoDialog
 from gui.languages import LANGUAGES
 import re
-from app_config import ERROR_LOG_FILE, STATS_LOG_FILE, ERROR_LOG_DIR, STATS_LOG_DIR
+from app_config import STATS_LOG_FILE, STATS_LOG_DIR
 
 # ========== CONFIG & CONSTANTS ==========
 LOG_DIR = "logs/errors"
