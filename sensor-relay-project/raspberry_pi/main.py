@@ -443,40 +443,87 @@ def startup(app, timer):
         print("[DEBUG] === Startup sequence initiated ===")
 
     # Load calibration and serials
-    load_scale_calibrations()
-    station_serials = load_station_serials()
+    try:
+        if DEBUG:
+            print("[DEBUG] Loading scale calibrations and station serials...")
+        else:
+            logging.info("Loading scale calibrations and station serials...")
+        load_scale_calibrations()
+        station_serials = load_station_serials()
+        if DEBUG:
+            print(f"[DEBUG] station_serials: {station_serials}")
+            print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
+        else:
+            logging.info(f"station_serials: {station_serials}")
+            logging.info(f"scale_calibrations: {scale_calibrations}")
+    except Exception as e:
+        if DEBUG:
+            print(f"[DEBUG] Error loading calibrations/serials: {e}")
+        logging.error(f"Error loading calibrations/serials: {e}")
 
     # Connect and setup Arduinos
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
     for port in arduino_ports:
         try:
+            if DEBUG:
+                print(f"[DEBUG] Trying port {port}...")
+            else:
+                logging.info(f"Trying port {port}...")
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
             arduino.write(RESET_HANDSHAKE)
             arduino.flush()
+            if DEBUG:
+                print(f"[DEBUG] Sent RESET HANDSHAKE to {port}")
+            else:
+                logging.info(f"Sent RESET HANDSHAKE to {port}")
             arduino.write(b'PMID')
             arduino.flush()
+            if DEBUG:
+                print(f"[DEBUG] Sent 'PMID' handshake to {port}")
+            else:
+                logging.info(f"Sent 'PMID' handshake to {port}")
             station_serial_number = None
             for _ in range(60):
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                    if DEBUG:
+                        print(f"[DEBUG] Received from {port}: {repr(line)}")
+                    else:
+                        logging.info(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
+                        if DEBUG:
+                            print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
+                        else:
+                            logging.info(f"Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
+                if DEBUG:
+                    print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
+                else:
+                    logging.error(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
             station_index = station_serials.index(station_serial_number)
             arduino.write(CONFIRM_ID)
             arduino.flush()
+            if DEBUG:
+                print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
+            else:
+                logging.info(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == REQUEST_CALIBRATION:
+                        if DEBUG:
+                            print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        else:
+                            logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
@@ -485,17 +532,44 @@ def startup(app, timer):
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
+                if DEBUG:
+                    print(f"[DEBUG] Station {station_index+1}: Did not receive calibration request, skipping.")
+                else:
+                    logging.error(f"Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
             arduinos[station_index] = arduino
             station_connected[station_index] = True
+            if DEBUG:
+                print(f"[DEBUG] Station {station_index+1} on {port} initialized and ready.")
+            else:
+                logging.info(f"Station {station_index+1} on {port} initialized and ready.")
         except Exception as e:
+            if DEBUG:
+                print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
     # Load enabled states
-    station_enabled = load_station_enabled("config.txt")
+    try:
+        if DEBUG:
+            print("[DEBUG] Loading enabled states...")
+        else:
+            logging.info("Loading enabled states...")
+        station_enabled = load_station_enabled("config.txt")
+        if DEBUG:
+            print(f"[DEBUG] station_enabled: {station_enabled}")
+        else:
+            logging.info(f"station_enabled: {station_enabled}")
+    except Exception as e:
+        if DEBUG:
+            print(f"[DEBUG] Error loading enabled states: {e}")
+        logging.error(f"Error loading enabled states: {e}")
 
     # Wait for E-STOP to be released
+    if DEBUG:
+        print("[DEBUG] Checking E-STOP state...")
+    else:
+        logging.info("Checking E-STOP state...")
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
