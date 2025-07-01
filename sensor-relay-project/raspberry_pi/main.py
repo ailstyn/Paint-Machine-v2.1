@@ -25,6 +25,9 @@ logging.basicConfig(
 
 print(f"Logging to: {ERROR_LOG_FILE}")
 
+# Test log entry
+logging.error("Test error log entry: If you see this, logging is working.")
+
 arduino_ports = [
     '/dev/ttyACM0',
     '/dev/ttyACM1',
