@@ -441,6 +441,8 @@ class RelayControlApp(QWidget):
         self.filling_mode_callback = filling_mode_callback
         if DEBUG:
             print(f"[DEBUG] RelayControlApp.__init__ called with station_enabled={station_enabled}")
+        else:
+            logging.info(f"RelayControlApp.__init__ called with station_enabled={station_enabled}")
         self.setWindowTitle("Four Station Control")
         self.setStyleSheet("background-color: #222222;")
 
@@ -451,10 +453,14 @@ class RelayControlApp(QWidget):
         if station_enabled is not None:
             if DEBUG:
                 print("[DEBUG] Using provided station_enabled list.")
+            else:
+                logging.info("Using provided station_enabled list.")
             self.station_enabled = station_enabled
         else:
             if DEBUG:
                 print("[DEBUG] No station_enabled provided, defaulting to all False.")
+            else:
+                logging.info("No station_enabled provided, defaulting to all False.")
             self.station_enabled = [False, False, False, False]
 
         # Main grid layout (2x2 for four stations)
@@ -529,6 +535,8 @@ class RelayControlApp(QWidget):
         self.active_menu = "main_menu"
         if DEBUG:
             print("RelayControlApp: show_menu() called")
+        else:
+            logging.info("RelayControlApp: show_menu() called")
         if self.menu_dialog is None or not self.menu_dialog.isVisible():
             self.menu_dialog = MenuDialog(self)
             self.active_dialog = self.menu_dialog
@@ -546,6 +554,8 @@ class RelayControlApp(QWidget):
         self.time_limit = value
         if DEBUG:
             print(f"[RelayControlApp] Time limit set to {value} ms")
+        else:
+            logging.info(f"Time limit set to {value} ms")
         # Optionally update UI here
 
     def tr(self, key):
@@ -577,9 +587,13 @@ class RelayControlApp(QWidget):
     def update_station_states(self, station_enabled):
         if DEBUG:
             print(f"[update_station_states] station_enabled={station_enabled}")
+        else:
+            logging.info(f"[update_station_states] station_enabled={station_enabled}")
         for i, widget in enumerate(self.station_widgets):
             if DEBUG:
                 print(f"[update_station_states] Setting Station {i+1} active={station_enabled[i]}, color={self.bg_colors[i]}")
+            else:
+                logging.info(f"[update_station_states] Setting Station {i+1} active={station_enabled[i]}, color={self.bg_colors[i]}")
             widget.set_active(station_enabled[i], self.bg_colors[i])
 
     def set_units(self, units):
@@ -591,55 +605,70 @@ class RelayControlApp(QWidget):
             widget.set_weight(current_weight, self.target_weight, self.units)
 
     def open_units_dialog(self):
-        print("[RelayControlApp] open_units_dialog called")
+        if DEBUG:
+            print("[RelayControlApp] open_units_dialog called")
+        else:
+            logging.info("open_units_dialog called")
         try:
             dlg = SelectionDialog(
-                options=[("g", "Grams"), ("oz", "Ounces")],
+                options=[("g", self.tr("Grams")), ("oz", self.tr("Ounces"))],
                 parent=self,
-                title="Change Units",
+                title=self.tr("CHANGE UNITS"),
                 on_select=self.set_units
             )
             self.active_dialog = dlg
-            print(f"[RelayControlApp] active_dialog set to: {dlg}")
+            if DEBUG:
+                print(f"[RelayControlApp] active_dialog set to: {dlg}")
+            else:
+                logging.info(f"active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
             dlg.show()  # Use show() instead of exec()
         except Exception as e:
             logging.error("Error in open_units_dialog", exc_info=True)
-            self.show_timed_info("ERROR", f"Failed to open units dialog: {e}", timeout_ms=2000)
+            self.show_timed_info(self.tr("ERROR"), f"Failed to open units dialog: {e}", timeout_ms=2000)
 
     def open_language_dialog(self):
-        print("[RelayControlApp] open_language_dialog called")
+        if DEBUG:
+            print("[RelayControlApp] open_language_dialog called")
+        else:
+            logging.info("open_language_dialog called")
         try:
             def set_language(lang_code):
                 self.set_language(lang_code)
                 for widget in self.station_widgets:
                     widget.update_language()
             dlg = SelectionDialog(
-                options=[("en", "English"), ("es", "Español")],
+                options=[("en", self.tr("English")), ("es", self.tr("Español"))],
                 parent=self,
-                title="Set Language",
+                title=self.tr("SET LANGUAGE"),
                 on_select=set_language
             )
             self.active_dialog = dlg
-            print(f"[RelayControlApp] active_dialog set to: {dlg}")
+            if DEBUG:
+                print(f"[RelayControlApp] active_dialog set to: {dlg}")
+            else:
+                logging.info(f"active_dialog set to: {dlg}")
             dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
             dlg.show()  # Use show() instead of exec()
         except Exception as e:
             logging.error("Error in open_language_dialog", exc_info=True)
-            self.show_timed_info("ERROR", f"Failed to open language dialog: {e}", timeout_ms=2000)
+            self.show_timed_info(self.tr("ERROR"), f"Failed to open language dialog: {e}", timeout_ms=2000)
 
     def open_filling_mode_dialog(self):
-        print("[RelayControlApp] open_filling_mode_dialog called")
+        if DEBUG:
+            print("[RelayControlApp] open_filling_mode_dialog called")
+        else:
+            logging.info("open_filling_mode_dialog called")
         try:
             def set_filling_mode(mode):
                 if self.filling_mode_callback:
                     self.filling_mode_callback(mode)
                 self.filling_mode = mode
-                self.show_timed_info("FILLING MODE", f"Mode set to: {mode}", timeout_ms=1500)
+                self.show_timed_info(self.tr("FILLING MODE"), f"{self.tr('Mode set to:')} {mode}", timeout_ms=1500)
             dlg = SelectionDialog(
-                options=[("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")],
+                options=[("AUTO", self.tr("AUTO")), ("MANUAL", self.tr("MANUAL")), ("SMART", self.tr("SMART"))],
                 parent=self,
-                title="Filling Mode",
+                title=self.tr("FILLING MODE"),
                 on_select=set_filling_mode
             )
             self.active_dialog = dlg
@@ -647,7 +676,7 @@ class RelayControlApp(QWidget):
             dlg.show()
         except Exception as e:
             logging.error("Error in open_filling_mode_dialog", exc_info=True)
-            self.show_timed_info("ERROR", f"Failed to open filling mode dialog: {e}", timeout_ms=2000)
+            self.show_timed_info(self.tr("ERROR"), f"Failed to open filling mode dialog: {e}", timeout_ms=2000)
 
     def show_timed_info(self, title, message, timeout_ms=2000):
         dialog = InfoDialog(title, message, self)
@@ -658,21 +687,28 @@ class RelayControlApp(QWidget):
     def handle_station_selected(self, station_index):
         if DEBUG:
             print(f"StationStatusDialog: Station {station_index+1} selected for (re)connect")
-        # Call a function in main.py to attempt (re)connect
+        else:
+            logging.info(f"StationStatusDialog: Station {station_index+1} selected for (re)connect")
         try:
             from main import try_connect_station  # Import your connect function
             success = try_connect_station(station_index)
             if success:
                 if DEBUG:
                     print(f"Station {station_index+1} connected and enabled.")
+                else:
+                    logging.info(f"Station {station_index+1} connected and enabled.")
                 self.station_enabled[station_index] = True
                 self.update_station_states(self.station_enabled)
             else:
                 if DEBUG:
                     print(f"Station {station_index+1} connection failed.")
+                else:
+                    logging.error(f"Station {station_index+1} connection failed.")
         except Exception as e:
             if DEBUG:
                 print(f"Error connecting to station {station_index+1}: {e}")
+            else:
+                logging.error(f"Error connecting to station {station_index+1}: {e}")
 
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):

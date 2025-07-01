@@ -236,9 +236,13 @@ def handle_unknown(station_index, arduino, message_type, **ctx):
             extra = arduino.readline().decode('utf-8', errors='replace').strip()
             if ctx['DEBUG']:
                 print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
+            else:
+                logging.error(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
         else:
             if ctx['DEBUG']:
                 print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
+            else:
+                logging.error(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
             if ctx['refresh_ui']:
                 ctx['refresh_ui']()
     except Exception as e:
@@ -443,16 +447,22 @@ def startup(app, timer):
             arduino.reset_input_buffer()
             if DEBUG:
                 print(f"Trying port {port}...")
+            else:
+                logging.info(f"Trying port {port}...")
 
             arduino.write(RESET_HANDSHAKE)
             arduino.flush()
             if DEBUG:
                 print(f"Sent RESET HANDSHAKE to {port}")
+            else:
+                logging.info(f"Sent RESET HANDSHAKE to {port}")
 
             arduino.write(b'PMID')
             arduino.flush()
             if DEBUG:
                 print(f"Sent 'PMID' handshake to {port}")
+            else:
+                logging.info(f"Sent 'PMID' handshake to {port}")
 
             station_serial_number = None
             for _ in range(60):
@@ -460,16 +470,22 @@ def startup(app, timer):
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
                     if DEBUG:
                         print(f"Received from {port}: {repr(line)}")
+                    else:
+                        logging.info(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
                         if DEBUG:
                             print(f"Station serial {station_serial_number} detected on {port}")
+                        else:
+                            logging.info(f"Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
                 if DEBUG:
                     print(f"No recognized station detected on port {port}, skipping...")
+                else:
+                    logging.error(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
 
@@ -479,6 +495,8 @@ def startup(app, timer):
             arduino.flush()
             if DEBUG:
                 print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
+            else:
+                logging.info(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
 
             got_request = False
             for _ in range(40):
@@ -487,6 +505,8 @@ def startup(app, timer):
                     if req == REQUEST_CALIBRATION:
                         if DEBUG:
                             print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        else:
+                            logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
@@ -497,6 +517,8 @@ def startup(app, timer):
             if not got_request:
                 if DEBUG:
                     print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
+                else:
+                    logging.error(f"Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
 
@@ -944,6 +966,8 @@ def filling_mode_callback(mode):
 def reconnect_arduino(station_index, port):
     if DEBUG:
         print(f"reconnect_arduino called for {port}")
+    else:
+        logging.info(f"reconnect_arduino called for {port}")
     try:
         if arduinos[station_index]:
             try:
@@ -960,12 +984,16 @@ def reconnect_arduino(station_index, port):
         arduino.flush()
         if DEBUG:
             print(f"Sent RESET_HANDSHAKE to {port}")
+        else:
+            logging.info(f"Sent RESET_HANDSHAKE to {port}")
         time.sleep(0.5)
 
         arduino.write(b'PMID')
         arduino.flush()
         if DEBUG:
             print(f"Sent 'PMID' handshake to {port}")
+        else:
+            logging.info(f"Sent 'PMID' handshake to {port}")
 
         station_serials = load_station_serials()
         station_serial_number = None
@@ -974,16 +1002,22 @@ def reconnect_arduino(station_index, port):
                 line = arduino.read_until(b'\n').decode(errors='replace').strip()
                 if DEBUG:
                     print(f"Received from {port}: {repr(line)}")
+                else:
+                    logging.info(f"Received from {port}: {repr(line)}")
                 match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                 if match:
                     station_serial_number = match.group(1)
                     if DEBUG:
                         print(f"Station serial {station_serial_number} detected on {port}")
+                    else:
+                        logging.info(f"Station serial {station_serial_number} detected on {port}")
                     break
             time.sleep(0.1)
         if station_serial_number is None or station_serial_number not in station_serials:
             if DEBUG:
                 print(f"No recognized station detected on port {port}, skipping...")
+            else:
+                logging.error(f"No recognized station detected on port {port}, skipping...")
             arduino.close()
             return False
 
@@ -993,6 +1027,8 @@ def reconnect_arduino(station_index, port):
         arduino.flush()
         if DEBUG:
             print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
+        else:
+            logging.info(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
 
         got_request = False
         for _ in range(40):
@@ -1001,6 +1037,8 @@ def reconnect_arduino(station_index, port):
                 if req == REQUEST_CALIBRATION:
                     if DEBUG:
                         print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                    else:
+                        logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     arduino.write(REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                     got_request = True
@@ -1011,12 +1049,16 @@ def reconnect_arduino(station_index, port):
         if not got_request:
             if DEBUG:
                 print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
+            else:
+                logging.error(f"Station {station_index+1}: Did not receive calibration request, skipping.")
             arduino.close()
             return False
 
         arduinos[station_index - 1] = arduino
         if DEBUG:
             print(f"Station {station_index+1} on {port} reconnected and ready.")
+        else:
+            logging.info(f"Station {station_index+1} on {port} reconnected and ready.")
         return True
 
     except Exception as e:
