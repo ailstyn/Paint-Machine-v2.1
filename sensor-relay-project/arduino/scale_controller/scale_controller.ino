@@ -175,10 +175,16 @@ void handle_max_weight_block() {
     unsigned long lastBlink = 0;
     bool ledState = false;
     bool sentEnd = false;
+    static bool sentWarning = false;
+    sentWarning = false; // Reset for each call
 
     while (true) {
         long currentWeight = scale.get_units(3); // Get the raw weight
         float trueWeight = get_true_weight(currentWeight); // Pass it in
+
+        // --- Send current weight to GUI for live update ---
+        Serial.write(CURRENT_WEIGHT);
+        Serial.write((byte*)&currentWeight, sizeof(currentWeight));
 
         // Blink LED every 300ms
         unsigned long now = millis();
@@ -201,7 +207,6 @@ void handle_max_weight_block() {
         }
 
         // If not already sent, send the warning
-        static bool sentWarning = false;
         if (!sentWarning) {
             Serial.write(MAX_WEIGHT_WARNING);
             Serial.println("<ERR:MAX WEIGHT EXCEEDED>");
@@ -356,7 +361,11 @@ void fill() {
             Serial.println("<ERR:MAX WEIGHT DURING FILL>");
             digitalWrite(RELAY_PIN, HIGH);
             digitalWrite(LED_PIN, HIGH);
-            return;
+            handle_max_weight_block();
+            // After block, resume fill loop
+            digitalWrite(RELAY_PIN, LOW);
+            digitalWrite(LED_PIN, HIGH);
+            continue;
         }
 
         Serial.write(CURRENT_WEIGHT);
@@ -395,6 +404,21 @@ void manual_fill() {
     while (true) {
         while (digitalRead(BUTTON_PIN) == HIGH) {
             long weight = scale.get_units(3);
+            float trueWeight = get_true_weight(weight);
+
+            // Max weight check during manual idle
+            if (trueWeight >= SCALE_MAX_GRAMS) {
+                Serial.write(MAX_WEIGHT_WARNING);
+                Serial.println("<ERR:MAX WEIGHT DURING MANUAL (IDLE)>");
+                digitalWrite(RELAY_PIN, HIGH);
+                digitalWrite(LED_PIN, HIGH);
+                handle_max_weight_block();
+                // After block, resume idle loop
+                digitalWrite(RELAY_PIN, HIGH);
+                digitalWrite(LED_PIN, LOW);
+                continue;
+            }
+
             Serial.write(CURRENT_WEIGHT);
             Serial.write((byte*)&weight, sizeof(weight));
             digitalWrite(LED_PIN, LOW);
@@ -416,7 +440,11 @@ void manual_fill() {
                 Serial.println("<ERR:MAX WEIGHT DURING MANUAL>");
                 digitalWrite(RELAY_PIN, HIGH);
                 digitalWrite(LED_PIN, HIGH);
-                return;
+                handle_max_weight_block();
+                // After block, resume fill loop
+                digitalWrite(RELAY_PIN, LOW);
+                digitalWrite(LED_PIN, HIGH);
+                continue;
             }
 
             digitalWrite(LED_PIN, HIGH);
@@ -499,7 +527,11 @@ void smart_fill() {
             Serial.println("<ERR:MAX WEIGHT DURING SMART>");
             digitalWrite(RELAY_PIN, HIGH);
             digitalWrite(LED_PIN, HIGH);
-            return;
+            handle_max_weight_block();
+            // After block, resume smart fill loop
+            digitalWrite(RELAY_PIN, LOW);
+            digitalWrite(LED_PIN, HIGH);
+            continue;
         }
 
         Serial.write(CURRENT_WEIGHT);
@@ -536,7 +568,11 @@ void smart_fill() {
             Serial.println("<ERR:MAX WEIGHT DURING SMART>");
             digitalWrite(RELAY_PIN, HIGH);
             digitalWrite(LED_PIN, HIGH);
-            return;
+            handle_max_weight_block();
+            // After block, resume smart fill loop
+            digitalWrite(RELAY_PIN, LOW);
+            digitalWrite(LED_PIN, HIGH);
+            continue;
         }
 
         Serial.write(CURRENT_WEIGHT);

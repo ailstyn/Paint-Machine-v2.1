@@ -85,6 +85,7 @@ DEBUG = True  # Set to False to disable debug prints
 station_connected = [arduino is not None for arduino in arduinos]
 serial_numbers = [arduino.serial_number if arduino else None for arduino in arduinos]
 filling_mode = "AUTO"  # Default mode
+station_max_weight_error = [False] * NUM_STATIONS
 
 # ========== MESSAGE HANDLERS ==========
 def handle_request_target_weight(station_index, arduino, **ctx):
@@ -124,6 +125,14 @@ def handle_current_weight(station_index, arduino, **ctx):
             weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
             if weight < 0:
                 weight = 0.0
+            widgets = ctx.get('station_widgets')
+            if widgets:
+                widget = widgets[station_index]
+                # Set color based on max weight error state
+                if station_max_weight_error[station_index]:
+                    widget.weight_label.setStyleSheet("color: #FF2222;")  # Red
+                else:
+                    widget.weight_label.setStyleSheet("color: #fff;")     # Normal
             if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
                 ctx['active_dialog'].set_weight(station_index, weight)
             elif ctx['update_station_weight']:
@@ -228,11 +237,8 @@ def handle_unknown(station_index, arduino, message_type, **ctx):
         logging.error("Error in handle_unknown", exc_info=True)
 
 def handle_max_weight_warning(station_index, arduino, **ctx):
-    """
-    Handle MAX_WEIGHT_WARNING from Arduino.
-    Display a flashing red "MAX WEIGHT EXCEEDED" message on the station widget until cleared.
-    """
     widgets = ctx.get('station_widgets')
+    station_max_weight_error[station_index] = True
     if widgets:
         widget = widgets[station_index]
         if hasattr(widget, "set_status"):
@@ -241,11 +247,8 @@ def handle_max_weight_warning(station_index, arduino, **ctx):
         print(f"[WARNING] Station {station_index+1}: MAX_WEIGHT_WARNING received")
 
 def handle_max_weight_end(station_index, arduino, **ctx):
-    """
-    Handle MAX_WEIGHT_END from Arduino.
-    Clear the max weight warning and return the station widget to normal.
-    """
     widgets = ctx.get('station_widgets')
+    station_max_weight_error[station_index] = False
     if widgets:
         widget = widgets[station_index]
         if hasattr(widget, "clear_status"):
