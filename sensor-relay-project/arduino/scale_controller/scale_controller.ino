@@ -39,7 +39,7 @@
 #define MAX_WEIGHT_WARNING 0xE1
 #define MAX_WEIGHT_END     0xE2  // <-- Add this new protocol byte
 #define SERIAL_MAX_LEN 16
-#define SCALE_MAX_GRAMS 5000
+#define SCALE_MAX_GRAMS 300
 
 // ================= GLOBAL VARIABLES ================
 HX711 scale;
@@ -177,7 +177,8 @@ void handle_max_weight_block() {
     bool sentEnd = false;
 
     while (true) {
-        float trueWeight = get_true_weight();
+        long currentWeight = scale.get_units(3); // Get the raw weight
+        float trueWeight = get_true_weight(currentWeight); // Pass it in
 
         // Blink LED every 300ms
         unsigned long now = millis();
@@ -216,7 +217,8 @@ void loop() {
     static bool buttonWasStuck = false;
 
     // --- MAX WEIGHT CHECK ---
-    float trueWeight = get_true_weight();
+    long currentWeight = scale.get_units(3); // Get the raw weight
+    float trueWeight = get_true_weight(currentWeight); // Pass it in
     if (trueWeight >= SCALE_MAX_GRAMS) {
         handle_max_weight_block();
         return;

@@ -538,6 +538,8 @@ def startup(app, timer):
 
     # Show the verification dialog with current station info
     dialog.show_station_verification(station_names, statuses, colors, station_connected)
+    dialog.selected_index = len(dialog.selection_indices) - 1  # Select ACCEPT by default
+    dialog.show_station_verification(station_names, statuses, colors, station_connected)  # Refresh highlight
     QApplication.processEvents()
 
     if DEBUG:
