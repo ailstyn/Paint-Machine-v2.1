@@ -638,13 +638,15 @@ def startup(app, timer):
     calib_dialog.exec()
 
     # --- Step 4: Full Bottle Check (Live update loop) ---
+    calib_dialog = CalibrationDialog(station_enabled, parent=app)
+    calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))
     calib_dialog.set_sub_label(app.tr("Place a full bottle in each active station, then press any button."))
     calib_dialog.set_bottom_label("")
+    app.active_dialog = calib_dialog
     calib_dialog.setModal(True)
     calib_dialog.show()
     QApplication.processEvents()
     while True:
-        # Live update loop for weights/colors
         while calib_dialog.result() == 0:
             for i in range(NUM_STATIONS):
                 if station_enabled[i]:
@@ -706,8 +708,11 @@ def startup(app, timer):
             break
 
     # --- Step 5: Empty Bottle Check (Live update loop) ---
+    calib_dialog = CalibrationDialog(station_enabled, parent=app)
+    calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))
     calib_dialog.set_sub_label(app.tr("Place an empty bottle in each active station"))
     calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
+    app.active_dialog = calib_dialog
     calib_dialog.setModal(True)
     calib_dialog.show()
     QApplication.processEvents()
