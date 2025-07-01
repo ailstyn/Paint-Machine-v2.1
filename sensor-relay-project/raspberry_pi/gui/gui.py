@@ -66,17 +66,19 @@ class StationBoxWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
+        # Use parent's tr if available, else fallback to English
+        tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+
         # Station name label with outline
         name_label = OutlinedLabel(name)
         name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-        # No background for outlined text, but you can add a subtle background if desired:
         name_label.setStyleSheet("background: transparent; padding: 4px;")
         layout.addWidget(name_label)
 
         # Connected/Enabled labels (optional)
         if connected is not None:
-            connected_label = QLabel("CONNECTED" if connected else "DISCONNECTED")
+            connected_label = QLabel(tr("CONNECTED") if connected else tr("DISCONNECTED"))
             connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             connected_label.setFont(QFont("Arial", 16))
             connected_label.setStyleSheet(f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
@@ -85,7 +87,7 @@ class StationBoxWidget(QWidget):
             connected_label = None
 
         if enabled is not None:
-            enabled_label = QLabel("ENABLED" if enabled else "DISABLED")
+            enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
             enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             enabled_label.setFont(QFont("Arial", 16))
             enabled_label.setStyleSheet(f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
@@ -158,7 +160,7 @@ class StationWidget(QWidget):
             content_layout.addWidget(self.weight_label, stretch=2)  # 67%
 
             # Status label (smaller, below weight)
-            self.status_label = QLabel("READY")
+            self.status_label = QLabel(self.tr("READY"))
             self.status_label.setFont(QFont("Arial", 20))
             self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.status_label.setStyleSheet("color: #fff;")
@@ -290,7 +292,7 @@ class MenuDialog(QDialog):
             "SET TIME LIMIT",
             "SET LANGUAGE",
             "CHANGE UNITS",
-            "SET FILLING MODE",   # <-- Add this line
+            "SET FILLING MODE",
             "EXIT"
         ]
         self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
@@ -372,9 +374,9 @@ class MenuDialog(QDialog):
             print("[MenuDialog] Opening Language Dialog.")
             self.hide()
             parent.language_dialog = SelectionDialog(
-                options=[("en", "English"), ("es", "Español")],
+                options=[("en", parent.tr("English")), ("es", parent.tr("Español"))],
                 parent=parent,
-                title="Set Language",
+                title=parent.tr("SET LANGUAGE"),
                 on_select=parent.set_language
             )
             parent.active_dialog = parent.language_dialog
@@ -384,9 +386,9 @@ class MenuDialog(QDialog):
             print("[MenuDialog] Opening Units Dialog.")
             self.hide()
             parent.change_units_dialog = SelectionDialog(
-                options=[("g", "Grams"), ("oz", "Ounces")],
+                options=[("g", parent.tr("Grams")), ("oz", parent.tr("Ounces"))],
                 parent=parent,
-                title="Change Units",
+                title=parent.tr("CHANGE UNITS"),
                 on_select=parent.set_units
             )
             parent.active_dialog = parent.change_units_dialog
@@ -1256,15 +1258,13 @@ class StartupDialog(QDialog):
             frame.layout().setContentsMargins(0, 0, 0, 0)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
-            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)  # Dynamic sizing
-            # Remove or comment out the setFixedSize line for the frame!
-            # frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             self.grid.addWidget(frame)
             self.station_frames.append(frame)
         self.layout.addLayout(self.grid)
 
         # Accept button
-        self.accept_label = QLabel("ACCEPT")
+        self.accept_label = QLabel(self.tr("ACCEPT"))
         self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setFixedWidth(220)
@@ -1306,12 +1306,12 @@ class StartupDialog(QDialog):
 
             # Update connected label
             if box_widget.connected_label is not None:
-                box_widget.connected_label.setText("CONNECTED" if is_connected else "DISCONNECTED")
+                box_widget.connected_label.setText(self.tr("CONNECTED") if is_connected else self.tr("DISCONNECTED"))
                 box_widget.connected_label.setStyleSheet(
                     f"background: {color if is_connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
                 )
             else:
-                connected_label = QLabel("CONNECTED" if is_connected else "DISCONNECTED")
+                connected_label = QLabel(self.tr("CONNECTED") if is_connected else self.tr("DISCONNECTED"))
                 connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 connected_label.setFont(QFont("Arial", 16))
                 connected_label.setStyleSheet(
@@ -1322,12 +1322,12 @@ class StartupDialog(QDialog):
 
             # Update enabled label
             if box_widget.enabled_label is not None:
-                box_widget.enabled_label.setText("ENABLED" if is_enabled else "DISABLED")
+                box_widget.enabled_label.setText(self.tr("ENABLED") if is_enabled else self.tr("DISABLED"))
                 box_widget.enabled_label.setStyleSheet(
                     f"background: {color if is_enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
                 )
             else:
-                enabled_label = QLabel("ENABLED" if is_enabled else "DISABLED")
+                enabled_label = QLabel(self.tr("ENABLED") if is_enabled else self.tr("DISABLED"))
                 enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 enabled_label.setFont(QFont("Arial", 16))
                 enabled_label.setStyleSheet(
