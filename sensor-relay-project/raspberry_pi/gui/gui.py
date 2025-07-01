@@ -1174,9 +1174,10 @@ class StationStatusDialog(QDialog):
             frame = QFrame()
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
-            frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
+            # Make the border fully transparent and background black for blending
+            frame.setStyleSheet("border: 4px solid transparent; border-radius: 18px; background: #000;")
             frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(0, 0, 0, 0)
+            frame.layout().setContentsMargins(16, 16, 16, 16)  # Add equal padding all around
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -1188,7 +1189,6 @@ class StationStatusDialog(QDialog):
         self.accept_label = QLabel("ACCEPT")
         self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.accept_label.setFixedWidth(220)
         accept_layout = QHBoxLayout()
         accept_layout.addWidget(self.accept_label)
         layout.addLayout(accept_layout)
