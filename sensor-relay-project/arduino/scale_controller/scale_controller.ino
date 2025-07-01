@@ -39,7 +39,7 @@
 #define MAX_WEIGHT_WARNING 0xE1
 #define MAX_WEIGHT_END     0xE2  // <-- Add this new protocol byte
 #define SERIAL_MAX_LEN 16
-#define SCALE_MAX_GRAMS 300
+#define SCALE_MAX_GRAMS 1000
 
 // ================= GLOBAL VARIABLES ================
 HX711 scale;

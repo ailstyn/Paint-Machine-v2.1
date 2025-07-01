@@ -242,7 +242,7 @@ def handle_max_weight_warning(station_index, arduino, **ctx):
     if widgets:
         widget = widgets[station_index]
         if hasattr(widget, "set_status"):
-            widget.set_status("MAX WEIGHT EXCEEDED", color="#FF2222", flashing=True)
+            widget.set_status("<b>MAX WEIGHT EXCEEDED</b>", color="#FF2222", flashing=True)
     if DEBUG:
         print(f"[WARNING] Station {station_index+1}: MAX_WEIGHT_WARNING received")
 
