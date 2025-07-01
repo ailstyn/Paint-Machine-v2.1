@@ -442,87 +442,41 @@ def startup(app, timer):
     if DEBUG:
         print("[DEBUG] === Startup sequence initiated ===")
 
-    # ========== Load station serials and scale calibrations ==========
-    if DEBUG:
-        print("[DEBUG] Loading scale calibrations and station serials...")
+    # Load calibration and serials
     load_scale_calibrations()
     station_serials = load_station_serials()
-    if DEBUG:
-        print(f"[DEBUG] station_serials: {station_serials}")
-        print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
 
-    # ========== Connect and Setup Arduinos ==========
-    if DEBUG:
-        print("[DEBUG] Connecting and setting up Arduinos...")
+    # Connect and setup Arduinos
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
-
     for port in arduino_ports:
         try:
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
-            if DEBUG:
-                print(f"Trying port {port}...")
-            else:
-                logging.info(f"Trying port {port}...")
-
             arduino.write(RESET_HANDSHAKE)
             arduino.flush()
-            if DEBUG:
-                print(f"Sent RESET HANDSHAKE to {port}")
-            else:
-                logging.info(f"Sent RESET HANDSHAKE to {port}")
-
             arduino.write(b'PMID')
             arduino.flush()
-            if DEBUG:
-                print(f"Sent 'PMID' handshake to {port}")
-            else:
-                logging.info(f"Sent 'PMID' handshake to {port}")
-
             station_serial_number = None
             for _ in range(60):
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                    if DEBUG:
-                        print(f"Received from {port}: {repr(line)}")
-                    else:
-                        logging.info(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
-                        if DEBUG:
-                            print(f"Station serial {station_serial_number} detected on {port}")
-                        else:
-                            logging.info(f"Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
-                if DEBUG:
-                    print(f"No recognized station detected on port {port}, skipping...")
-                else:
-                    logging.error(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
-
             station_index = station_serials.index(station_serial_number)
-
             arduino.write(CONFIRM_ID)
             arduino.flush()
-            if DEBUG:
-                print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
-            else:
-                logging.info(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
-
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == REQUEST_CALIBRATION:
-                        if DEBUG:
-                            print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
-                        else:
-                            logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
@@ -531,48 +485,23 @@ def startup(app, timer):
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
-                if DEBUG:
-                    print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
-                else:
-                    logging.error(f"Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
-
             arduinos[station_index] = arduino
             station_connected[station_index] = True
-            if DEBUG:
-                print(f"Station {station_index+1} on {port} initialized and ready.")
-
-        except serial.SerialException:
-            if DEBUG:
-                print(f"No station detected on port {port}, skipping...")
         except Exception as e:
-            if DEBUG:
-                print(f"Error initializing Arduino on {port}: {e}")
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
-    # ========== Load enabled states ==========
-    if DEBUG:
-        print("[DEBUG] Loading enabled states...")
+    # Load enabled states
     station_enabled = load_station_enabled("config.txt")
-    if DEBUG:
-        print(f"[DEBUG] station_enabled: {station_enabled}")
 
-    # ========== Check E-STOP state ==========
-    if DEBUG:
-        print("[DEBUG] Checking E-STOP state...")
+    # Wait for E-STOP to be released
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
-    # ========== Step 1: Verify Stations ==========
-    if DEBUG:
-        print("[DEBUG] Step 1: Verify Stations dialog")
+    # --- Step 1: Verify Stations ---
     dialog = StartupDialog(app.tr("Are these the filling stations you are using?"), parent=app)
     app.active_dialog = dialog
-    dialog.showFullScreen()
-    QApplication.processEvents()
-
-    # Prepare station names, statuses, and colors
     station_names = [app.tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
     statuses = []
     for i in range(NUM_STATIONS):
@@ -584,35 +513,16 @@ def startup(app, timer):
             statuses.append(app.tr("DISABLED") + " & " + app.tr("CONNECTED"))
         else:
             statuses.append(app.tr("DISABLED") + " & " + app.tr("DISCONNECTED"))
-    if DEBUG:
-        print(f"[DEBUG] Station statuses: {statuses}")
-
     colors = getattr(app, "bg_colors", ["#444"] * NUM_STATIONS)
-
-    # Show the verification dialog with current station info
     dialog.show_station_verification(station_names, statuses, colors, station_connected)
-    dialog.selected_index = len(dialog.selection_indices) - 1  # Select ACCEPT by default
-    dialog.show_station_verification(station_names, statuses, colors, station_connected)  # Refresh highlight
-    QApplication.processEvents()
-
-    if DEBUG:
-        print("[DEBUG] Waiting for user to select YES/NO...")
-    while dialog.result() == 0:
-        QApplication.processEvents()
-        time.sleep(0.01)
-
-    result = dialog.result()
-    # Always save the current station_enabled state before continuing
+    dialog.selected_index = len(dialog.selection_indices) - 1
+    dialog.show_station_verification(station_names, statuses, colors, station_connected)
+    dialog.setModal(True)
+    dialog.exec()
     save_station_enabled(config_file, station_enabled)
-    if DEBUG:
-        print(f"[DEBUG] Station verification dialog result: {result}")
-    dialog.accept()
     app.active_dialog = None
 
-    # YES selected: proceed to next step
-    # ========== Step 2: Select Filling Mode ==========
-    if DEBUG:
-        print("[DEBUG] Step 2: Select Filling Mode dialog")
+    # --- Step 2: Select Filling Mode ---
     filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
     filling_mode_dialog = SelectionDialog(
         options=filling_modes,
@@ -620,16 +530,13 @@ def startup(app, timer):
         title=app.tr("SET FILLING MODE")
     )
     app.active_dialog = filling_mode_dialog
-    result = filling_mode_dialog.exec()  # This blocks until the dialog is closed
-
+    filling_mode_dialog.setModal(True)
+    filling_mode_dialog.exec()
     selected_index = filling_mode_dialog.selected_index
     filling_modes_list = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes_list[selected_index]
     global filling_mode
-    filling_mode = app.filling_mode  # Always sync global with app
-
-    if DEBUG:
-        print(f"[DEBUG] Filling mode selected: {app.filling_mode}")
+    filling_mode = app.filling_mode
     app.active_dialog = None
 
     # If MANUAL mode, show popup, send command, and exit startup
@@ -640,76 +547,45 @@ def startup(app, timer):
                 try:
                     arduino.write(MANUAL_FILL_START)
                     arduino.flush()
-                    if DEBUG:
-                        print(f"[DEBUG] Sent MANUAL_FILL_START to station {i+1}")
                 except Exception as e:
-                    if DEBUG:
-                        print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+                    logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
         info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
-        info.show()
-        QTimer.singleShot(2000, info.accept)
-        while info.result() == 0:
-            QApplication.processEvents()
-            time.sleep(0.01)
+        info.exec()
         return
 
-    # ========== Step 3: Calibration Check ==========
-    if DEBUG:
-        print("[DEBUG] Step 3: Calibration Check dialog - BEGIN")
+    # --- Step 3: Calibration Check (Remove Weight) ---
     calib_dialog = CalibrationDialog(station_enabled, parent=app)
     calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))
     calib_dialog.set_sub_label(app.tr("CALIBRATION_REMOVE_WEIGHT"))
     calib_dialog.set_bottom_label("")
-
     app.active_dialog = calib_dialog
-    calib_dialog.show()
-    QApplication.processEvents()
+    calib_dialog.setModal(True)
+    calib_dialog.exec()
 
-    if DEBUG:
-        print("[DEBUG] Waiting for first button press (empty stations)...")
-    while calib_dialog.result() == 0:
-        QApplication.processEvents()
-        time.sleep(0.01)
-    if DEBUG:
-        print("[DEBUG] Step 3: Calibration Check dialog - END")
-
-    # ========== Full Bottle Check ==========
-    if DEBUG:
-        print("[DEBUG] Full Bottle Check - BEGIN")
+    # --- Step 4: Full Bottle Check (Live update loop) ---
     calib_dialog.set_sub_label(app.tr("Place a full bottle in each active station, then press any button."))
     calib_dialog.set_bottom_label("")
+    calib_dialog.setModal(True)
     calib_dialog.show()
     QApplication.processEvents()
-
-    if DEBUG:
-        print("[DEBUG] Waiting for full bottle check (live weight/color updates)...")
-
     while True:
-        calib_dialog.done(0)
-        calib_dialog.set_sub_label(app.tr("Place a full bottle in each active station, then press any button."))
-        calib_dialog.set_bottom_label("")
-        calib_dialog.show()
-        QApplication.processEvents()
-
-        # Live update loop: update colors and weights until a button is pressed
+        # Live update loop for weights/colors
         while calib_dialog.result() == 0:
             for i in range(NUM_STATIONS):
                 if station_enabled[i]:
                     try:
                         weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                         weight = float(weight_text) if weight_text not in ("--", "") else 0.0
-                        # Set color based on weight
                         if 375 <= weight <= 425 or 715 <= weight <= 765:
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22;")
                         else:
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
                     except Exception:
-                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
             QApplication.processEvents()
             time.sleep(0.05)
-
-        # After button press, gather weights and check ranges
+        # After button press, check weights
         weights = []
         failed_stations = []
         for i in range(NUM_STATIONS):
@@ -719,16 +595,14 @@ def startup(app, timer):
                     weight = float(weight_text) if weight_text not in ("--", "") else 0.0
                     weights.append((i, weight))
                     if 375 <= weight <= 425 or 725 <= weight <= 775:
-                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22;")
                     else:
-                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
                         failed_stations.append(str(i + 1))
                 except Exception:
                     failed_stations.append(str(i + 1))
-
         in_first_range = [i for i, w in weights if 375 <= w <= 425]
         in_second_range = [i for i, w in weights if 715 <= w <= 765]
-
         if len(in_first_range) == len(weights):
             failed_stations = []
             app.target_weight = 400
@@ -743,7 +617,6 @@ def startup(app, timer):
             ]
             if not failed_stations and len(weights) > 0:
                 failed_stations = [str(i + 1) for i, _ in weights]
-
         if failed_stations:
             calib_dialog.set_bottom_label(
                 app.tr("ERROR") + " " +
@@ -753,26 +626,18 @@ def startup(app, timer):
                 "<br>" + app.tr("ALL STATIONS MUST USE THE SAME SIZE") + "<br>" + app.tr("PRESS SELECT TO CONTINUE")
             )
             calib_dialog.done(0)
-            continue  # Repeat the loop for another attempt
+            continue
         else:
-            if DEBUG:
-                print("[DEBUG] Full Bottle Check - END")
             calib_dialog.accept()
-            break  # All stations OK, continue to next step
+            break
 
-    # ========== Step 4: Empty Bottle Check ==========
+    # --- Step 5: Empty Bottle Check (Live update loop) ---
     calib_dialog.set_sub_label(app.tr("Place an empty bottle in each active station"))
     calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
+    calib_dialog.setModal(True)
+    calib_dialog.show()
     QApplication.processEvents()
-
-    if DEBUG:
-        print("[DEBUG] Waiting for empty bottle check...")
     while True:
-        calib_dialog.set_sub_label(app.tr("Place an empty bottle in each active station"))
-        calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
-        calib_dialog.show()
-        QApplication.processEvents()
-
         while calib_dialog.result() == 0:
             for i in range(NUM_STATIONS):
                 if station_enabled[i]:
@@ -786,14 +651,13 @@ def startup(app, timer):
                         else:
                             in_range = False
                         if in_range:
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22;")
                         else:
-                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                            calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
                     except Exception:
-                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
             QApplication.processEvents()
             time.sleep(0.05)
-
         failed_stations = []
         for i in range(NUM_STATIONS):
             if station_enabled[i]:
@@ -807,18 +671,16 @@ def startup(app, timer):
                     else:
                         in_range = False
                     if in_range:
-                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22; border-radius: 8px;")
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #228B22;")
                     else:
-                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                        calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
                         failed_stations.append(str(i + 1))
                 except Exception:
-                    calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222; border-radius: 8px;")
+                    calib_dialog.weight_labels[i].setStyleSheet("color: #fff; background: #B22222;")
                     failed_stations.append(str(i + 1))
         if not failed_stations:
-            if DEBUG:
-                print("[DEBUG] Empty Bottle Check - END")
             calib_dialog.accept()
-            break  # All stations OK, continue to next step
+            break
         else:
             calib_dialog.set_bottom_label(
                 app.tr("ERROR") + " " +
@@ -833,14 +695,11 @@ def startup(app, timer):
             calib_dialog.done(0)
             continue
 
-    # ========== Final Setup ==========
-    if DEBUG:
-        print("[DEBUG] Entering Final Setup after empty bottle check")
+    # --- Final Setup: Button Check ---
     button_error_counts = [0] * NUM_STATIONS
     faulty_stations = set()
-    timeout = 6  # seconds
+    timeout = 6
     start_time = time.time()
-
     calib_dialog.set_main_label(app.tr("BUTTON CHECK"))
     calib_dialog.set_sub_label(app.tr("Checking station buttons for faults..."))
     calib_dialog.set_bottom_label(app.tr("Checking... {timeout} seconds remaining").format(timeout=timeout))
@@ -860,7 +719,6 @@ def startup(app, timer):
     calib_dialog.resize(1200, 400)
     calib_dialog.show()
     QApplication.processEvents()
-
     last_seconds_left = timeout
     while True:
         elapsed = time.time() - start_time
@@ -869,7 +727,6 @@ def startup(app, timer):
             calib_dialog.set_bottom_label(app.tr("Checking... {timeout} seconds remaining").format(timeout=seconds_left))
             last_seconds_left = seconds_left
             QApplication.processEvents()
-
         for i in range(NUM_STATIONS):
             if station_enabled[i] and i not in faulty_stations and arduinos[i] and arduinos[i].in_waiting > 0:
                 try:
@@ -890,11 +747,8 @@ def startup(app, timer):
                             QApplication.processEvents()
                     elif byte == CURRENT_WEIGHT:
                         extra = arduinos[i].read(4)
-                    else:
-                        pass
-                except Exception as e:
+                except Exception:
                     pass
-
         for i in range(NUM_STATIONS):
             if station_enabled[i] and i not in faulty_stations:
                 calib_dialog.weight_labels[i].setText(app.tr("STATION") + f" {i+1}: " + app.tr("OK"))
@@ -911,27 +765,16 @@ def startup(app, timer):
         QApplication.processEvents()
         time.sleep(0.05)
         if elapsed >= timeout:
-            if DEBUG:
-                print(f"[DEBUG] Timeout reached, breaking loop")
             break
-
-    if DEBUG:
-        print("[DEBUG] Final Setup complete, showing final calibration message")
     if not faulty_stations:
         calib_dialog.set_sub_label(app.tr("Calibration complete."))
     else:
         calib_dialog.set_sub_label(app.tr("Some stations disabled due to button error."))
     calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
     QApplication.processEvents()
-
-    if DEBUG:
-        print("[DEBUG] Waiting for user to acknowledge calibration complete")
     while calib_dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
-
-    if DEBUG:
-        print("[DEBUG] Calibration dialog accepted, finishing calibration setup")
     app.active_dialog = None
     calib_dialog.accept()
 
