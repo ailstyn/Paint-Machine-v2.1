@@ -130,6 +130,13 @@ class StationWidget(QWidget):
         self.progress_bar = None
         self.offline_label = None
 
+        # Flashing status attributes
+        self._status_flash_timer = None
+        self._status_flash_state = False
+        self._status_flash_color = "#FF2222"
+        self._status_flash_text = ""
+        self._status_flash_interval = 500  # ms
+
         if enabled:
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
@@ -221,9 +228,50 @@ class StationWidget(QWidget):
             font.setPointSize(min_size)
             label.setFont(font)
 
-    def set_status(self, status):
+    def set_status(self, status, color=None, flashing=False):
+        """
+        Set the status label text, with optional color and flashing.
+        """
         if self.status_label is not None:
-            self.status_label.setText(status)
+            if flashing:
+                self._status_flash_text = status
+                self._status_flash_color = color if color else "#FF2222"
+                self._status_flash_state = False
+                if self._status_flash_timer is None:
+                    self._status_flash_timer = QTimer(self)
+                    self._status_flash_timer.timeout.connect(self._toggle_status_flash)
+                if not self._status_flash_timer.isActive():
+                    self._status_flash_timer.start(self._status_flash_interval)
+                self._toggle_status_flash()  # Immediately update
+            else:
+                if self._status_flash_timer and self._status_flash_timer.isActive():
+                    self._status_flash_timer.stop()
+                self.status_label.setText(status)
+                if color:
+                    self.status_label.setStyleSheet(f"color: {color};")
+                else:
+                    self.status_label.setStyleSheet("color: #fff;")
+
+    def _toggle_status_flash(self):
+        if self.status_label is None:
+            return
+        self._status_flash_state = not self._status_flash_state
+        if self._status_flash_state:
+            self.status_label.setText(self._status_flash_text)
+            self.status_label.setStyleSheet(f"color: {self._status_flash_color};")
+        else:
+            self.status_label.setText("")
+            self.status_label.setStyleSheet("color: #fff;")
+
+    def clear_status(self):
+        """
+        Clear the status label and stop any flashing.
+        """
+        if self._status_flash_timer and self._status_flash_timer.isActive():
+            self._status_flash_timer.stop()
+        if self.status_label is not None:
+            self.status_label.setText("")
+            self.status_label.setStyleSheet("color: #fff;")
 
     def update_language(self):
         parent = self.parent()

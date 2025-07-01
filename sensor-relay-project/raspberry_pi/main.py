@@ -60,6 +60,8 @@ STOP = b'\xFD'
 CONFIRM_ID = b'\xA1'
 RESET_HANDSHAKE = b'\xB0'
 BUTTON_ERROR = b'\xE0'
+MAX_WEIGHT_WARNING = b'\xE1'
+MAX_WEIGHT_END = b'\xE2'  # <-- Add this new protocol byte
 EXIT_MANUAL_END = b'\x22'  # Or import from your protocol/constants file
 
 # GPIO pins
@@ -224,7 +226,35 @@ def handle_unknown(station_index, arduino, message_type, **ctx):
                 ctx['refresh_ui']()
     except Exception as e:
         logging.error("Error in handle_unknown", exc_info=True)
-        
+
+def handle_max_weight_warning(station_index, arduino, **ctx):
+    """
+    Handle MAX_WEIGHT_WARNING from Arduino.
+    Display a flashing red "MAX WEIGHT EXCEEDED" message on the station widget until cleared.
+    """
+    widgets = ctx.get('station_widgets')
+    if widgets:
+        widget = widgets[station_index]
+        if hasattr(widget, "set_status"):
+            widget.set_status("MAX WEIGHT EXCEEDED", color="#FF2222", flashing=True)
+    if DEBUG:
+        print(f"[WARNING] Station {station_index+1}: MAX_WEIGHT_WARNING received")
+
+def handle_max_weight_end(station_index, arduino, **ctx):
+    """
+    Handle MAX_WEIGHT_END from Arduino.
+    Clear the max weight warning and return the station widget to normal.
+    """
+    widgets = ctx.get('station_widgets')
+    if widgets:
+        widget = widgets[station_index]
+        if hasattr(widget, "clear_status"):
+            widget.clear_status()
+        elif hasattr(widget, "set_status"):
+            widget.set_status("")  # Fallback: clear status text
+    if DEBUG:
+        print(f"[INFO] Station {station_index+1}: MAX_WEIGHT_END received, warning cleared.")
+
 MESSAGE_HANDLERS = {
     REQUEST_TARGET_WEIGHT: handle_request_target_weight,
     REQUEST_CALIBRATION: handle_request_calibration,
@@ -234,6 +264,8 @@ MESSAGE_HANDLERS = {
     BEGIN_SMART_FILL: handle_begin_smart_fill,
     FINAL_WEIGHT: handle_final_weight,
     FILL_TIME: handle_fill_time,
+    MAX_WEIGHT_WARNING: handle_max_weight_warning,
+    MAX_WEIGHT_END: handle_max_weight_end,  # <-- Register the new handler
 }
 
 # ========== UTILITY FUNCTIONS ==========
