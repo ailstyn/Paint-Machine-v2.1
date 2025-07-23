@@ -287,7 +287,7 @@ class MenuDialog(QDialog):
         print("MenuDialog: __init__ called")
         self.selected_index = 0
         self.menu_keys = [
-            "STATION STATUS",
+            # "STATION STATUS",
             "SET TARGET WEIGHT",
             "SET TIME LIMIT",
             "SET LANGUAGE",

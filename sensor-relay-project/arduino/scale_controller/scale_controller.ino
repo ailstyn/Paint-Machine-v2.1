@@ -334,11 +334,12 @@ void fill() {
     Serial.println("Time Limit Received: " + String(timeLimit));
 
     long currentWeight = scale.get_units(3);
+    float trueWeight = get_true_weight(currentWeight);
     Serial.write(VERBOSE_DEBUG);
     Serial.print("Current Weight: ");
     Serial.println(currentWeight);
 
-    if (currentWeight > 0.2 * targetWeight) {
+    if (trueWeight > 0.2 * targetWeight) {
         digitalWrite(LED_PIN, LOW);
         return;
     }
