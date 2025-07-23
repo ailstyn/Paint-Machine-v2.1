@@ -641,6 +641,17 @@ def startup(app, timer):
     app.active_dialog = calib_dialog
     calib_dialog.exec()
 
+    # --- Tare all enabled stations after user confirms remove weight ---
+    for i, arduino in enumerate(arduinos):
+        if arduino and station_enabled[i]:
+            try:
+                arduino.write(TARE_SCALE)
+                arduino.flush()
+                if DEBUG:
+                    print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
+            except Exception as e:
+                logging.error(f"Failed to send TARE_SCALE to station {i+1}: {e}")
+
     # --- Step 4: Full Bottle Check (Live update loop) ---
     calib_dialog = CalibrationDialog(station_enabled, parent=app)
     calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))

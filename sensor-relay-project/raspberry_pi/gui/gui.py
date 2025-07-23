@@ -216,7 +216,7 @@ class StationWidget(QWidget):
         # Start with a large font size and decrease until it fits
         font = label.font()
         min_size = 10
-        max_size = 200
+        max_size = 100
         step = 2
         for size in range(max_size, min_size, -step):
             font.setPointSize(size)

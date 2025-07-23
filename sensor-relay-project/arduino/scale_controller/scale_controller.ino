@@ -284,7 +284,6 @@ void loop() {
 
 void fill() {
     digitalWrite(LED_PIN, HIGH);
-    tare_and_update_offset();
 
     Serial.write(REQUEST_TARGET_WEIGHT);
     String receivedData = "";
