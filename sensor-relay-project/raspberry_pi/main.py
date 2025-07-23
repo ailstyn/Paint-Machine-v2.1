@@ -139,8 +139,8 @@ def handle_current_weight(station_index, arduino, **ctx):
         weight_bytes = arduino.read(4)
         if len(weight_bytes) == 4:
             weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            if weight < 0:
-                weight = 0.0
+            #if weight < 0:
+             #    weight = 0.0
             widgets = ctx.get('station_widgets')
             if widgets:
                 widget = widgets[station_index]
