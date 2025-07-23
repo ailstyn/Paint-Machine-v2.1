@@ -1092,13 +1092,14 @@ def poll_hardware(app):
                     ctx = {
                         'FILL_LOCKED': FILL_LOCKED,
                         'DEBUG': DEBUG,
-                        'target_weight': target_weight,
+                        'target_weight': getattr(app, "target_weight", target_weight),
                         'scale_calibrations': scale_calibrations,
-                        'time_limit': time_limit,
+                        'time_limit': getattr(app, "time_limit", time_limit),
                         'active_dialog': active_dialog,
                         'update_station_weight': update_station_weight,
                         'station_widgets': station_widgets,
                         'refresh_ui': refresh_ui,
+                        'app': app,  # Pass app for handlers that want it
                     }
                     if handler:
                         handler(station_index, arduino, **ctx)
@@ -1110,9 +1111,9 @@ def poll_hardware(app):
                 port = arduino_ports[station_index]
                 reconnect_arduino(station_index, port)
     except Exception as e:
-                logging.error(f"Error in poll_hardware: {e}")
-                if DEBUG:
-                    print(f"Error in poll_hardware: {e}")
+        logging.error(f"Error in poll_hardware: {e}")
+        if DEBUG:
+            print(f"Error in poll_hardware: {e}")
 
 # ========== GUI/BUTTON HANDLING ==========
 
