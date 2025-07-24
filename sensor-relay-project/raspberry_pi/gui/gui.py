@@ -6,9 +6,9 @@ from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QC
 import sys
 import logging
 import os
-import weakref
-from gui.languages import LANGUAGES
-from app_config import DEBUG, NUM_STATIONS, target_weight, time_limit
+from languages import LANGUAGES
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app_config import DEBUG
 
 logging.basicConfig(level=logging.INFO)
 
@@ -231,29 +231,14 @@ class StationWidget(QWidget):
             font.setPointSize(min_size)
             label.setFont(font)
 
-    def set_status(self, status, color=None, flashing=False):
+    def set_status(self, text, color="#fff"):
         """
         Set the status label text, with optional color and flashing.
         """
         if self.status_label is not None:
-            if flashing:
-                self._status_flash_text = status
-                self._status_flash_color = color if color else "#FF2222"
-                self._status_flash_state = False
-                if self._status_flash_timer is None:
-                    self._status_flash_timer = QTimer(self)
-                    self._status_flash_timer.timeout.connect(self._toggle_status_flash)
-                if not self._status_flash_timer.isActive():
-                    self._status_flash_timer.start(self._status_flash_interval)
-                self._toggle_status_flash()  # Immediately update
-            else:
-                if self._status_flash_timer and self._status_flash_timer.isActive():
-                    self._status_flash_timer.stop()
-                self.status_label.setText(status)
-                if color:
-                    self.status_label.setStyleSheet(f"color: {color};")
-                else:
-                    self.status_label.setStyleSheet("color: #fff;")
+            print(f"set_status called: {text}")
+            self.status_label.setText(text)
+            self.status_label.setStyleSheet(f"color: {color};")
 
     def _toggle_status_flash(self):
         if self.status_label is None:
@@ -1152,6 +1137,21 @@ class StationStatusDialog(QDialog):
         # Selection: 0-3 for stations, 4 for accept
         self.selected_index = 0
         self.num_stations = 4
+
+        # Create frames and widgets
+        self.station_frames = []
+        self.station_boxes = []
+        stations_layout = QHBoxLayout()
+        stations_layout.setSpacing(24)
+        for i in range(self.num_stations):
+            box_widget = StationBoxWidget(
+                station_index=i,
+                name=f"Station {i+1}",
+                color=bg_colors[i],
+                connected=station_enabled[i],
+                enabled=station_enabled[i],
+                weight_text=None
+            )
 
         # Create frames and widgets
         self.station_frames = []

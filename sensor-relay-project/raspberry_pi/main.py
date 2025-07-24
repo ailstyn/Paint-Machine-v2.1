@@ -156,11 +156,13 @@ def handle_final_weight(station_index, arduino, **ctx):
     print(f"[DEBUG] handle_final_weight called for station {station_index}")
     try:
         weight_bytes = arduino.read(4)
+        print(f"[DEBUG] weight_bytes: {weight_bytes!r}")
         if len(weight_bytes) == 4:
             final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+            print(f"[DEBUG] final_weight: {final_weight}")
             last_final_weight[station_index] = final_weight
 
-            # Immediately update status to show fill complete (without time)
+            print("About to call update_station_status in handle_final_weight")
             update_station_status(
                 station_index,
                 final_weight,
@@ -1195,8 +1197,9 @@ def handle_button_presses(app):
             print(f"Error in handle_button_presses: {e}")
 
 def update_station_status(station_index, weight, filling_mode, is_filling, fill_result=None, fill_time=None):
-    widget = app.station_widgets[station_index]
     print(f"[DEBUG] update_station_status: idx={station_index}, weight={weight}, mode={filling_mode}, is_filling={is_filling}, fill_result={fill_result}, fill_time={fill_time}")
+    widget = app.station_widgets[station_index]
+    print(f"widget for station {station_index} is {widget}")
     if filling_mode == "AUTO":
         if fill_result == "complete":
             if fill_time is not None:
