@@ -1100,8 +1100,12 @@ def handle_button_presses(app):
 
         # Helper: flash icon if button_column exists
         def flash_dialog_icon(index):
+            # Try to flash on the active dialog first
             if dialog is not None and hasattr(dialog, "button_column"):
                 dialog.button_column.flash_icon(index)
+            # If not, flash on the main app window
+            elif hasattr(app, "button_column"):
+                app.button_column.flash_icon(index)
 
         # UP BUTTON
         if GPIO.input(app_config.UP_BUTTON_PIN) == GPIO.LOW:
