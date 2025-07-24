@@ -6,6 +6,7 @@ from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QC
 import sys
 import logging
 import os
+import weakref
 from gui.languages import LANGUAGES
 from app_config import DEBUG, NUM_STATIONS, target_weight, time_limit
 
@@ -1564,13 +1565,18 @@ class ButtonColumnWidget(QWidget):
         """
         Flash the icon at the given index with the specified color for a short duration.
         """
-        if not (0 <= index < len(self.findChildren(QLabel))):
-            return
         labels = self.findChildren(QLabel)
+        if not (0 <= index < len(labels)):
+            return
         label = labels[index]
         original_style = label.styleSheet()
         label.setStyleSheet(original_style + f"; color: {flash_color}; background: #444;")
-        QTimer.singleShot(duration, lambda: label.setStyleSheet(original_style))
+        label_ref = weakref.ref(label)
+        def restore_style():
+            lbl = label_ref()
+            if lbl is not None:
+                lbl.setStyleSheet(original_style)
+        QTimer.singleShot(duration, restore_style)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
