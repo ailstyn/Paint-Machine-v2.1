@@ -158,17 +158,18 @@ def handle_final_weight(station_index, arduino, **ctx):
         if len(weight_bytes) == 4:
             final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
             last_final_weight[station_index] = final_weight
-            # Try to update status if fill time is also available
             fill_time = last_fill_time[station_index]
             if fill_time is not None:
                 seconds = int(round(fill_time / 1000))
-                status = f"Filled {final_weight}g in {seconds}s"
-                widgets = ctx.get('station_widgets')
-                if widgets:
-                    widget = widgets[station_index]
-                    if hasattr(widget, "set_status"):
-                        widget.set_status(status)
-                last_fill_time[station_index] = None  # Reset after use
+                update_station_status(
+                    station_index,
+                    final_weight,
+                    ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                    is_filling=False,
+                    fill_result="complete",
+                    fill_time=seconds
+                )
+                last_fill_time[station_index] = None
                 last_final_weight[station_index] = None
             if ctx['DEBUG']:
                 print(f"Station {station_index+1}: Final weight: {final_weight}")
@@ -184,17 +185,29 @@ def handle_fill_time(station_index, arduino, **ctx):
         if len(time_bytes) == 4:
             fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
             last_fill_time[station_index] = fill_time
-            # Try to update status if final weight is also available
             final_weight = last_final_weight[station_index]
             if final_weight is not None:
                 seconds = int(round(fill_time / 1000))
-                status = f"Filled {final_weight}g in {seconds}s"
-                widgets = ctx.get('station_widgets')
-                if widgets:
-                    widget = widgets[station_index]
-                    if hasattr(widget, "set_status"):
-                        widget.set_status(status)
-                last_fill_time[station_index] = None  # Reset after use
+                # If fill_time reached the time limit, treat as timeout
+                if fill_time >= ctx.get('time_limit', 3000):
+                    update_station_status(
+                        station_index,
+                        final_weight,
+                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                        is_filling=False,
+                        fill_result="timeout",
+                        fill_time=seconds
+                    )
+                else:
+                    update_station_status(
+                        station_index,
+                        final_weight,
+                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                        is_filling=False,
+                        fill_result="complete",
+                        fill_time=seconds
+                    )
+                last_fill_time[station_index] = None
                 last_final_weight[station_index] = None
             if ctx['DEBUG']:
                 print(f"Station {station_index+1}: Fill time: {fill_time} ms")
@@ -1168,6 +1181,25 @@ def handle_button_presses(app):
         logging.error("Error in handle_button_presses", exc_info=True)
         if DEBUG:
             print(f"Error in handle_button_presses: {e}")
+
+def update_station_status(station_index, weight, filling_mode, is_filling, fill_result=None, fill_time=None):
+    """
+    Update the status label for a station based on auto fill logic.
+    """
+    widget = app.station_widgets[station_index]
+    if filling_mode == "AUTO":
+        if fill_result == "complete" and fill_time is not None:
+            widget.set_status(f"AUTO FILL COMPLETE {fill_time:.2f}s", color="#11BD33")
+        elif fill_result == "timeout" and fill_time is not None:
+            widget.set_status(f"AUTO FILL TIMEOUT {fill_time:.2f}s", color="#F6EB61")
+        elif is_filling:
+            widget.set_status("AUTO FILLING...", color="#F6EB61")
+        elif weight < 40:
+            widget.set_status("AUTO FILL READY", color="#11BD33")
+        else:
+            widget.set_status("READY", color="#fff")
+    else:
+        widget.set_status("READY", color="#fff")
 
 # ========== MAIN ENTRY POINT ==========
 
