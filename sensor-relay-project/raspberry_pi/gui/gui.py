@@ -484,20 +484,14 @@ class RelayControlApp(QWidget):
         grid.addWidget(self.station_widgets[3], 1, 1)
 
         # --- Right-side column for button labels ---
-        button_column = QVBoxLayout()
-        button_column.setContentsMargins(0, 40, 8, 40)  # Right margin reduced
-        button_column.setSpacing(32)
-        button_labels = ["▲", "⏎", "▼"]
-        for icon in button_labels:
-            lbl = QLabel(icon)
-            lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;")
-            lbl.setFixedWidth(64)  # Narrow column
-            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            button_column.addWidget(lbl)
-        button_column.addStretch(1)
-
-        # --- Combine grid and button column ---
+        button_column = ButtonColumnWidget(
+            icons=["▲", "⏎", "▼"],
+            font_size=32,
+            fixed_width=64,
+            margins=(0, 30, 8, 40),  # Adjust margins as needed
+            spacing=82,              # Match your CalibrationDialog spacing
+            parent=self
+        )
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -1493,23 +1487,15 @@ class CalibrationDialog(QDialog):
         main_layout.addLayout(content_layout, stretch=3)
 
         # Right: button label column
-        button_column = QVBoxLayout()
-        button_column.setContentsMargins(0, 40, 40, 40)
-        button_column.setSpacing(32)
-        button_labels = [
-            ("▲"),
-            ("⏎"),
-            ("▼"),
-        ]
-        for icon in button_labels:
-            lbl = QLabel(icon)
-            lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;")
-            lbl.setFixedWidth(100)
-            lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-            button_column.addWidget(lbl)
-        button_column.addStretch(1)
-        main_layout.addLayout(button_column, stretch=1)
+        button_column = ButtonColumnWidget(
+            icons=["▲", "⏎", "▼"],
+            font_size=32,
+            fixed_width=64,
+            margins=(0, 30, 8, 40),  # Adjust margins as needed
+            spacing=82,              # Match your CalibrationDialog spacing
+            parent=self
+        )
+        main_layout.addWidget(button_column, stretch=0)
 
         self.setLayout(main_layout)
 
@@ -1545,6 +1531,34 @@ class CalibrationDialog(QDialog):
 
     def set_bottom_label(self, text):
         self.bottom_label.setText(text)
+
+class ButtonColumnWidget(QWidget):
+    def __init__(
+        self,
+        icons=["▲", "⏎", "▼"],
+        parent=None,
+        font_size=32,
+        fixed_width=64,
+        margins=(0, 30, 40, 40),
+        spacing=52,
+        align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+        style="color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;"
+    ):
+        super().__init__(parent)
+        if icons is None:
+            icons = ["▲", "⏎", "▼"]
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(*margins)
+        layout.setSpacing(spacing)
+        for icon in icons:
+            lbl = QLabel(icon)
+            lbl.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
+            lbl.setStyleSheet(style)
+            lbl.setFixedWidth(fixed_width)
+            lbl.setAlignment(align)
+            layout.addWidget(lbl)
+        layout.addStretch(1)
+        self.setLayout(layout)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
