@@ -445,36 +445,29 @@ class RelayControlApp(QWidget):
             logging.info(f"RelayControlApp.__init__ called with station_enabled={station_enabled}")
         self.setWindowTitle("Four Station Control")
         self.setStyleSheet("background-color: #222222;")
+        self.setFixedSize(1024, 600)  # Ensure window fits screen exactly
 
         # Define station colors
         self.bg_colors = STATION_COLORS
 
-        # Example enabled state (replace with your actual config loading)
+        # Enabled state
         if station_enabled is not None:
-            if DEBUG:
-                print("[DEBUG] Using provided station_enabled list.")
-            else:
-                logging.info("Using provided station_enabled list.")
             self.station_enabled = station_enabled
         else:
-            if DEBUG:
-                print("[DEBUG] No station_enabled provided, defaulting to all False.")
-            else:
-                logging.info("No station_enabled provided, defaulting to all False.")
             self.station_enabled = [False, False, False, False]
 
-        # Main grid layout (2x2 for four stations)
+        # --- Main grid layout (2x2 for four stations) ---
         grid = QGridLayout()
         grid.setContentsMargins(8, 8, 8, 8)
         grid.setSpacing(8)
         self.station_widgets = [None] * 4
         for i in range(4):
             widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
+            widget.setFixedSize(320, 260)  # Each station widget fixed size
             # Set initial color with opacity based on enabled state
             if self.station_enabled[i]:
                 color = self.bg_colors[i]
             else:
-                # Convert hex to rgba with 25% opacity
                 hex_color = self.bg_colors[i]
                 if hex_color.startswith("#") and len(hex_color) == 7:
                     r = int(hex_color[1:3], 16)
@@ -492,19 +485,15 @@ class RelayControlApp(QWidget):
 
         # --- Right-side column for button labels ---
         button_column = QVBoxLayout()
-        button_column.setContentsMargins(0, 40, 40, 40)
+        button_column.setContentsMargins(0, 40, 8, 40)  # Right margin reduced
         button_column.setSpacing(32)
-        button_labels = [
-            ("▲"),
-            ("⏎"),
-            ("▼"),
-        ]
-        for icon, label in button_labels:
-            lbl = QLabel(f"{icon}  {label}")
+        button_labels = ["▲", "⏎", "▼"]
+        for icon in button_labels:
+            lbl = QLabel(icon)
             lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 32px;")
-            lbl.setFixedWidth(320)
-            lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;")
+            lbl.setFixedWidth(64)  # Narrow column
+            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
             button_column.addWidget(lbl)
         button_column.addStretch(1)
 
@@ -512,12 +501,13 @@ class RelayControlApp(QWidget):
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        main_layout.addLayout(grid, stretch=3)
-        main_layout.addLayout(button_column, stretch=1)
+        main_layout.addLayout(grid, stretch=1)
+        main_layout.addLayout(button_column, stretch=0)
         self.setLayout(main_layout)
 
         # Borderless fullscreen for kiosk mode
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setGeometry(0, 0, 1024, 600)
         self.showFullScreen()
 
         self.target_weight = 0
@@ -532,14 +522,6 @@ class RelayControlApp(QWidget):
         self.change_units_dialog = None
         self.station_status_dialog = None
 
-        self.setGeometry(
-            QStyle.alignedRect(
-                Qt.LayoutDirection.LeftToRight,
-                Qt.AlignmentFlag.AlignCenter,
-                self.size(),
-                QApplication.primaryScreen().availableGeometry()
-            )
-        )
         self.setCursor(QCursor(Qt.CursorShape.BlankCursor))
         self.active_menu = None
         self.active_dialog = None
@@ -550,7 +532,7 @@ class RelayControlApp(QWidget):
         self.overlay_widget.hide()
 
         # Arduino serial ports (example initialization)
-        self.arduino_ports = []  # List of open serial.Serial objects
+        self.arduino_ports = []
 
     def show_menu(self):
         self.active_menu = "main_menu"
