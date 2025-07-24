@@ -484,11 +484,11 @@ class RelayControlApp(QWidget):
         grid.addWidget(self.station_widgets[3], 1, 1)
 
         # --- Right-side column for button labels ---
-        button_column = ButtonColumnWidget(
+        self.button_column = ButtonColumnWidget(
             icons=["▲", "⏎", "▼"],
             font_size=32,
             fixed_width=64,
-            margins=(0, 30, 8, 40),  # Adjust margins as needed
+            margins=(0, 30, 8, 8),  # Adjust margins as needed
             spacing=82,              # Match your CalibrationDialog spacing
             parent=self
         )
@@ -496,7 +496,7 @@ class RelayControlApp(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         main_layout.addLayout(grid, stretch=1)
-        main_layout.addWidget(button_column, stretch=0)
+        main_layout.addWidget(self.button_column, stretch=0)
         self.setLayout(main_layout)
 
         # Borderless fullscreen for kiosk mode
@@ -1487,15 +1487,15 @@ class CalibrationDialog(QDialog):
         main_layout.addLayout(content_layout, stretch=3)
 
         # Right: button label column
-        button_column = ButtonColumnWidget(
+        self.button_column = ButtonColumnWidget(
             icons=["▲", "⏎", "▼"],
             font_size=32,
             fixed_width=64,
-            margins=(0, 30, 8, 40),  # Adjust margins as needed
+            margins=(0, 30, 8, 8),  # Adjust margins as needed
             spacing=82,              # Match your CalibrationDialog spacing
             parent=self
         )
-        main_layout.addWidget(button_column, stretch=0)
+        main_layout.addWidget(self.button_column, stretch=0)
 
         self.setLayout(main_layout)
 
@@ -1539,7 +1539,7 @@ class ButtonColumnWidget(QWidget):
         parent=None,
         font_size=32,
         fixed_width=64,
-        margins=(0, 30, 40, 40),
+        margins=(0, 30, 40, 8),
         spacing=52,
         align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         style="color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;"
@@ -1559,6 +1559,18 @@ class ButtonColumnWidget(QWidget):
             layout.addWidget(lbl)
         layout.addStretch(1)
         self.setLayout(layout)
+
+    def flash_icon(self, index, flash_color="#11BD33", duration=150):
+        """
+        Flash the icon at the given index with the specified color for a short duration.
+        """
+        if not (0 <= index < len(self.findChildren(QLabel))):
+            return
+        labels = self.findChildren(QLabel)
+        label = labels[index]
+        original_style = label.styleSheet()
+        label.setStyleSheet(original_style + f"; color: {flash_color}; background: #444;")
+        QTimer.singleShot(duration, lambda: label.setStyleSheet(original_style))
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

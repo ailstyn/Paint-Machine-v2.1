@@ -1098,11 +1098,17 @@ def handle_button_presses(app):
     try:
         dialog = getattr(app, "active_dialog", None)
 
+        # Helper: flash icon if button_column exists
+        def flash_dialog_icon(index):
+            if dialog is not None and hasattr(dialog, "button_column"):
+                dialog.button_column.flash_icon(index)
+
         # UP BUTTON
         if GPIO.input(app_config.UP_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             if DEBUG:
                 print(f"UP button pressed, dialog: {dialog}")
+            flash_dialog_icon(0)  # Flash UP icon
             if dialog is not None and hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("up")
             while GPIO.input(app_config.UP_BUTTON_PIN) == GPIO.LOW:
@@ -1119,6 +1125,7 @@ def handle_button_presses(app):
             ping_buzzer()
             if DEBUG:
                 print(f"DOWN button pressed, dialog: {dialog}")
+            flash_dialog_icon(2)  # Flash DOWN icon
             if dialog is not None and hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("down")
             while GPIO.input(app_config.DOWN_BUTTON_PIN) == GPIO.LOW:
@@ -1135,6 +1142,7 @@ def handle_button_presses(app):
             ping_buzzer()
             if DEBUG:
                 print(f"SELECT button pressed, dialog: {dialog}")
+            flash_dialog_icon(1)  # Flash SELECT icon
             while GPIO.input(app_config.SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
