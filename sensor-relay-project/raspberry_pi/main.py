@@ -158,6 +158,17 @@ def handle_final_weight(station_index, arduino, **ctx):
         if len(weight_bytes) == 4:
             final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
             last_final_weight[station_index] = final_weight
+
+            # Immediately update status to show fill complete (without time)
+            update_station_status(
+                station_index,
+                final_weight,
+                ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                is_filling=False,
+                fill_result="complete",
+                fill_time=None  # No time yet
+            )
+
             fill_time = last_fill_time[station_index]
             if fill_time is not None:
                 seconds = int(round(fill_time / 1000))
@@ -1188,10 +1199,16 @@ def update_station_status(station_index, weight, filling_mode, is_filling, fill_
     """
     widget = app.station_widgets[station_index]
     if filling_mode == "AUTO":
-        if fill_result == "complete" and fill_time is not None:
-            widget.set_status(f"AUTO FILL COMPLETE {fill_time:.2f}s", color="#11BD33")
-        elif fill_result == "timeout" and fill_time is not None:
-            widget.set_status(f"AUTO FILL TIMEOUT {fill_time:.2f}s", color="#F6EB61")
+        if fill_result == "complete":
+            if fill_time is not None:
+                widget.set_status(f"AUTO FILL COMPLETE {fill_time:.2f}s", color="#11BD33")
+            else:
+                widget.set_status("AUTO FILL COMPLETE", color="#11BD33")
+        elif fill_result == "timeout":
+            if fill_time is not None:
+                widget.set_status(f"AUTO FILL TIMEOUT {fill_time:.2f}s", color="#F6EB61")
+            else:
+                widget.set_status("AUTO FILL TIMEOUT", color="#F6EB61")
         elif is_filling:
             widget.set_status("AUTO FILLING...", color="#F6EB61")
         elif weight < 40:
