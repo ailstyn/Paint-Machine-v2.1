@@ -464,7 +464,7 @@ class RelayControlApp(QWidget):
         self.station_widgets = [None] * 4
         for i in range(4):
             widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
-            widget.setFixedSize(430, 280)  # Each station widget fixed size
+            widget.setFixedSize(475, 280)  # Each station widget fixed size
             # Set initial color with opacity based on enabled state
             if self.station_enabled[i]:
                 color = self.bg_colors[i]
@@ -1543,7 +1543,7 @@ class ButtonColumnWidget(QWidget):
         margins=(0, 30, 0, 0),
         spacing=50,
         align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-        style="color: #fff; background: #fff; border-radius: 12px; padding: 12px 0px;"
+        style="color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;"
     ):
         super().__init__(parent)
         if icons is None:
