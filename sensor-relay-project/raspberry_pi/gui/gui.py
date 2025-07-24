@@ -490,7 +490,7 @@ class RelayControlApp(QWidget):
             font_size=32,
             fixed_width=64,
             margins=(0, 30, 0, 0),  # Adjust margins as needed
-            spacing=45,              # Match your CalibrationDialog spacing
+            spacing=50,              # Match your CalibrationDialog spacing
             parent=self
         )
         main_layout = QHBoxLayout(self)
@@ -1493,7 +1493,7 @@ class CalibrationDialog(QDialog):
             font_size=32,
             fixed_width=64,
             margins=(0, 30, 0, 0),  # Adjust margins as needed
-            spacing=45,              # Match your CalibrationDialog spacing
+            spacing=50,              # Match your CalibrationDialog spacing
             parent=self
         )
         main_layout.addWidget(self.button_column, stretch=0)
@@ -1541,9 +1541,9 @@ class ButtonColumnWidget(QWidget):
         font_size=32,
         fixed_width=64,
         margins=(0, 30, 0, 0),
-        spacing=45,
+        spacing=50,
         align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-        style="color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;"
+        style="color: #fff; background: #fff; border-radius: 12px; padding: 12px 0px;"
     ):
         super().__init__(parent)
         if icons is None:
