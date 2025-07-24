@@ -1,0 +1,1 @@
+2025-07-24 16:05:44,861 - ERROR - Test error log entry: If you see this, logging is working.
