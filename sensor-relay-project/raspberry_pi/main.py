@@ -592,6 +592,7 @@ def startup(app, timer):
     dialog.selected_index = len(dialog.selection_indices) - 1
     dialog.show_station_verification(station_names, statuses, colors, station_connected)
     dialog.setModal(True)
+    dialog.setWindowState(Qt.WindowState.WindowFullScreen)
     dialog.exec()
     save_station_enabled(config_file, station_enabled)
     app.active_dialog = None
@@ -605,6 +606,7 @@ def startup(app, timer):
     )
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.setModal(True)
+    filling_mode_dialog.setWindowState(Qt.WindowState.WindowFullScreen)
     filling_mode_dialog.exec()
     selected_index = filling_mode_dialog.selected_index
     filling_modes_list = ["AUTO", "MANUAL", "SMART"]
@@ -625,6 +627,7 @@ def startup(app, timer):
                     logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
         info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
+        info.setWindowState(Qt.WindowState.WindowFullScreen)
         info.exec()
         return
 
@@ -639,6 +642,7 @@ def startup(app, timer):
         calib_dialog.screen().geometry().center() - calib_dialog.rect().center()
     )
     app.active_dialog = calib_dialog
+    calib_dialog.setWindowState(Qt.WindowState.WindowFullScreen)
     calib_dialog.exec()
 
     # --- Tare all enabled stations after user confirms remove weight ---
@@ -663,6 +667,7 @@ def startup(app, timer):
         calib_dialog.screen().geometry().center() - calib_dialog.rect().center()
     )
     app.active_dialog = calib_dialog
+    calib_dialog.setWindowState(Qt.WindowState.WindowFullScreen)
     calib_dialog.show()
     QApplication.processEvents()
     while True:

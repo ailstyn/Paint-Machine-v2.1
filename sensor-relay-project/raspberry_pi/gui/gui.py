@@ -467,8 +467,6 @@ class RelayControlApp(QWidget):
         grid = QGridLayout()
         grid.setContentsMargins(8, 8, 8, 8)
         grid.setSpacing(8)
-
-        # Explicitly assign widgets to grid positions with color and opacity
         self.station_widgets = [None] * 4
         for i in range(4):
             widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
@@ -487,13 +485,36 @@ class RelayControlApp(QWidget):
                     color = "rgba(68,68,68,0.25)"
             widget.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
             self.station_widgets[i] = widget
+        grid.addWidget(self.station_widgets[0], 0, 0)
+        grid.addWidget(self.station_widgets[1], 1, 0)
+        grid.addWidget(self.station_widgets[2], 0, 1)
+        grid.addWidget(self.station_widgets[3], 1, 1)
 
-        grid.addWidget(self.station_widgets[0], 0, 0)  # Top left
-        grid.addWidget(self.station_widgets[1], 1, 0)  # Bottom left
-        grid.addWidget(self.station_widgets[2], 0, 1)  # Top right
-        grid.addWidget(self.station_widgets[3], 1, 1)  # Bottom right
+        # --- Right-side column for button labels ---
+        button_column = QVBoxLayout()
+        button_column.setContentsMargins(0, 40, 40, 40)
+        button_column.setSpacing(32)
+        button_labels = [
+            ("▲", "UP"),
+            ("⏎", "SELECT"),
+            ("▼", "DOWN"),
+        ]
+        for icon, label in button_labels:
+            lbl = QLabel(f"{icon}  {label}")
+            lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 32px;")
+            lbl.setFixedWidth(320)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            button_column.addWidget(lbl)
+        button_column.addStretch(1)
 
-        self.setLayout(grid)
+        # --- Combine grid and button column ---
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addLayout(grid, stretch=3)
+        main_layout.addLayout(button_column, stretch=1)
+        self.setLayout(main_layout)
 
         # Borderless fullscreen for kiosk mode
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
@@ -1432,19 +1453,25 @@ class CalibrationDialog(QDialog):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setStyleSheet("background-color: #222; color: #fff;")
-        layout = QVBoxLayout(self)
 
+        # Main horizontal layout
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Left: existing content
+        content_layout = QVBoxLayout()
         # Large label (main instruction)
         self.main_label = QLabel("CALIBRATION")
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-        layout.addWidget(self.main_label)
+        content_layout.addWidget(self.main_label)
 
         # Smaller label (sub-instruction)
         self.sub_label = QLabel("Follow the instructions to calibrate each station.")
         self.sub_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sub_label.setFont(QFont("Arial", 20))
-        layout.addWidget(self.sub_label)
+        content_layout.addWidget(self.sub_label)
 
         # Four StationBoxWidgets inside QFrames
         self.weight_labels = []
@@ -1474,29 +1501,43 @@ class CalibrationDialog(QDialog):
             # Remove or comment out the setFixedSize line for the frame!
             # frame.setFixedSize(box_widget.width() + 8, box_widget.height() + 8)
             weights_layout.addWidget(frame)
-        layout.addLayout(weights_layout)
+        content_layout.addLayout(weights_layout)
 
         # Bottom label (status or instruction)
         self.bottom_label = QLabel("Press SELECT to continue when ready.")
         self.bottom_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.bottom_label.setFont(QFont("Arial", 18))
-        layout.addWidget(self.bottom_label)
+        content_layout.addWidget(self.bottom_label)
+        main_layout.addLayout(content_layout, stretch=3)
 
-        self.setLayout(layout)
+        # Right: button label column
+        button_column = QVBoxLayout()
+        button_column.setContentsMargins(0, 40, 40, 40)
+        button_column.setSpacing(32)
+        button_labels = [
+            ("▲", "UP"),
+            ("⏎", "SELECT"),
+            ("▼", "DOWN"),
+        ]
+        for icon, label in button_labels:
+            lbl = QLabel(f"{icon}  {label}")
+            lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 32px;")
+            lbl.setFixedWidth(320)
+            lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            button_column.addWidget(lbl)
+        button_column.addStretch(1)
+        main_layout.addLayout(button_column, stretch=1)
 
-    def set_main_label(self, text):
-        self.main_label.setText(text)
+        self.setLayout(main_layout)
 
-    def set_sub_label(self, text):
-        self.sub_label.setText(text)
-
-    def set_weight(self, station_index, weight, color=None):
-        """Update the weight label and optionally its color."""
-        if 0 <= station_index < len(self.weight_labels):
-            self.weight_labels[station_index].setText(f"{weight:.1f} g")
-            if color:
-                self.weight_labels[station_index].setStyleSheet(f"color: {color};")
-            # Otherwise, main.py can set the color as needed
+    def set_weight(self, station_index, weight):
+        if self.weight_labels[station_index]:
+            if isinstance(weight, (int, float)):
+                new_text = f"{weight:.1f} g"
+            else:
+                new_text = str(weight)
+            self.weight_labels[station_index].setText(new_text)
 
     def set_bottom_label(self, text):
         self.bottom_label.setText(text)
