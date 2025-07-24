@@ -165,7 +165,7 @@ def handle_final_weight(station_index, arduino, **ctx):
             print("About to call update_station_status in handle_final_weight")
             update_station_status(
                 station_index,
-                final_weight,
+                final_weight,  # Always use this value
                 ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
                 is_filling=False,
                 fill_result="complete",
@@ -1197,6 +1197,10 @@ def handle_button_presses(app):
             print(f"Error in handle_button_presses: {e}")
 
 def update_station_status(station_index, weight, filling_mode, is_filling, fill_result=None, fill_time=None):
+    """
+    Update the status label for a station.
+    'weight' should be the final fill weight if called from handle_final_weight.
+    """
     print(f"[DEBUG] update_station_status: idx={station_index}, weight={weight}, mode={filling_mode}, is_filling={is_filling}, fill_result={fill_result}, fill_time={fill_time}")
     widget = app.station_widgets[station_index]
     print(f"widget for station {station_index} is {widget}")
@@ -1219,6 +1223,7 @@ def update_station_status(station_index, weight, filling_mode, is_filling, fill_
             widget.set_status("READY", color="#fff")
     else:
         widget.set_status("READY", color="#fff")
+
 
 # ========== MAIN ENTRY POINT ==========
 
