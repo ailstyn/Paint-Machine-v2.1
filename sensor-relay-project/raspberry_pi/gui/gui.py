@@ -1555,6 +1555,16 @@ class CalibrationDialog(QDialog):
         super().showEvent(event)
         self.showFullScreen()
 
+    def set_main_label(self, text):
+        """Set the main instruction label text."""
+        self.main_label.setText(text)
+
+    def set_sub_label(self, text):
+        self.sub_label.setText(text)
+
+    def set_bottom_label(self, text):
+        self.bottom_label.setText(text)
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = RelayControlApp()  # or your main QWidget/QDialog
