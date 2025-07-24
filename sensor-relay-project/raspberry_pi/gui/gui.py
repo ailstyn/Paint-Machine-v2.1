@@ -496,7 +496,7 @@ class RelayControlApp(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         main_layout.addLayout(grid, stretch=1)
-        main_layout.addLayout(button_column, stretch=0)
+        main_layout.addWidget(button_column, stretch=0)
         self.setLayout(main_layout)
 
         # Borderless fullscreen for kiosk mode
