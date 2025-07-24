@@ -495,9 +495,9 @@ class RelayControlApp(QWidget):
         button_column.setContentsMargins(0, 40, 40, 40)
         button_column.setSpacing(32)
         button_labels = [
-            ("▲", "UP"),
-            ("⏎", "SELECT"),
-            ("▼", "DOWN"),
+            ("▲"),
+            ("⏎"),
+            ("▼"),
         ]
         for icon, label in button_labels:
             lbl = QLabel(f"{icon}  {label}")
@@ -1515,9 +1515,9 @@ class CalibrationDialog(QDialog):
         button_column.setContentsMargins(0, 40, 40, 40)
         button_column.setSpacing(32)
         button_labels = [
-            ("▲", "UP"),
-            ("⏎", "SELECT"),
-            ("▼", "DOWN"),
+            ("▲"),
+            ("⏎"),
+            ("▼"),
         ]
         for icon, label in button_labels:
             lbl = QLabel(f"{icon}  {label}")
@@ -1556,7 +1556,6 @@ class CalibrationDialog(QDialog):
         self.showFullScreen()
 
     def set_main_label(self, text):
-        """Set the main instruction label text."""
         self.main_label.setText(text)
 
     def set_sub_label(self, text):
