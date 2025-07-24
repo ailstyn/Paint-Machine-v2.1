@@ -6,6 +6,7 @@ from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QC
 import sys
 import logging
 import os
+import weakref
 from gui.languages import LANGUAGES
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app_config import DEBUG
