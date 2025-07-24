@@ -463,7 +463,7 @@ class RelayControlApp(QWidget):
         self.station_widgets = [None] * 4
         for i in range(4):
             widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
-            widget.setFixedSize(320, 260)  # Each station widget fixed size
+            widget.setFixedSize(430, 280)  # Each station widget fixed size
             # Set initial color with opacity based on enabled state
             if self.station_enabled[i]:
                 color = self.bg_colors[i]
@@ -1504,8 +1504,8 @@ class CalibrationDialog(QDialog):
         for icon in button_labels:
             lbl = QLabel(icon)
             lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 32px;")
-            lbl.setFixedWidth(320)
+            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;")
+            lbl.setFixedWidth(100)
             lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             button_column.addWidget(lbl)
         button_column.addStretch(1)
