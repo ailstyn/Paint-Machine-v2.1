@@ -1501,8 +1501,8 @@ class CalibrationDialog(QDialog):
             ("⏎"),
             ("▼"),
         ]
-        for icon, label in button_labels:
-            lbl = QLabel(f"{icon}  {label}")
+        for icon in button_labels:
+            lbl = QLabel(icon)
             lbl.setFont(QFont("Arial", 32, QFont.Weight.Bold))
             lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 12px 32px;")
             lbl.setFixedWidth(320)
