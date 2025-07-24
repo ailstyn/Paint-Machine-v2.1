@@ -153,6 +153,7 @@ def handle_begin_smart_fill(station_index, arduino, **ctx):
         logging.error("Error in handle_begin_smart_fill", exc_info=True)
 
 def handle_final_weight(station_index, arduino, **ctx):
+    print(f"[DEBUG] handle_final_weight called for station {station_index}")
     try:
         weight_bytes = arduino.read(4)
         if len(weight_bytes) == 4:
@@ -1194,10 +1195,8 @@ def handle_button_presses(app):
             print(f"Error in handle_button_presses: {e}")
 
 def update_station_status(station_index, weight, filling_mode, is_filling, fill_result=None, fill_time=None):
-    """
-    Update the status label for a station based on auto fill logic.
-    """
     widget = app.station_widgets[station_index]
+    print(f"[DEBUG] update_station_status: idx={station_index}, weight={weight}, mode={filling_mode}, is_filling={is_filling}, fill_result={fill_result}, fill_time={fill_time}")
     if filling_mode == "AUTO":
         if fill_result == "complete":
             if fill_time is not None:
