@@ -436,164 +436,235 @@ def log_final_weight(station_index, final_weight):
 
 # ========== STARTUP ==========
 
-def run_startup_sequence(app_qt):
-    """
-    Run all startup dialogs and calibration logic before showing the main window.
-    Returns a dict with all state needed to create the main window.
-    """
-    # Local translation function (no-op, replace with real translation if needed)
-    tr = lambda k: k
+def startup(app, timer):
+    global arduinos, scale_calibrations, station_enabled, station_serials
 
-    # Setup GPIO, load configs, connect arduinos, etc.
-    setup_gpio()
-    load_scale_calibrations()
-    config_path = "config.txt"
-    station_enabled = load_station_enabled(config_path)
-    station_serials = load_station_serials()
+    if DEBUG:
+        print("[DEBUG] === Startup sequence initiated ===")
 
-    # Fix: define these at the top
-    scale_calibrations_local = list(scale_calibrations)
-    arduinos_local = [None] * NUM_STATIONS
+    # Load calibration and serials
+    try:
+        if DEBUG:
+            print("[DEBUG] Loading scale calibrations and station serials...")
+        else:
+            logging.info("Loading scale calibrations and station serials...")
+        load_scale_calibrations()
+        station_serials = load_station_serials()
+        if DEBUG:
+            print(f"[DEBUG] station_serials: {station_serials}")
+            print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
+        else:
+            logging.info(f"station_serials: {station_serials}")
+            logging.info(f"scale_calibrations: {scale_calibrations}")
+    except Exception as e:
+        if DEBUG:
+            print(f"[DEBUG] Error loading calibrations/serials: {e}")
+        logging.error(f"Error loading calibrations/serials: {e}")
 
-    # Connect arduinos
+    # Connect and setup Arduinos
     station_connected = [False] * NUM_STATIONS
+    arduinos = [None] * NUM_STATIONS
     for port in arduino_ports:
         try:
+            if DEBUG:
+                print(f"[DEBUG] Trying port {port}...")
+            else:
+                logging.info(f"Trying port {port}...")
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
             arduino.write(RESET_HANDSHAKE)
             arduino.flush()
+            if DEBUG:
+                print(f"[DEBUG] Sent RESET HANDSHAKE to {port}")
+            else:
+                logging.info(f"Sent RESET HANDSHAKE to {port}")
             arduino.write(b'PMID')
             arduino.flush()
+            if DEBUG:
+                print(f"[DEBUG] Sent 'PMID' handshake to {port}")
+            else:
+                logging.info(f"Sent 'PMID' handshake to {port}")
             station_serial_number = None
             for _ in range(60):
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                    if DEBUG:
+                        print(f"[DEBUG] Received from {port}: {repr(line)}")
+                    else:
+                        logging.info(f"Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
+                        if DEBUG:
+                            print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
+                        else:
+                            logging.info(f"Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
+                if DEBUG:
+                    print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
+                else:
+                    logging.error(f"No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
             station_index = station_serials.index(station_serial_number)
             arduino.write(CONFIRM_ID)
             arduino.flush()
+            if DEBUG:
+                print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
+            else:
+                logging.info(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == REQUEST_CALIBRATION:
+                        if DEBUG:
+                            print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        else:
+                            logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(REQUEST_CALIBRATION)
-                        arduino.write(f"{scale_calibrations_local[station_index]}\n".encode('utf-8'))
+                        arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
                         break
                     else:
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
+                if DEBUG:
+                    print(f"[DEBUG] Station {station_index+1}: Did not receive calibration request, skipping.")
+                else:
+                    logging.error(f"Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
-            arduinos_local[station_index] = arduino
+            arduinos[station_index] = arduino
             station_connected[station_index] = True
+            if DEBUG:
+                print(f"[DEBUG] Station {station_index+1} on {port} initialized and ready.")
+            else:
+                logging.info(f"Station {station_index+1} on {port} initialized and ready.")
         except Exception as e:
+            if DEBUG:
+                print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
             logging.error(f"Error initializing Arduino on {port}: {e}")
 
+    # Load enabled states
+    try:
+        if DEBUG:
+            print("[DEBUG] Loading enabled states...")
+        else:
+            logging.info("Loading enabled states...")
+        station_enabled = load_station_enabled("config.txt")
+        if DEBUG:
+            print(f"[DEBUG] station_enabled: {station_enabled}")
+        else:
+            logging.info(f"station_enabled: {station_enabled}")
+    except Exception as e:
+        if DEBUG:
+            print(f"[DEBUG] Error loading enabled states: {e}")
+        logging.error(f"Error loading enabled states: {e}")
+
     # Wait for E-STOP to be released
+    if DEBUG:
+        print("[DEBUG] Checking E-STOP state...")
+    else:
+        logging.info("Checking E-STOP state...")
     while GPIO.input(E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
     # --- Step 1: Verify Stations ---
-    dialog = StartupDialog(tr("Are these the filling stations you are using?"), parent=None)
-    station_names = [tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
+    dialog = StartupDialog(app.tr("Are these the filling stations you are using?"), parent=app)
+    app.active_dialog = dialog
+    station_names = [app.tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
     statuses = []
     for i in range(NUM_STATIONS):
         if station_enabled[i] and station_connected[i]:
-            statuses.append(tr("ENABLED") + " & " + tr("CONNECTED"))
+            statuses.append(app.tr("ENABLED") + " & " + app.tr("CONNECTED"))
         elif station_enabled[i] and not station_connected[i]:
-            statuses.append(tr("ENABLED") + " & " + tr("DISCONNECTED"))
+            statuses.append(app.tr("ENABLED") + " & " + app.tr("DISCONNECTED"))
         elif not station_enabled[i] and station_connected[i]:
-            statuses.append(tr("DISABLED") + " & " + tr("CONNECTED"))
+            statuses.append(app.tr("DISABLED") + " & " + app.tr("CONNECTED"))
         else:
-            statuses.append(tr("DISABLED") + " & " + tr("DISCONNECTED"))
-    colors = ["#444"] * NUM_STATIONS
+            statuses.append(app.tr("DISABLED") + " & " + app.tr("DISCONNECTED"))
+    colors = getattr(app, "bg_colors", ["#444"] * NUM_STATIONS)
     dialog.show_station_verification(station_names, statuses, colors, station_connected)
-    dialog.selected_index = len(getattr(dialog, "selection_indices", [])) - 1
+    dialog.selected_index = len(dialog.selection_indices) - 1
     dialog.show_station_verification(station_names, statuses, colors, station_connected)
     dialog.setModal(True)
     dialog.exec()
     save_station_enabled(config_file, station_enabled)
+    app.active_dialog = None
 
     # --- Step 2: Select Filling Mode ---
-    filling_modes = [("AUTO", tr("AUTO")), ("MANUAL", tr("MANUAL")), ("SMART", tr("SMART"))]
+    filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
     filling_mode_dialog = SelectionDialog(
         options=filling_modes,
-        parent=None,
-        title=tr("SET FILLING MODE")
+        parent=app,
+        title=app.tr("SET FILLING MODE")
     )
+    app.active_dialog = filling_mode_dialog
     filling_mode_dialog.setModal(True)
     filling_mode_dialog.exec()
     selected_index = filling_mode_dialog.selected_index
     filling_modes_list = ["AUTO", "MANUAL", "SMART"]
-    filling_mode = filling_modes_list[selected_index]
+    app.filling_mode = filling_modes_list[selected_index]
+    global filling_mode
+    filling_mode = app.filling_mode
+    app.active_dialog = None
 
     # If MANUAL mode, show popup, send command, and exit startup
     if filling_mode == "MANUAL":
         MANUAL_FILL_START = b'\x20'
-        for i, arduino in enumerate(arduinos_local):
+        for i, arduino in enumerate(arduinos):
             if arduino and station_enabled[i]:
                 try:
                     arduino.write(MANUAL_FILL_START)
                     arduino.flush()
                 except Exception as e:
                     logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
-        info = InfoDialog(tr("MANUAL FILLING MODE"), tr("Manual filling mode selected.<br>Startup complete."), None)
+        info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
         info.exec()
-        return {
-            "station_enabled": station_enabled,
-            "scale_calibrations": scale_calibrations_local,
-            "target_weight": target_weight,
-            "time_limit": time_limit,
-            "filling_mode": filling_mode,
-            "arduinos": arduinos_local,
-        }
+        return
 
     # --- Step 3: Calibration Check (Remove Weight) ---
-    calib_dialog = CalibrationDialog(station_enabled, parent=None)
-    calib_dialog.set_main_label(tr("CALIBRATION_TITLE"))
-    calib_dialog.set_sub_label(tr("CALIBRATION_REMOVE_WEIGHT"))
+    calib_dialog = CalibrationDialog(station_enabled, parent=app)
+    calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))
+    calib_dialog.set_sub_label(app.tr("CALIBRATION_REMOVE_WEIGHT"))
     calib_dialog.set_bottom_label("")
     calib_dialog.setModal(True)
     calib_dialog.resize(900, 500)
     calib_dialog.move(
         calib_dialog.screen().geometry().center() - calib_dialog.rect().center()
     )
+    app.active_dialog = calib_dialog
     calib_dialog.exec()
 
     # --- Tare all enabled stations after user confirms remove weight ---
-    for i, arduino in enumerate(arduinos_local):
+    for i, arduino in enumerate(arduinos):
         if arduino and station_enabled[i]:
             try:
                 arduino.write(TARE_SCALE)
                 arduino.flush()
+                if DEBUG:
+                    print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
             except Exception as e:
                 logging.error(f"Failed to send TARE_SCALE to station {i+1}: {e}")
 
     # --- Step 4: Full Bottle Check (Live update loop) ---
-    calib_dialog = CalibrationDialog(station_enabled, parent=None)
-    calib_dialog.set_main_label(tr("CALIBRATION_TITLE"))
-    calib_dialog.set_sub_label(tr("Place a full bottle in each active station, then press any button."))
+    calib_dialog = CalibrationDialog(station_enabled, parent=app)
+    calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))
+    calib_dialog.set_sub_label(app.tr("Place a full bottle in each active station, then press any button."))
     calib_dialog.set_bottom_label("")
     calib_dialog.setModal(True)
     calib_dialog.resize(900, 500)
     calib_dialog.move(
         calib_dialog.screen().geometry().center() - calib_dialog.rect().center()
     )
+    app.active_dialog = calib_dialog
     calib_dialog.show()
     QApplication.processEvents()
-    target_weight_local = 500.0
     while True:
         while calib_dialog.result() == 0:
             for i in range(NUM_STATIONS):
@@ -629,10 +700,10 @@ def run_startup_sequence(app_qt):
         in_second_range = [i for i, w in weights if 715 <= w <= 765]
         if len(in_first_range) == len(weights):
             failed_stations = []
-            target_weight_local = 400
+            app.target_weight = 400
         elif len(in_second_range) == len(weights):
             failed_stations = []
-            target_weight_local = 750
+            app.target_weight = 750
         else:
             failed_stations = [
                 str(i + 1)
@@ -643,11 +714,11 @@ def run_startup_sequence(app_qt):
                 failed_stations = [str(i + 1) for i, _ in weights]
         if failed_stations:
             calib_dialog.set_bottom_label(
-                tr("ERROR") + " " +
-                tr("ON STATION") +
+                app.tr("ERROR") + " " +
+                app.tr("ON STATION") +
                 ("S" if len(failed_stations) > 1 else "") +
                 " " + ", ".join(failed_stations) +
-                "<br>" + tr("ALL STATIONS MUST USE THE SAME SIZE") + "<br>" + tr("PRESS SELECT TO CONTINUE")
+                "<br>" + app.tr("ALL STATIONS MUST USE THE SAME SIZE") + "<br>" + app.tr("PRESS SELECT TO CONTINUE")
             )
             calib_dialog.done(0)
             continue
@@ -656,15 +727,16 @@ def run_startup_sequence(app_qt):
             break
 
     # --- Step 5: Empty Bottle Check (Live update loop) ---
-    calib_dialog = CalibrationDialog(station_enabled, parent=None)
-    calib_dialog.set_main_label(tr("CALIBRATION_TITLE"))
-    calib_dialog.set_sub_label(tr("Place an empty bottle in each active station"))
-    calib_dialog.set_bottom_label(tr("PRESS SELECT TO CONTINUE"))
+    calib_dialog = CalibrationDialog(station_enabled, parent=app)
+    calib_dialog.set_main_label(app.tr("CALIBRATION_TITLE"))
+    calib_dialog.set_sub_label(app.tr("Place an empty bottle in each active station"))
+    calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
     calib_dialog.setModal(True)
     calib_dialog.resize(900, 500)
     calib_dialog.move(
         calib_dialog.screen().geometry().center() - calib_dialog.rect().center()
     )
+    app.active_dialog = calib_dialog
     calib_dialog.show()
     QApplication.processEvents()
     while True:
@@ -674,9 +746,9 @@ def run_startup_sequence(app_qt):
                     try:
                         weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                         weight = float(weight_text) if weight_text not in ("--", "") else 0.0
-                        if target_weight_local == 400:
+                        if app.target_weight == 400:
                             in_range = 18 <= weight <= 22
-                        elif target_weight_local == 750:
+                        elif app.target_weight == 750:
                             in_range = 29 <= weight <= 33
                         else:
                             in_range = False
@@ -694,9 +766,9 @@ def run_startup_sequence(app_qt):
                 try:
                     weight_text = calib_dialog.weight_labels[i].text().replace(" g", "")
                     weight = float(weight_text) if weight_text not in ("--", "") else 0.0
-                    if target_weight_local == 400:
+                    if app.target_weight == 400:
                         in_range = 18 <= weight <= 22
-                    elif target_weight_local == 750:
+                    elif app.target_weight == 750:
                         in_range = 29 <= weight <= 33
                     else:
                         in_range = False
@@ -713,15 +785,15 @@ def run_startup_sequence(app_qt):
             break
         else:
             calib_dialog.set_bottom_label(
-                tr("ERROR") + " " +
-                tr("ON STATION") +
+                app.tr("ERROR") + " " +
+                app.tr("ON STATION") +
                 ("S" if len(failed_stations) > 1 else "") +
                 " " + ", ".join(failed_stations)
             )
             for _ in range(3):
                 ping_buzzer()
                 time.sleep(0.15)
-            calib_dialog.set_bottom_label(tr("PRESS SELECT TO CONTINUE"))
+            calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
             calib_dialog.done(0)
             continue
 
@@ -730,18 +802,18 @@ def run_startup_sequence(app_qt):
     faulty_stations = set()
     timeout = 6
     start_time = time.time()
-    calib_dialog.set_main_label(tr("BUTTON CHECK"))
-    calib_dialog.set_sub_label(tr("Checking station buttons for faults..."))
-    calib_dialog.set_bottom_label(tr("Checking... {timeout} seconds remaining").format(timeout=timeout))
+    calib_dialog.set_main_label(app.tr("BUTTON CHECK"))
+    calib_dialog.set_sub_label(app.tr("Checking station buttons for faults..."))
+    calib_dialog.set_bottom_label(app.tr("Checking... {timeout} seconds remaining").format(timeout=timeout))
     for i in range(NUM_STATIONS):
         if station_enabled[i]:
-            calib_dialog.weight_labels[i].setText(tr("STATION") + f" {i+1}: " + tr("OK"))
+            calib_dialog.weight_labels[i].setText(app.tr("STATION") + f" {i+1}: " + app.tr("OK"))
             calib_dialog.weight_labels[i].setStyleSheet(
                 "color: #fff; background: #228B22; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
             )
             calib_dialog.weight_labels[i].setFixedWidth(180)
         else:
-            calib_dialog.weight_labels[i].setText(tr("STATION") + f" {i+1}: " + tr("DISABLED"))
+            calib_dialog.weight_labels[i].setText(app.tr("STATION") + f" {i+1}: " + app.tr("DISABLED"))
             calib_dialog.weight_labels[i].setStyleSheet(
                 "color: #fff; background: #888; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
             )
@@ -754,40 +826,40 @@ def run_startup_sequence(app_qt):
         elapsed = time.time() - start_time
         seconds_left = max(0, int(timeout - elapsed))
         if seconds_left != last_seconds_left:
-            calib_dialog.set_bottom_label(tr("Checking... {timeout} seconds remaining").format(timeout=seconds_left))
+            calib_dialog.set_bottom_label(app.tr("Checking... {timeout} seconds remaining").format(timeout=seconds_left))
             last_seconds_left = seconds_left
             QApplication.processEvents()
         for i in range(NUM_STATIONS):
-            if station_enabled[i] and i not in faulty_stations and arduinos_local[i] and arduinos_local[i].in_waiting > 0:
+            if station_enabled[i] and i not in faulty_stations and arduinos[i] and arduinos[i].in_waiting > 0:
                 try:
-                    byte = arduinos_local[i].read(1)
+                    byte = arduinos[i].read(1)
                     if byte == BUTTON_ERROR:
                         button_error_counts[i] += 1
                         if button_error_counts[i] >= 2 and i not in faulty_stations:
                             faulty_stations.add(i)
-                            calib_dialog.weight_labels[i].setText(tr("STATION") + f" {i+1}: " + tr("BUTTON ERROR"))
+                            calib_dialog.weight_labels[i].setText(app.tr("STATION") + f" {i+1}: " + app.tr("BUTTON ERROR"))
                             calib_dialog.weight_labels[i].setStyleSheet(
                                 "color: #fff; background: #B22222; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
                             )
                             calib_dialog.weight_labels[i].setFixedWidth(180)
-                            calib_dialog.set_sub_label(tr("STATION") + f" {i+1} " + tr("button is malfunctioning."))
-                            calib_dialog.set_bottom_label(tr("For your safety, station {station} has been disabled<br>Checking... {timeout} seconds remaining").format(station=i+1, timeout=seconds_left))
+                            calib_dialog.set_sub_label(app.tr("STATION") + f" {i+1} " + app.tr("button is malfunctioning."))
+                            calib_dialog.set_bottom_label(app.tr("For your safety, station {station} has been disabled<br>Checking... {timeout} seconds remaining").format(station=i+1, timeout=seconds_left))
                             station_enabled[i] = False
                             save_station_enabled(config_file, station_enabled)
                             QApplication.processEvents()
                     elif byte == CURRENT_WEIGHT:
-                        extra = arduinos_local[i].read(4)
+                        extra = arduinos[i].read(4)
                 except Exception:
                     pass
         for i in range(NUM_STATIONS):
             if station_enabled[i] and i not in faulty_stations:
-                calib_dialog.weight_labels[i].setText(tr("STATION") + f" {i+1}: " + tr("OK"))
+                calib_dialog.weight_labels[i].setText(app.tr("STATION") + f" {i+1}: " + app.tr("OK"))
                 calib_dialog.weight_labels[i].setStyleSheet(
                     "color: #fff; background: #228B22; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
                 )
                 calib_dialog.weight_labels[i].setFixedWidth(180)
             elif not station_enabled[i]:
-                calib_dialog.weight_labels[i].setText(tr("STATION") + f" {i+1}: " + tr("DISABLED"))
+                calib_dialog.weight_labels[i].setText(app.tr("STATION") + f" {i+1}: " + app.tr("DISABLED"))
                 calib_dialog.weight_labels[i].setStyleSheet(
                     "color: #fff; background: #888; border-radius: 8px; font-size: 20px; padding: 8px 16px; min-width: 180px;"
                 )
@@ -797,51 +869,361 @@ def run_startup_sequence(app_qt):
         if elapsed >= timeout:
             break
     if not faulty_stations:
-        calib_dialog.set_sub_label(tr("Calibration complete."))
+        calib_dialog.set_sub_label(app.tr("Calibration complete."))
     else:
-        calib_dialog.set_sub_label(tr("Some stations disabled due to button error."))
-    calib_dialog.set_bottom_label(tr("PRESS SELECT TO CONTINUE"))
+        calib_dialog.set_sub_label(app.tr("Some stations disabled due to button error."))
+    calib_dialog.set_bottom_label(app.tr("PRESS SELECT TO CONTINUE"))
     QApplication.processEvents()
     while calib_dialog.result() == 0:
         QApplication.processEvents()
         time.sleep(0.01)
+    app.active_dialog = None
     calib_dialog.accept()
 
-    # Return all state needed for the main window
-    return {
-        "station_enabled": station_enabled,
-        "scale_calibrations": scale_calibrations_local,
-        "target_weight": target_weight_local,
-        "time_limit": time_limit,
-        "filling_mode": filling_mode,
-        "arduinos": arduinos_local,
-    }
+    # Show the main window after startup is complete
+    app.show()
+
+    # ========== If MANUAL mode, send MANUAL_FILL_START to all connected stations ==========
+    if getattr(app, "filling_mode", "AUTO") == "MANUAL":
+        MANUAL_FILL_START = b'\x20'
+        for i, arduino in enumerate(arduinos):
+            if arduino and station_enabled[i]:
+                try:
+                    arduino.write(MANUAL_FILL_START)
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[DEBUG] Sent MANUAL_FILL_START to station {i+1}")
+                except Exception as e:
+                    if DEBUG:
+                        print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+
+EXIT_MANUAL_END = 0x22
+MANUAL_FILL_START = 0x20
+
+def filling_mode_callback(mode):
+    global filling_mode
+    filling_mode = mode
+    if DEBUG:
+        print(f"[main.py] Filling mode set to: {mode}")
+
+    if mode == "MANUAL":
+        for i, arduino in enumerate(arduinos):
+            if arduino and station_enabled[i]:
+                try:
+                    arduino.write(bytes([0x20]))  # MANUAL_FILL_START
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[main.py] Sent MANUAL_FILL_START to station {i+1}")
+                except Exception as e:
+                    print(f"[main.py] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+    else:
+        for i, arduino in enumerate(arduinos):
+            if arduino and station_enabled[i]:
+                try:
+                    arduino.write(bytes([0x22]))  # EXIT_MANUAL_END
+                    arduino.flush()
+                    if DEBUG:
+                        print(f"[main.py] Sent EXIT_MANUAL_END to station {i+1}")
+                except Exception as e:
+                    print(f"[main.py] Failed to send EXIT_MANUAL_END to station {i+1}: {e}")
+
+def reconnect_arduino(station_index, port):
+    if DEBUG:
+        print(f"reconnect_arduino called for {port}")
+    else:
+        logging.info(f"reconnect_arduino called for {port}")
+    try:
+        if arduinos[station_index]:
+            try:
+                arduinos[station_index].close()
+            except Exception:
+                pass
+            arduinos[station_index] = None
+
+        arduino = serial.Serial(port, 9600, timeout=0.5)
+        arduino.reset_input_buffer()
+        time.sleep(1)
+
+        arduino.write(RESET_HANDSHAKE)
+        arduino.flush()
+        if DEBUG:
+            print(f"Sent RESET_HANDSHAKE to {port}")
+        else:
+            logging.info(f"Sent RESET_HANDSHAKE to {port}")
+        time.sleep(0.5)
+
+        arduino.write(b'PMID')
+        arduino.flush()
+        if DEBUG:
+            print(f"Sent 'PMID' handshake to {port}")
+        else:
+            logging.info(f"Sent 'PMID' handshake to {port}")
+
+        station_serials = load_station_serials()
+        station_serial_number = None
+        for _ in range(60):
+            if arduino.in_waiting > 0:
+                line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                if DEBUG:
+                    print(f"Received from {port}: {repr(line)}")
+                else:
+                    logging.info(f"Received from {port}: {repr(line)}")
+                match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
+                if match:
+                    station_serial_number = match.group(1)
+                    if DEBUG:
+                        print(f"Station serial {station_serial_number} detected on {port}")
+                    else:
+                        logging.info(f"Station serial {station_serial_number} detected on {port}")
+                    break
+            time.sleep(0.1)
+        if station_serial_number is None or station_serial_number not in station_serials:
+            if DEBUG:
+                print(f"No recognized station detected on port {port}, skipping...")
+            else:
+                logging.error(f"No recognized station detected on port {port}, skipping...")
+            arduino.close()
+            return False
+
+        station_index = station_serials.index(station_serial_number)
+
+        arduino.write(CONFIRM_ID)
+        arduino.flush()
+        if DEBUG:
+            print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
+        else:
+            logging.info(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
+
+        got_request = False
+        for _ in range(40):
+            if arduino.in_waiting > 0:
+                req = arduino.read(1)
+                if req == REQUEST_CALIBRATION:
+                    if DEBUG:
+                        print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                    else:
+                        logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                    arduino.write(REQUEST_CALIBRATION)
+                    arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
+                    got_request = True
+                    break
+                else:
+                    arduino.reset_input_buffer()
+            time.sleep(0.1)
+        if not got_request:
+            if DEBUG:
+                print(f"Station {station_index+1}: Did not receive calibration request, skipping.")
+            else:
+                logging.error(f"Station {station_index+1}: Did not receive calibration request, skipping.")
+            arduino.close()
+            return False
+
+        arduinos[station_index - 1] = arduino
+        if DEBUG:
+            print(f"Station {station_index+1} on {port} reconnected and ready.")
+        else:
+            logging.info(f"Station {station_index+1} on {port} reconnected and ready.")
+        return True
+
+    except Exception as e:
+        if DEBUG:
+            print(f"Error reconnecting Arduino on {port}: {e}")
+        logging.error(f"Error reconnecting Arduino on {port}: {e}")
+        return False
+
+def try_connect_station(station_index):
+    port = arduino_ports[station_index]
+    if DEBUG:
+        print(f"Attempting to (re)connect to station {station_index+1} on port {port}...")
+    try:
+        success = reconnect_arduino(station_index, port)
+        if success:
+            station_enabled[station_index] = True
+            return True
+        else:
+            return False
+    except Exception as e:
+        if DEBUG:
+            print(f"Error in try_connect_station: {e}")
+        return False
+
+def poll_hardware(app):
+    global E_STOP, FILL_LOCKED
+    try:
+        # Localize frequently accessed attributes
+        station_widgets = getattr(app, "station_widgets", None)
+        active_dialog = getattr(app, "active_dialog", None)
+        filling_mode = getattr(app, "filling_mode", "AUTO")
+        overlay_widget = getattr(app, "overlay_widget", None)
+        refresh_ui = getattr(app, "refresh_ui", None)
+        update_station_weight = getattr(app, "update_station_weight", None)
+
+        estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
+
+        # Handle E-STOP state change
+        if estop_pressed and not E_STOP:
+            if DEBUG:
+                print("E-STOP pressed")
+            E_STOP = True
+            FILL_LOCKED = True
+            if active_dialog is not None:
+                try:
+                    active_dialog.reject()
+                except Exception as e:
+                    logging.error(f"Error rejecting active dialog: {e}")
+                app.active_dialog = None
+
+            if overlay_widget:
+                overlay_widget.show_overlay(
+                    f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
+                    f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
+                    color="#CD0A0A"
+                )
+            for arduino in arduinos:
+                if arduino:
+                    arduino.write(E_STOP_ACTIVATED)
+                    arduino.flush()
+        elif not estop_pressed and E_STOP:
+            if DEBUG:
+                print("E-STOP released")
+            E_STOP = False
+            FILL_LOCKED = False
+            if overlay_widget:
+                overlay_widget.hide_overlay()
+
+        for station_index, arduino in enumerate(arduinos):
+            if arduino is None or not station_enabled[station_index]:
+                continue
+            try:
+                if E_STOP:
+                    while arduino.in_waiting > 0:
+                        arduino.read(arduino.in_waiting)
+                    continue
+
+                while arduino.in_waiting > 0:
+                    message_type = arduino.read(1)
+                    handler = MESSAGE_HANDLERS.get(message_type)
+                    ctx = {
+                        'FILL_LOCKED': FILL_LOCKED,
+                        'DEBUG': DEBUG,
+                        'target_weight': getattr(app, "target_weight", target_weight),
+                        'scale_calibrations': scale_calibrations,
+                        'time_limit': getattr(app, "time_limit", time_limit),
+                        'active_dialog': active_dialog,
+                        'update_station_weight': update_station_weight,
+                        'station_widgets': station_widgets,
+                        'refresh_ui': refresh_ui,
+                        'app': app,  # Pass app for handlers that want it
+                    }
+                    if handler:
+                        handler(station_index, arduino, **ctx)
+                    else:
+                        handle_unknown(station_index, arduino, message_type, **ctx)
+            except serial.SerialException as e:
+                if DEBUG:
+                    print(f"Lost connection to Arduino {station_index+1}: {e}")
+                port = arduino_ports[station_index]
+                reconnect_arduino(station_index, port)
+    except Exception as e:
+        logging.error(f"Error in poll_hardware: {e}")
+        if DEBUG:
+            print(f"Error in poll_hardware: {e}")
+
+# ========== GUI/BUTTON HANDLING ==========
+
+def handle_button_presses(app):
+    try:
+        dialog = getattr(app, "active_dialog", None)
+
+        # UP BUTTON
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            if DEBUG:
+                print(f"UP button pressed, dialog: {dialog}")
+            if dialog is not None and hasattr(dialog, "set_arrow_active"):
+                dialog.set_arrow_active("up")
+            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            if dialog is not None:
+                dialog.select_prev()
+                if hasattr(dialog, "set_arrow_inactive"):
+                    dialog.set_arrow_inactive("up")
+            return
+
+        # DOWN BUTTON
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            if DEBUG:
+                print(f"DOWN button pressed, dialog: {dialog}")
+            if dialog is not None and hasattr(dialog, "set_arrow_active"):
+                dialog.set_arrow_active("down")
+            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            if dialog is not None:
+                dialog.select_next()
+                if hasattr(dialog, "set_arrow_inactive"):
+                    dialog.set_arrow_inactive("down")
+            return
+
+        # SELECT BUTTON
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            ping_buzzer()
+            if DEBUG:
+                print(f"SELECT button pressed, dialog: {dialog}")
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+                QApplication.processEvents()
+                time.sleep(0.01)
+            if dialog is not None:
+                try:
+                    dialog.activate_selected()
+                except Exception as e:
+                    logging.error("Error in dialog.activate_selected()", exc_info=True)
+                    if DEBUG:
+                        print(f"Error in dialog.activate_selected(): {e}")
+            else:
+                if DEBUG:
+                    print('select button pressed on main screen, opening menu')
+                if not app.menu_dialog or not app.menu_dialog.isVisible():
+                    app.show_menu()
+            return
+
+    except Exception as e:
+        logging.error("Error in handle_button_presses", exc_info=True)
+        if DEBUG:
+            print(f"Error in handle_button_presses: {e}")
+
+# ========== MAIN ENTRY POINT ==========
 
 def main():
     try:
         logging.info("Starting main application.")
+        load_scale_calibrations()
+        global station_enabled
+        config_path = "config.txt"
+        station_enabled = load_station_enabled(config_path)
+        if DEBUG:
+            print(f"Loaded station_enabled: {station_enabled}")
+        setup_gpio()
+
         app_qt = QApplication(sys.argv)
-
-        # --- Run startup sequence (no main window yet) ---
-        startup_state = run_startup_sequence(app_qt)
-
-        # --- Now create and show the main window ---
         app = RelayControlApp(
-            station_enabled=startup_state["station_enabled"],
+            station_enabled=station_enabled,
             filling_mode_callback=filling_mode_callback
         )
-        app.set_calibrate = None
-        app.target_weight = startup_state.get("target_weight", 500.0)
-        app.time_limit = startup_state.get("time_limit", 3000)
-        app.filling_mode = startup_state.get("filling_mode", "AUTO")
+        app.set_calibrate = None  # Set if you have a calibrate_scale function
 
-        # If you want to pass the arduinos to the app, you can do so here
-        global arduinos
-        arduinos = startup_state.get("arduinos", [None] * NUM_STATIONS)
+        app.target_weight = target_weight
+
+        app.hide()  # <-- Add this line to hide the window during startup
+
+        if DEBUG:
+            print('app initialized, contacting arduinos')
 
         for i, widget in enumerate(app.station_widgets):
-            if startup_state["station_enabled"][i]:
-                widget.set_weight(0, app.target_weight)
+            if station_enabled[i]:
+                widget.set_weight(0, target_weight)
 
         GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -854,7 +1236,7 @@ def main():
         button_timer.timeout.connect(lambda: handle_button_presses(app))
         button_timer.start(50)
 
-        app.show()  # Only show after startup is complete
+        QTimer.singleShot(1000, lambda: startup(app, timer))
 
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
