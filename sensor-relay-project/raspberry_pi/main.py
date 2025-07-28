@@ -613,7 +613,9 @@ def startup(app, timer):
         info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
         info.setWindowState(Qt.WindowState.WindowFullScreen)
-        info.exec()
+        info.show()
+        QTimer.singleShot(2000, info.accept)  # Close after 2 seconds
+        QApplication.processEvents()
         return
 
     # --- Step 3: Calibration Check (Remove Weight) ---
