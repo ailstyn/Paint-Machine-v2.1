@@ -666,7 +666,7 @@ class RelayControlApp(QWidget):
         dialog = InfoDialog(title, message, self)
         dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
         dialog.show()
-        QTimer.singleShot(timeout_ms, dialog.accept)
+        QTimer.singleShot(timeout_ms, dialog.close)
 
     def handle_station_selected(self, station_index):
         if DEBUG:
