@@ -1752,60 +1752,55 @@ class StartupWizardDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #555;
-                border: 6px solid #fff;
-                border-radius: 24px;
-            }
-        """)
+        self.setFixedSize(1024, 600)  # Ensure dialog fits the screen exactly
         self.num_stations = num_stations
 
         # Step tracking
-        self.current_step = 0  # Set by startup() in main.py
-        self.selection_index = 0  # For navigation
-        self.station_enabled = [True] * num_stations  # Used for toggling
-        self.station_connected = [True] * num_stations  # Set by set_station_labels
+        self.current_step = 0
+        self.selection_index = 0
+        self.station_enabled = [True] * num_stations
+        self.station_connected = [True] * num_stations
         self.station_names = [f"Station {i+1}" for i in range(num_stations)]
         self.weight_texts = [None] * num_stations
 
         # Main vertical layout
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(32, 32, 32, 32)
-        main_layout.setSpacing(24)
+        main_layout.setContentsMargins(16, 16, 16, 16)
+        main_layout.setSpacing(12)
 
         # Main label
         self.main_label = QLabel("MAIN LABEL")
-        self.main_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+        self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
+        self.main_label.setFixedHeight(60)
         self.main_label.setStyleSheet("""
             background: transparent;
             color: #fff;
-            border:  2px solid #ccc;
+            border: 2px solid #ccc;
             border-radius: 12px;
-            padding: 12px;
+            padding: 6px;
         """)
         main_layout.addWidget(self.main_label)
 
         # Info/Prompt area
         self.info_label = QLabel("Startup Info ....")
-        self.info_label.setFont(QFont("Arial", 28))
+        self.info_label.setFont(QFont("Arial", 22))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         self.info_label.setWordWrap(True)
-        self.info_label.setMinimumHeight(120)
+        self.info_label.setMinimumHeight(60)
+        self.info_label.setMaximumHeight(80)
         self.info_label.setStyleSheet("""
             background: transparent;
             color: #fff;
             border: 2px solid #ccc;
             border-radius: 12px;
-            padding: 18px;
+            padding: 8px;
         """)
         main_layout.addWidget(self.info_label)
 
         # Station boxes row (now using StationBoxWidget)
         stations_layout = QHBoxLayout()
-        stations_layout.setSpacing(32)
+        stations_layout.setSpacing(16)
         self.station_boxes = []
         for i in range(self.num_stations):
             box = StationBoxWidget(
@@ -1817,29 +1812,33 @@ class StartupWizardDialog(QDialog):
                 weight_text=None,
                 parent=self
             )
+            box.setFixedSize(180, 140)  # Shrink to fit 4 across
             self.station_boxes.append(box)
             stations_layout.addWidget(box)
         main_layout.addLayout(stations_layout)
 
         # Accept/Continue label
         self.accept_label = QLabel("CONTINUE")
-        self.accept_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.accept_label.setStyleSheet("color: #fff; border: 2px solid #ccc; border-radius: 12px; padding: 12px 32px; margin-top: 18px;")
+        self.accept_label.setFixedHeight(48)
+        self.accept_label.setStyleSheet("color: #fff; border: 2px solid #ccc; border-radius: 12px; padding: 8px 24px; margin-top: 8px;")
         main_layout.addWidget(self.accept_label)
 
         # Right-side: button labels (identical to RelayControlApp)
         button_column = ButtonColumnWidget(
             icons=["▲", "⏎", "▼"],
-            font_size=32,
-            fixed_width=64,
-            margins=(0, 30, 0, 0),
-            spacing=50,
+            font_size=28,
+            fixed_width=48,
+            margins=(0, 16, 0, 0),
+            spacing=32,
             parent=self
         )
 
         # Place main content and button column in a horizontal layout
         h_layout = QHBoxLayout()
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        h_layout.setSpacing(0)
         h_layout.addLayout(main_layout, stretch=10)
         h_layout.addWidget(button_column, stretch=0)
         self.setLayout(h_layout)
