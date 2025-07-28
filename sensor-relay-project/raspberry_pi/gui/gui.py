@@ -104,16 +104,12 @@ class StationBoxWidget(QWidget):
             # Weight label (optional, for calibration)
             if weight_text is not None:
                 weight_label = QLabel(weight_text)
-                weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                weight_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-                weight_label.setStyleSheet("color: #0f0; border: none;" if enabled else "color: #888; border: none;")
-                layout.addWidget(weight_label)
             else:
-                weight_label = None
-
-            self.name_label = name_label
-            self.connected_label = connected_label
-            self.enabled_label = enabled_label
+                weight_label = QLabel("--")
+            weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+            weight_label.setStyleSheet("color: #0f0; border: none;" if enabled else "color: #888; border: none;")
+            layout.addWidget(weight_label)
             self.weight_label = weight_label
 
             self.setFixedSize(180, 160)
@@ -1809,10 +1805,10 @@ class StartupWizardDialog(QDialog):
                 color=STATION_COLORS[i % len(STATION_COLORS)],
                 connected=True,
                 enabled=True,
-                weight_text=None,
+                weight_text="--",  # Default to --
                 parent=self
             )
-            box.setFixedSize(180, 140)  # Shrink to fit 4 across
+            box.setFixedSize(216, 140)  # 20% wider
             self.station_boxes.append(box)
             stations_layout.addWidget(box)
         main_layout.addLayout(stations_layout)
@@ -1878,9 +1874,12 @@ class StartupWizardDialog(QDialog):
             if self.station_enabled and i < len(self.station_enabled):
                 if box.enabled_label:
                     box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
+            # Always update weight label
+            weight = "0.0 g"
             if self.weight_texts and i < len(self.weight_texts) and self.weight_texts[i] is not None:
-                if box.weight_label:
-                    box.weight_label.setText(self.weight_texts[i])
+                weight = self.weight_texts[i]
+            if box.weight_label:
+                box.weight_label.setText(weight)
         self.update_highlight()
 
     def set_step(self, step):
