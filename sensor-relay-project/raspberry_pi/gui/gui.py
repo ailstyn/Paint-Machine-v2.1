@@ -72,47 +72,45 @@ class StationBoxWidget(QWidget):
             layout.setContentsMargins(0, 0, 0, 0)
             layout.setSpacing(4)
 
-            # Use parent's tr if available, else fallback to English
             tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
 
             # Station name label with outline
-            name_label = OutlinedLabel(name)
-            name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            name_label.setStyleSheet("background: transparent; padding: 4px;")
-            layout.addWidget(name_label)
+            self.name_label = OutlinedLabel(name)
+            self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+            self.name_label.setStyleSheet("background: transparent; padding: 4px;")
+            layout.addWidget(self.name_label)
 
             # Connected/Enabled labels (optional)
             if connected is not None:
-                connected_label = QLabel(tr("CONNECTED") if connected else tr("DISCONNECTED"))
-                connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                connected_label.setFont(QFont("Arial", 16))
-                connected_label.setStyleSheet(f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
-                layout.addWidget(connected_label)
+                self.connected_label = QLabel(tr("CONNECTED") if connected else tr("DISCONNECTED"))
+                self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.connected_label.setFont(QFont("Arial", 16))
+                self.connected_label.setStyleSheet(f"background: {color if connected else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                layout.addWidget(self.connected_label)
             else:
-                connected_label = None
+                self.connected_label = None
 
             if enabled is not None:
-                enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
-                enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                enabled_label.setFont(QFont("Arial", 16))
-                enabled_label.setStyleSheet(f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
-                layout.addWidget(enabled_label)
+                self.enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
+                self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.enabled_label.setFont(QFont("Arial", 16))
+                self.enabled_label.setStyleSheet(f"background: {color if enabled else '#000'}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                layout.addWidget(self.enabled_label)
             else:
-                enabled_label = None
+                self.enabled_label = None
 
             # Weight label (optional, for calibration)
             if weight_text is not None:
-                weight_label = QLabel(weight_text)
+                self.weight_label = QLabel(weight_text)
             else:
-                weight_label = QLabel("--")
-            weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            weight_label.setStyleSheet("color: #0f0; border: none;" if enabled else "color: #888; border: none;")
-            layout.addWidget(weight_label)
-            self.weight_label = weight_label
+                self.weight_label = QLabel("--")
+            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+            self.weight_label.setStyleSheet("color: #0f0; border: none;" if enabled else "color: #888; border: none;")
+            layout.addWidget(self.weight_label)
 
-            self.setFixedSize(180, 160)
+            self.setFixedSize(216, 140)
         except Exception as e:
             logging.error(f"Error in StationBoxWidget.__init__ (station_index={station_index}, name={name}): {e}", exc_info=True)
 
