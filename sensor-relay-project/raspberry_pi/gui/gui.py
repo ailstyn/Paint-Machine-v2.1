@@ -1848,6 +1848,7 @@ class StartupWizardDialog(QDialog):
         self.button_column = button_column
 
         # Initial highlight
+        self.step_mode = "station_select"
         self.update_highlight()
 
     def set_main_label(self, text):
