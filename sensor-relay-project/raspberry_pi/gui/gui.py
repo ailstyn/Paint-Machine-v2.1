@@ -1874,3 +1874,9 @@ class StartupWizardDialog(QDialog):
         elif self.step_mode == "accept_only":
             self.accept()
         # If step_mode == "none", do nothing
+
+    def get_station_enabled(self):
+        """
+        Return the current enabled state of all stations as a list.
+        """
+        return list(self.station_enabled)
