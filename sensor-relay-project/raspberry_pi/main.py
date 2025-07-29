@@ -891,8 +891,14 @@ def poll_hardware(app):
                         arduino.read(arduino.in_waiting)
                     continue
 
+                # --- DEBUG: Print bytes waiting for each station ---
+                if DEBUG:
+                    print(f"[poll_hardware] Station {station_index+1}: in_waiting={arduino.in_waiting}")
+
                 while arduino.in_waiting > 0:
                     message_type = arduino.read(1)
+                    if DEBUG:
+                        print(f"[poll_hardware] Station {station_index+1}: message_type={message_type!r}")
                     handler = MESSAGE_HANDLERS.get(message_type)
                     ctx = {
                         'FILL_LOCKED': FILL_LOCKED,
@@ -906,13 +912,16 @@ def poll_hardware(app):
                         'refresh_ui': getattr(app, "refresh_ui", None),
                         'app': app,
                     }
-                    # --- Consistent dynamic weight update for StartupWizardDialog step 0 ---
                     dialog = getattr(app, "active_dialog", None)
-                    if dialog and hasattr(dialog, "set_station_weight") and getattr(dialog, "current_step", None) == 0:
-                        ctx['update_station_weight'] = dialog.set_station_weight
+                    if dialog and hasattr(dialog, "update_station_weight"):
+                        ctx['update_station_weight'] = dialog.update_station_weight
+                    elif hasattr(app, "update_station_weight"):
+                        ctx['update_station_weight'] = app.update_station_weight
                     else:
                         ctx['update_station_weight'] = None
-                    # ------------------------------------------
+                    # --- DEBUG: Print handler selection ---
+                    if DEBUG:
+                        print(f"[poll_hardware] Station {station_index+1}: handler={handler.__name__ if handler else None}")
                     if handler:
                         handler(station_index, arduino, **ctx)
                     else:
@@ -922,6 +931,10 @@ def poll_hardware(app):
                     print(f"Lost connection to Arduino {station_index+1}: {e}")
                 port = app_config.arduino_ports[station_index]
                 reconnect_arduino(station_index, port)
+            except Exception as e:
+                if DEBUG:
+                    print(f"[poll_hardware] Exception for station {station_index+1}: {e}")
+                logging.error(f"Error in poll_hardware: {e}")
     except Exception as e:
         logging.error(f"Error in poll_hardware: {e}")
         if DEBUG:
