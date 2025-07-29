@@ -1841,7 +1841,8 @@ class StartupWizardDialog(QDialog):
         self.current_step = step
         if step == 0:
             self.step_mode = "station_select"
-            self.selection_index = 0
+            self.update_selection_indices()
+            self.selection_index = len(self.selection_indices) - 1  # Always start on "accept"
         elif step in (1, 2, 3):
             self.step_mode = "accept_only"
             self.selection_index = 0
@@ -1849,25 +1850,13 @@ class StartupWizardDialog(QDialog):
             self.step_mode = "none"
         self.update_highlight()
 
-    def update_highlight(self):
-        # Highlight station frames by setting a property, let stylesheet handle appearance
-        for i, frame in enumerate(self.station_frames):
-            frame.setProperty("highlight", self.step_mode == "station_select" and self.selection_index == i)
-            frame.style().unpolish(frame)
-            frame.style().polish(frame)
-        # Highlight accept label
-        if self.step_mode in ("station_select", "accept_only"):
-            highlight_accept = (
-                (self.step_mode == "station_select" and self.selection_index == self.num_stations)
-                or (self.step_mode == "accept_only" and self.selection_index == 0)
-            )
-            self.accept_label.setProperty("highlight", highlight_accept)
-            self.accept_label.style().unpolish(self.accept_label)
-            self.accept_label.style().polish(self.accept_label)
-        else:
-            self.accept_label.setProperty("highlight", False)
-            self.accept_label.style().unpolish(self.accept_label)
-            self.accept_label.style().polish(self.accept_label)
+    def update_selection_indices(self):
+        """Build a list of indices for connected stations plus 'accept'."""
+        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
+        self.selection_indices.append("accept")
+        # Clamp selection_index to valid range
+        if self.selection_index >= len(self.selection_indices):
+            self.selection_index = len(self.selection_indices) - 1  # Always start on "accept"
 
     def select_next(self):
         if self.current_step == 0 and self.step_mode == "station_select":
@@ -1907,11 +1896,3 @@ class StartupWizardDialog(QDialog):
         elif self.step_mode == "accept_only":
             self.accept()
         # If step_mode == "none", do nothing
-
-    def update_selection_indices(self):
-        """Build a list of indices for connected stations plus 'accept'."""
-        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
-        self.selection_indices.append("accept")
-        # Clamp selection_index to valid range
-        if self.selection_index >= len(self.selection_indices):
-            self.selection_index = 0
