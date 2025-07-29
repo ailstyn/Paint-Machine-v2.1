@@ -32,9 +32,10 @@ QLabel#smallweightLabel {
     min-height: 48px;
 }
 QLabel.stationStatusLabel {
-    border-radius: 0;
+    border-radius: 4px;  /* Match name label */
     border: none;
-    padding: 4px;
+    padding: 2px;        /* Match name label */
+    margin: 2px;         /* Add margin for spacing from frame */
     color: #fff;
 }
 
@@ -42,8 +43,8 @@ QLabel.stationStatusLabel {
 OutlinedLabel {
     background: transparent;
     padding: 2px;
-    margin: 6px;
-    border-radius: 4px;
+    margin: 2px;         /* Reduced margin */
+    border-radius: 4px;  /* Small radius for subtle rounding */
 }
 OutlinedLabel[highlight="true"], QLabel[highlight="true"] {
     border: 4px solid #F6EB61;
