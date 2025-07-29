@@ -105,12 +105,12 @@ class StationBoxWidget(QWidget):
                 self.weight_label = QLabel(weight_text)
             else:
                 self.weight_label = QLabel("--")
+            self.weight_label.setObjectName("smallweightLabel")  # Use stylesheet for small weight label
             self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            self.weight_label.setStyleSheet("color: #0f0; border: none;" if enabled else "color: #888; border: none;")
             layout.addWidget(self.weight_label)
 
-            self.setFixedSize(216, 140)
+            self.setFixedSize(216, 110)
         except Exception as e:
             logging.error(f"Error in StationBoxWidget.__init__ (station_index={station_index}, name={name}): {e}", exc_info=True)
 
@@ -493,20 +493,11 @@ class RelayControlApp(QWidget):
             self.station_widgets = [None] * 4
             for i in range(4):
                 widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
-                widget.setFixedSize(475, 280)  # Each station widget fixed size
-                # Set initial color with opacity based on enabled state
-                if self.station_enabled[i]:
-                    color = self.bg_colors[i]
-                else:
-                    hex_color = self.bg_colors[i]
-                    if hex_color.startswith("#") and len(hex_color) == 7:
-                        r = int(hex_color[1:3], 16)
-                        g = int(hex_color[3:5], 16)
-                        b = int(hex_color[5:7], 16)
-                        color = f"rgba({r},{g},{b},0.25)"
-                    else:
-                        color = "rgba(68,68,68,0.25)"
-                widget.setStyleSheet(f"background-color: {color}; border: 2px solid #222;")
+                widget.setFixedSize(475, 280)
+                # Set object name for weight label so only RelayControlApp uses the special style
+                if widget.weight_label is not None:
+                    widget.weight_label.setObjectName("weightLabel")
+                # ...existing code...
                 self.station_widgets[i] = widget
             grid.addWidget(self.station_widgets[0], 0, 0)
             grid.addWidget(self.station_widgets[1], 1, 0)

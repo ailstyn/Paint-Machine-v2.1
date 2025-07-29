@@ -81,6 +81,23 @@ QLabel[highlight="true"] {
     border-radius: 8px;
     padding: 4px;
 }
+/* --- Weight label for RelayControlApp --- */
+QLabel#weightLabel {
+    color: #0f0;
+    font-size: 64px;
+    font-weight: bold;
+    background: transparent;
+    border: none;
+    padding: 4px;
+}
+QLabel#smallweightLabel {
+    color: #0f0;
+    font-size: 24px;
+    font-weight: bold;
+    background: transparent;
+    border: none;
+    padding: 2px;
+}
 QPushButton, QDialog QPushButton {
     background-color: #444;
     color: #fff;

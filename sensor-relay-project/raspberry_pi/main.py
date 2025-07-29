@@ -24,7 +24,7 @@ import RPi.GPIO as GPIO # type: ignore
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer, Qt
-from gui.gui import RelayControlApp, MenuDialog, StartupDialog, CalibrationDialog, SelectionDialog, InfoDialog, StartupWizardDialog
+from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
 from app_config import STATS_LOG_FILE, STATS_LOG_DIR
@@ -103,24 +103,21 @@ def handle_current_weight(station_index, arduino, **ctx):
             unit = getattr(app, "units", "g") if app else "g"
             if widgets:
                 widget = widgets[station_index]
-                # Set color based on max weight error state
                 if station_max_weight_error[station_index]:
-                    widget.weight_label.setStyleSheet("color: #FF2222;")  # Red
+                    widget.weight_label.setStyleSheet("color: #FF2222;")
                 else:
-                    widget.weight_label.setStyleSheet("color: #fff;")     # Normal
-                # Unified weight update
+                    widget.weight_label.setStyleSheet("color: #fff;")
                 if hasattr(widget, "set_weight"):
                     widget.set_weight(weight, target_weight, unit)
                 else:
-                    # Fallback for StationBoxWidget
                     if widget.weight_label:
                         if unit == "g":
                             widget.weight_label.setText(f"{int(round(weight))} g")
                         else:
                             oz = weight / 28.3495
                             widget.weight_label.setText(f"{oz:.1f} oz")
-            # CalibrationDialog support
-            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
+            # StartupWizardDialog support
+            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
                 ctx['active_dialog'].set_weight(station_index, weight)
         else:
             logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
@@ -129,7 +126,7 @@ def handle_current_weight(station_index, arduino, **ctx):
                 widget = widgets[station_index]
                 if widget.weight_label:
                     widget.weight_label.setText("0.0 g")
-            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "CalibrationDialog":
+            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
                 ctx['active_dialog'].set_weight(station_index, 0.0)
     except Exception as e:
         logging.error("Error in handle_current_weight", exc_info=True)
