@@ -1768,6 +1768,7 @@ class StartupWizardDialog(QDialog):
         self.button_column = button_column
 
         self.step_mode = "station_select"
+        self.update_selection_indices()  # <-- Add this line
         self.update_highlight()
         self.update_station_widgets()
     
@@ -1777,9 +1778,6 @@ class StartupWizardDialog(QDialog):
         return self.station_boxes
 
     def set_main_label(self, text):
-
-
-
         self.main_label.setText(text)
 
     def set_info_text(self, text):
@@ -1900,6 +1898,8 @@ class StartupWizardDialog(QDialog):
 
     def update_highlight(self):
         # Highlight the selected frame and accept label
+        if not self.selection_indices or self.selection_index >= len(self.selection_indices):
+            return  # Prevent IndexError if selection_indices is empty or index out of range
         for i, frame in enumerate(self.station_frames):
             if self.selection_indices[self.selection_index] == i:
                 frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent;")
