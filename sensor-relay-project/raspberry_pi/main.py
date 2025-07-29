@@ -842,12 +842,16 @@ def poll_hardware(app):
     global E_STOP, FILL_LOCKED
     try:
         # Localize frequently accessed attributes
-        station_widgets = getattr(app, "station_widgets", None)
         active_dialog = getattr(app, "active_dialog", None)
         filling_mode = getattr(app, "filling_mode", "AUTO")
         overlay_widget = getattr(app, "overlay_widget", None)
         refresh_ui = getattr(app, "refresh_ui", None)
-        update_station_weight = getattr(app, "update_station_weight", None)
+
+        # --- Unified station_widgets selection ---
+        if active_dialog and hasattr(active_dialog, "station_widgets"):
+            station_widgets = active_dialog.station_widgets
+        else:
+            station_widgets = getattr(app, "station_widgets", None)
 
         estop_pressed = GPIO.input(app_config.E_STOP_PIN) == GPIO.LOW
 
@@ -891,7 +895,6 @@ def poll_hardware(app):
                         arduino.read(arduino.in_waiting)
                     continue
 
-                # --- DEBUG: Print bytes waiting for each station ---
                 if DEBUG:
                     print(f"[poll_hardware] Station {station_index+1}: in_waiting={arduino.in_waiting}")
 
@@ -900,28 +903,21 @@ def poll_hardware(app):
                     if DEBUG:
                         print(f"[poll_hardware] Station {station_index+1}: message_type={message_type!r}")
                     handler = MESSAGE_HANDLERS.get(message_type)
+                    # --- Unified context for handlers ---
                     ctx = {
                         'FILL_LOCKED': FILL_LOCKED,
                         'DEBUG': DEBUG,
                         'target_weight': getattr(app, "target_weight", target_weight),
                         'scale_calibrations': scale_calibrations,
                         'time_limit': getattr(app, "time_limit", time_limit),
-                        'active_dialog': getattr(app, "active_dialog", None),
-                        'update_station_weight': None,  # We'll set this below
-                        'station_widgets': getattr(app, "station_widgets", None),
-                        'refresh_ui': getattr(app, "refresh_ui", None),
+                        'active_dialog': active_dialog,
+                        'station_widgets': station_widgets,
+                        'refresh_ui': refresh_ui,
                         'app': app,
                     }
-                    dialog = getattr(app, "active_dialog", None)
-                    if dialog and hasattr(dialog, "update_station_weight"):
-                        ctx['update_station_weight'] = dialog.update_station_weight
-                    elif hasattr(app, "update_station_weight"):
-                        ctx['update_station_weight'] = app.update_station_weight
-                    else:
-                        ctx['update_station_weight'] = None
-                    # --- DEBUG: Print handler selection ---
-                    if DEBUG:
-                        print(f"[poll_hardware] Station {station_index+1}: handler={handler.__name__ if handler else None}")
+                    # Remove legacy update_station_weight logic
+                    # Weight updates should use widget.set_weight directly
+
                     if handler:
                         handler(station_index, arduino, **ctx)
                     else:

@@ -1809,6 +1809,7 @@ class StartupWizardDialog(QDialog):
                 parent=self
             )
             box.setFixedSize(216, 140)
+            self.station_boxes.append(box)
             frame = QFrame()
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
@@ -1818,7 +1819,6 @@ class StartupWizardDialog(QDialog):
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            self.station_boxes.append(box)
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         main_layout.addLayout(stations_layout)
@@ -1859,6 +1859,11 @@ class StartupWizardDialog(QDialog):
         self.step_mode = "station_select"
         self.update_highlight()
         self.update_station_widgets()  # Initial update
+
+    @property
+    def station_widgets(self):
+        # For compatibility with RelayControlApp
+        return self.station_boxes
 
     def set_main_label(self, text):
         self.main_label.setText(text)
@@ -1904,16 +1909,20 @@ class StartupWizardDialog(QDialog):
                 box.weight_label.setText(weight)
         self.update_highlight()
 
-    def update_station_weight(self, station_index, weight):
+    def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
         """
-        Update the weight label for a specific station box at any step.
+        Unified weight update for compatibility with RelayControlApp.
         """
         if 0 <= station_index < len(self.station_boxes):
-            text = f"{weight:.1f} g"
-            self.weight_texts[station_index] = text
             box = self.station_boxes[station_index]
             if box.weight_label:
-                box.weight_label.setText(text)
+                if unit == "g":
+                    new_text = f"{int(round(current_weight))} g"
+                else:
+                    oz = current_weight / 28.3495
+                    new_text = f"{oz:.1f} oz"
+                box.weight_label.setText(new_text)
+                self.weight_texts[station_index] = new_text
 
     def set_step(self, step):
         """
