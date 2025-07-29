@@ -1741,8 +1741,9 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setObjectName("acceptLabel")
-        self.accept_label.setFixedHeight(44)
-        self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        # Remove fixed height, use minimum height instead
+        self.accept_label.setMinimumHeight(44)
+        self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         main_layout.addWidget(self.accept_label, stretch=0)  # <-- No stretch, so it doesn't get squished
 
         # Right-side: button labels
@@ -1869,38 +1870,48 @@ class StartupWizardDialog(QDialog):
             self.accept_label.style().polish(self.accept_label)
 
     def select_next(self):
-        if self.step_mode == "station_select":
-            self.selection_index = (self.selection_index + 1) % (self.num_stations + 1)
+        if self.current_step == 0 and self.step_mode == "station_select":
+            self.update_selection_indices()
+            self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
+            self.update_highlight()
         elif self.step_mode == "accept_only":
             self.selection_index = 0
-        self.update_highlight()
+            self.update_highlight()
 
     def select_prev(self):
-        if self.step_mode == "station_select":
-            self.selection_index = (self.selection_index - 1) % (self.num_stations + 1)
+        if self.current_step == 0 and self.step_mode == "station_select":
+            self.update_selection_indices()
+            self.selection_index = (self.selection_index - 1) % len(self.selection_indices)
+            self.update_highlight()
         elif self.step_mode == "accept_only":
             self.selection_index = 0
-        self.update_highlight()
+            self.update_highlight()
 
     def activate_selected(self):
-        # Step 0: station select/toggle
         if self.current_step == 0 and self.step_mode == "station_select":
-            if self.selection_index < self.num_stations:
-                # Toggle enabled state for this station
-                self.station_enabled[self.selection_index] = not self.station_enabled[self.selection_index]
-                # Update enabled label
-                if self.station_boxes[self.selection_index].enabled_label:
-                    self.station_boxes[self.selection_index].enabled_label.setText("ENABLED" if self.station_enabled[self.selection_index] else "DISABLED")
-                self.update_highlight()
-            else:
+            self.update_selection_indices()
+            sel = self.selection_indices[self.selection_index]
+            parent = self.parent()
+            if sel == "accept":
                 self.accept()
-        # Steps 1,2,3: just accept/continue
+            else:
+                # Toggle enabled state for the selected station
+                self.station_enabled[sel] = not self.station_enabled[sel]
+                # Update parent/main.py enabled list if available
+                if hasattr(parent, "station_enabled"):
+                    parent.station_enabled[sel] = self.station_enabled[sel]
+                # Update enabled label
+                if self.station_boxes[sel].enabled_label:
+                    self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
+                self.update_highlight()
         elif self.step_mode == "accept_only":
             self.accept()
         # If step_mode == "none", do nothing
 
-    def get_station_enabled(self):
-        """
-        Return the current enabled state of all stations as a list.
-        """
-        return list(self.station_enabled)
+    def update_selection_indices(self):
+        """Build a list of indices for connected stations plus 'accept'."""
+        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
+        self.selection_indices.append("accept")
+        # Clamp selection_index to valid range
+        if self.selection_index >= len(self.selection_indices):
+            self.selection_index = 0
