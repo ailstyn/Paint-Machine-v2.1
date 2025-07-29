@@ -106,7 +106,7 @@ class StationBoxWidget(QWidget):
                 if connected:
                     self.connected_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
-                    self.connected_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    self.connected_label.setStyleSheet("background: transparent; color: #fff; border-radius: 4px; border: none; padding: 2px; margin: 2px;")
                 layout.addWidget(self.connected_label)
             else:
                 self.connected_label = None
@@ -121,7 +121,7 @@ class StationBoxWidget(QWidget):
                 if enabled:
                     self.enabled_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
-                    self.enabled_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    self.enabled_label.setStyleSheet("background: transparent; color: #fff; border-radius: 4px; border: none; padding: 2px; margin: 2px;")
                 layout.addWidget(self.enabled_label)
             else:
                 self.enabled_label = None
@@ -1775,6 +1775,9 @@ class StartupWizardDialog(QDialog):
         return self.station_boxes
 
     def set_main_label(self, text):
+
+
+
         self.main_label.setText(text)
 
     def set_info_text(self, text):
