@@ -153,7 +153,7 @@ QFrame[highlight="false"] {
 /* All dialogs */
 QDialog {
     background-color: #222;
-    border: 6px solid #F6EB61;
+    border: none;
     border-radius: 24px;
 }
 

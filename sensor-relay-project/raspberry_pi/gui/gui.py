@@ -767,6 +767,7 @@ class BottleProgressBar(QWidget):
             self.max_value = max_value
             self.value = value
             self.bar_color = bar_color
+            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         except Exception as e:
             logging.error(f"Error in BottleProgressBar.__init__: {e}", exc_info=True)
 
