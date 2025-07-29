@@ -102,7 +102,7 @@ class StationBoxWidget(QWidget):
                 self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.connected_label.setFont(QFont("Arial", 16))
                 self.connected_label.setProperty("class", "stationStatusLabel")
-                # Only use station color if connected, else use black (or transparent)
+                # Only use station color if connected, else black/transparent
                 if connected:
                     self.connected_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
@@ -117,7 +117,7 @@ class StationBoxWidget(QWidget):
                 self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.enabled_label.setFont(QFont("Arial", 16))
                 self.enabled_label.setProperty("class", "stationStatusLabel")
-                # Only use station color if enabled, else use black
+                # Only use station color if enabled, else black/transparent
                 if enabled:
                     self.enabled_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
@@ -1798,11 +1798,22 @@ class StartupWizardDialog(QDialog):
             if self.station_names and i < len(self.station_names):
                 box.name_label.setText(self.station_names[i])
             # Connected
+            if box.connected_label:
                 box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
+                # Update style based on connection
+                if self.station_connected[i]:
+                    box.connected_label.setStyleSheet(f"background: {STATION_COLORS[i % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                else:
+                    box.connected_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
             # Enabled
             if self.station_enabled and i < len(self.station_enabled):
                 if box.enabled_label:
                     box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
+                    # Update style based on enabled state
+                    if self.station_enabled[i]:
+                        box.enabled_label.setStyleSheet(f"background: {STATION_COLORS[i % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    else:
+                        box.enabled_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
             # Weight
             weight = "--"
             if self.weight_texts and i < len(self.weight_texts) and self.weight_texts[i] is not None:
