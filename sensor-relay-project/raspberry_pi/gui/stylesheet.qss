@@ -1,4 +1,4 @@
-/* --- GLOBAL --- */
+/* GLOBAL */
 QWidget {
     background-color: #222;
     color: #fff;
@@ -13,7 +13,7 @@ QLabel {
     border: none;
 }
 
-/* --- RelayControlApp, CalibrationDialog --- */
+/* RelayControlApp, CalibrationDialog */
 QLabel#weightLabel {
     color: #0f0;
     font-size: 64px;
@@ -23,7 +23,7 @@ QLabel#weightLabel {
     padding: 4px;
 }
 
-/* --- StartupWizardDialog, StationBoxWidget --- */
+/* StartupWizardDialog, StationBoxWidget */
 QLabel#smallweightLabel {
     color: #0f0;
     font-size: 32px;
@@ -33,7 +33,7 @@ QLabel#smallweightLabel {
     padding: 2px;
 }
 
-/* --- RelayControlApp, StationStatusDialog --- */
+/* RelayControlApp, StationStatusDialog */
 QLabel#offlineLabel {
     color: #FF2222;
     font-size: 36px;
@@ -43,7 +43,7 @@ QLabel#offlineLabel {
     padding: 4px;
 }
 
-/* --- SelectionDialog, StationStatusDialog, StartupWizardDialog, CalibrationDialog --- */
+/* SelectionDialog, StationStatusDialog, StartupWizardDialog, CalibrationDialog */
 QLabel#acceptLabel {
     color: #fff;
     background: transparent;
@@ -66,20 +66,19 @@ QLabel#acceptLabel[highlight="false"] {
     margin-top: 18px;
 }
 
-/* --- StationStatusDialog, StartupWizardDialog, CalibrationDialog, InfoDialog --- */
+/* StationStatusDialog, StartupWizardDialog, CalibrationDialog, InfoDialog */
 QLabel#statusLabel {
     color: #fff;
     font-size: 28px;
 }
 
-/* --- SetTargetWeightDialog --- */
+/* SetTargetWeightDialog */
 QLabel#arrowLabel {
     color: #fff;
     font-size: 28px;
     background: transparent;
     border: none;
     padding: 4px 0;
-    transition: color 0.2s;
 }
 QLabel#digitLabel {
     color: #fff;
@@ -89,7 +88,6 @@ QLabel#digitLabel {
     border: 2px solid transparent;
     padding: 4px 0;
     min-width: 48px;
-    transition: color 0.2s, border-color 0.2s;
 }
 QLabel#digitLabel[highlight="true"] {
     color: #F6EB61;
@@ -97,7 +95,7 @@ QLabel#digitLabel[highlight="true"] {
     background: #222;
 }
 
-/* --- StationStatusDialog, SelectionDialog, StartupWizardDialog, CalibrationDialog --- */
+/* StationStatusDialog, SelectionDialog, StartupWizardDialog, CalibrationDialog */
 OutlinedLabel {
     background: transparent;
     padding: 4px;
@@ -115,7 +113,7 @@ OutlinedLabel[highlight="false"], QLabel[highlight="false"] {
     font-size: 24px;
 }
 
-/* --- StationBoxWidget --- */
+/* StationBoxWidget */
 QLabel.stationStatusLabel {
     border-radius: 8px;
     border: none;
@@ -123,7 +121,7 @@ QLabel.stationStatusLabel {
     color: #fff;
 }
 
-/* --- InfoDialog --- */
+/* InfoDialog */
 QLabel#titleLabel {
     color: #fff;
     font-size: 32px;
@@ -137,7 +135,7 @@ QLabel#valueLabel {
     padding: 12px;
 }
 
-/* --- StationStatusDialog, StartupWizardDialog, CalibrationDialog --- */
+/* StationStatusDialog, StartupWizardDialog, CalibrationDialog */
 QFrame {
     background: transparent;
     border: 2px solid #ccc;
@@ -152,20 +150,20 @@ QFrame[highlight="false"] {
     border-radius: 14px;
 }
 
-/* --- All dialogs --- */
+/* All dialogs */
 QDialog {
     background-color: #222;
     border: 6px solid #F6EB61;
     border-radius: 24px;
 }
 
-/* --- StationBoxWidget --- */
+/* StationBoxWidget color classes */
 .station-red    { background: #CB1212; color: #fff; }
 .station-blue   { background: #2E4BA8; color: #fff; }
 .station-green  { background: #3f922e; color: #fff; }
 .station-yellow { background: #EDE021; color: #222; }
 
-/* --- ButtonColumnWidget (used in most dialogs) --- */
+/* ButtonColumnWidget (used in most dialogs) */
 QWidget#buttonColumn {
     background: transparent;
     padding: 12px 0px;
@@ -181,7 +179,7 @@ QLabel.buttonColumnLabel {
     background: #333;
 }
 
-/* --- QPushButton (used in all dialogs) --- */
+/* QPushButton (used in all dialogs) */
 QPushButton, QDialog QPushButton {
     background-color: #444;
     color: #fff;
@@ -195,14 +193,14 @@ QPushButton:hover, QDialog QPushButton:hover {
     color: #222;
 }
 
-/* --- SelectionDialog, MenuDialog --- */
+/* SelectionDialog, MenuDialog */
 QLabel#menuLabel {
     font-size: 28px;
     padding: 12px 0;
 }
 
-/* --- OverlayWidget --- */
-OverlayWidget {
+/* OverlayWidget (use object name for custom widget) */
+QWidget#overlayWidget {
     background: rgba(0,0,0,180);
     border-radius: 32px;
 }
@@ -213,9 +211,8 @@ QLabel#overlayLabel {
     background: transparent;
 }
 
-/* --- BottleProgressBar (main app, possibly dialogs) --- */
-BottleProgressBar {
+/* BottleProgressBar (use object name for custom widget) */
+QWidget#bottleProgressBar {
     min-width: 60px;
     max-width: 60px;
 }
-"""
