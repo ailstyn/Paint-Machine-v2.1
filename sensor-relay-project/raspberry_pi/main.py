@@ -1,6 +1,5 @@
 import os
 import logging
-
 import app_config
 
 
@@ -28,7 +27,7 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, StartupDialog, CalibrationDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
-from app_config import STATS_LOG_FILE, STATS_LOG_DIR
+from app_config import STATS_LOG_FILE, STATS_LOG_DIR, DEBUG
 
 # ========== CONFIG & CONSTANTS ==========
 LOG_DIR = "logs/errors"
