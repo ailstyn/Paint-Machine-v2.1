@@ -111,7 +111,7 @@ QLabel#smallweightLabel {
 /* Offline label for RelayControlApp */
 QLabel#offlineLabel {
     color: #FF2222;
-    font-size: 54px;
+    font-size: 36px;
     font-weight: bold;
     background: transparent;
     border: none;
@@ -291,5 +291,11 @@ QLabel#overlayLabel {
     font-size: 64px;
     font-weight: bold;
     background: transparent;
+}
+
+/* BottleProgressBar custom width */
+BottleProgressBar {
+    min-width: 30px;
+    max-width: 30px;
 }
 """
