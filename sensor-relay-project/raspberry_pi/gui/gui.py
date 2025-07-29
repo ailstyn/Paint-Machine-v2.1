@@ -1683,6 +1683,7 @@ class StartupWizardDialog(QDialog):
         self.station_connected = [True] * num_stations
         self.station_names = [f"Station {i+1}" for i in range(num_stations)]
         self.weight_texts = ["--"] * num_stations
+        self.selection_indices = []
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(24, 16, 24, 16)
