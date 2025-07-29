@@ -131,9 +131,9 @@ class StationBoxWidget(QWidget):
             self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             layout.addWidget(self.weight_label)
 
+            # Remove fixed size, allow expansion
             self.setMinimumWidth(216)
             self.setMinimumHeight(110)
-            # Patch: allow vertical expansion
             self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
         except Exception as e:
             logging.error(f"Error in StationBoxWidget.__init__ (station_index={station_index}, name={name}): {e}", exc_info=True)
@@ -1712,7 +1712,10 @@ class StartupWizardDialog(QDialog):
                 weight_text="--",
                 parent=self
             )
-            box.setFixedSize(216, 110)
+            # Remove fixed size, allow expansion
+            box.setMinimumWidth(216)
+            box.setMinimumHeight(110)
+            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
             frame.setFrameShape(QFrame.Shape.StyledPanel)
