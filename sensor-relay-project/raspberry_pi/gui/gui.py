@@ -1896,3 +1896,15 @@ class StartupWizardDialog(QDialog):
         elif self.step_mode == "accept_only":
             self.accept()
         # If step_mode == "none", do nothing
+
+    def update_highlight(self):
+        # Highlight the selected frame and accept label
+        for i, frame in enumerate(self.station_frames):
+            if self.selection_indices[self.selection_index] == i:
+                frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent;")
+            else:
+                frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
+        if self.selection_indices[self.selection_index] == "accept":
+            self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
+        else:
+            self.accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
