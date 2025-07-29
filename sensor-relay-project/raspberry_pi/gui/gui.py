@@ -624,13 +624,15 @@ class RelayControlApp(QWidget):
             logging.error(f"Error in RelayControlApp.show_info_dialog: {e}", exc_info=True)
 
     def update_station_weight(self, station_index, weight):
-        try:
-            self.station_widgets[station_index].set_weight(weight, self.target_weight, self.units)
-            # If CalibrationDialog is active, update its weight display too
-            if hasattr(self, "active_dialog") and isinstance(self.active_dialog, CalibrationDialog):
-                self.active_dialog.set_weight(station_index, weight)
-        except Exception as e:
-            logging.error(f"Error in RelayControlApp.update_station_weight: {e}", exc_info=True)
+        """
+        Update the weight label for a specific station box at any step.
+        """
+        if 0 <= station_index < len(self.station_boxes):
+            text = f"{weight:.1f} g"
+            self.weight_texts[station_index] = text
+            box = self.station_boxes[station_index]
+            if box.weight_label:
+                box.weight_label.setText(text)
 
     def refresh_ui(self):
         try:
@@ -1609,8 +1611,6 @@ class CalibrationDialog(QDialog):
                     frame = QFrame()
                     frame.setFrameShape(QFrame.Shape.StyledPanel)
                     frame.setLineWidth(0)
-                    frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
-                    frame.setLayout(QVBoxLayout())
                     frame.layout().setContentsMargins(0, 0, 0, 0)
                     frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
                     frame.layout().addWidget(box_widget)
@@ -1746,7 +1746,7 @@ class StartupWizardDialog(QDialog):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
-        self.setFixedSize(1024, 600)  # Ensure dialog fits the screen exactly
+        self.setFixedSize(1024, 600)
         self.num_stations = num_stations
 
         # Step tracking
@@ -1755,14 +1755,14 @@ class StartupWizardDialog(QDialog):
         self.station_enabled = [True] * num_stations
         self.station_connected = [True] * num_stations
         self.station_names = [f"Station {i+1}" for i in range(num_stations)]
-        self.weight_texts = [None] * num_stations
+        self.weight_texts = ["--"] * num_stations
 
         # Main vertical layout
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(16, 16, 16, 16)
         main_layout.setSpacing(12)
 
-        # Main label
+        # Main label (no border)
         self.main_label = QLabel("MAIN LABEL")
         self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1770,32 +1770,34 @@ class StartupWizardDialog(QDialog):
         self.main_label.setStyleSheet("""
             background: transparent;
             color: #fff;
-            border: 2px solid #ccc;
-            border-radius: 12px;
+            border: none;
+            border-radius: 0;
             padding: 6px;
         """)
         main_layout.addWidget(self.main_label)
 
-        # Info/Prompt area
+        # Info/Prompt area (no border)
         self.info_label = QLabel("Startup Info ....")
         self.info_label.setFont(QFont("Arial", 22))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+
         self.info_label.setWordWrap(True)
         self.info_label.setMinimumHeight(60)
         self.info_label.setMaximumHeight(80)
         self.info_label.setStyleSheet("""
             background: transparent;
             color: #fff;
-            border: 2px solid #ccc;
-            border-radius: 12px;
+            border: none;
+            border-radius: 0;
             padding: 8px;
         """)
         main_layout.addWidget(self.info_label)
 
-        # Station boxes row (now using StationBoxWidget)
+        # Station boxes row (each inside a QFrame with border)
         stations_layout = QHBoxLayout()
         stations_layout.setSpacing(16)
         self.station_boxes = []
+        self.station_frames = []
         for i in range(self.num_stations):
             box = StationBoxWidget(
                 station_index=i,
@@ -1803,29 +1805,42 @@ class StartupWizardDialog(QDialog):
                 color=STATION_COLORS[i % len(STATION_COLORS)],
                 connected=True,
                 enabled=True,
-                weight_text="--",  # Default to --
+                weight_text="--",
                 parent=self
             )
-            box.setFixedSize(216, 140)  # 20% wider
+            box.setFixedSize(216, 140)
+            frame = QFrame()
+            frame.setFrameShape(QFrame.Shape.StyledPanel)
+            frame.setLineWidth(0)
+            frame.setStyleSheet("border: 2px solid #ccc; border-radius: 14px; background: transparent;")
+            frame.setLayout(QVBoxLayout())
+            frame.layout().setContentsMargins(0, 0, 0, 0)
+            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
+            frame.layout().addWidget(box)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             self.station_boxes.append(box)
-            stations_layout.addWidget(box)
+            self.station_frames.append(frame)
+            stations_layout.addWidget(frame)
         main_layout.addLayout(stations_layout)
 
-        # Accept/Continue label
+        # Accept/Continue label (no border)
         self.accept_label = QLabel("CONTINUE")
         self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setFixedHeight(48)
-        self.accept_label.setStyleSheet("color: #fff; border: 2px solid #ccc; border-radius: 12px; padding: 8px 24px; margin-top: 8px;")
+        self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.accept_label.setStyleSheet("color: #fff; border: none; border-radius: 0; padding: 8px 24px; margin-top: 8px;")
         main_layout.addWidget(self.accept_label)
 
         # Right-side: button labels (identical to RelayControlApp)
         button_column = ButtonColumnWidget(
             icons=["▲", "⏎", "▼"],
-            font_size=28,
-            fixed_width=48,
-            margins=(0, 16, 0, 0),
-            spacing=32,
+            font_size=32,
+            fixed_width=64,
+            margins=(0, 30, 0, 0),
+            spacing=50,
+            align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            style="color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;",
             parent=self
         )
 
@@ -1843,6 +1858,7 @@ class StartupWizardDialog(QDialog):
         # Initial highlight
         self.step_mode = "station_select"
         self.update_highlight()
+        self.update_station_widgets()  # Initial update
 
     def set_main_label(self, text):
         self.main_label.setText(text)
@@ -1852,7 +1868,7 @@ class StartupWizardDialog(QDialog):
 
     def set_station_labels(self, names=None, connected=None, enabled=None, weight_texts=None):
         """
-        Update the StationBoxWidgets.
+        Update the StationBoxWidgets' data and refresh their display.
         """
         if names:
             self.station_names = names
@@ -1862,34 +1878,52 @@ class StartupWizardDialog(QDialog):
             self.station_enabled = enabled
         if weight_texts:
             self.weight_texts = weight_texts
+        self.update_station_widgets()
 
+    def update_station_widgets(self):
+        """
+        Refresh all StationBoxWidgets with current state.
+        """
         for i, box in enumerate(self.station_boxes):
+            # Name
             if self.station_names and i < len(self.station_names):
                 box.name_label.setText(self.station_names[i])
+            # Connected
             if self.station_connected and i < len(self.station_connected):
                 if box.connected_label:
                     box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
+            # Enabled
             if self.station_enabled and i < len(self.station_enabled):
                 if box.enabled_label:
                     box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
-            # Always update weight label
-            weight = "0.0 g"
+            # Weight
+            weight = "--"
             if self.weight_texts and i < len(self.weight_texts) and self.weight_texts[i] is not None:
                 weight = self.weight_texts[i]
             if box.weight_label:
                 box.weight_label.setText(weight)
         self.update_highlight()
 
+    def update_station_weight(self, station_index, weight):
+        """
+        Update the weight label for a specific station box at any step.
+        """
+        if 0 <= station_index < len(self.station_boxes):
+            text = f"{weight:.1f} g"
+            self.weight_texts[station_index] = text
+            box = self.station_boxes[station_index]
+            if box.weight_label:
+                box.weight_label.setText(text)
+
     def set_step(self, step):
         """
         Set the current step and update navigation mode.
         """
         self.current_step = step
-        # You can expand this logic for more steps as needed
         if step == 0:
-            self.step_mode = "station_select"  # Station enable/disable + continue
+            self.step_mode = "station_select"
             self.selection_index = 0
-        elif step in (1, 2, 3):  # Accept-only steps (e.g. calibration, bottle check)
+        elif step in (1, 2, 3):
             self.step_mode = "accept_only"
             self.selection_index = 0
         else:
@@ -1897,25 +1931,25 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def update_highlight(self):
-        # Highlight station boxes or accept label based on selection_index and step_mode
-        for i, box in enumerate(self.station_boxes):
+        # Highlight station frames or accept label based on selection_index and step_mode
+        for i, frame in enumerate(self.station_frames):
             if self.step_mode == "station_select" and self.selection_index == i:
-                box.setStyleSheet("border: 4px solid #F6EB61; border-radius: 12px; background: transparent;")
+                frame.setStyleSheet("border: 4px solid #F6EB61; border-radius: 14px; background: transparent;")
             else:
-                box.setStyleSheet("border: 2px solid #ccc; border-radius: 12px; background: transparent;")
+                frame.setStyleSheet("border: 2px solid #ccc; border-radius: 14px; background: transparent;")
         if self.step_mode in ("station_select", "accept_only"):
             if (self.step_mode == "station_select" and self.selection_index == self.num_stations) or (self.step_mode == "accept_only" and self.selection_index == 0):
-                self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px; padding: 12px 32px; margin-top: 18px; background: #444;")
+                self.accept_label.setStyleSheet("color: #F6EB61; border: none; border-radius: 0; padding: 12px 32px; margin-top: 18px; background: #444;")
             else:
-                self.accept_label.setStyleSheet("color: #fff; border: 2px solid #ccc; border-radius: 12px; padding: 12px 32px; margin-top: 18px; background: transparent;")
+                self.accept_label.setStyleSheet("color: #fff; border: none; border-radius: 0; padding: 12px 32px; margin-top: 18px; background: transparent;")
         else:
-            self.accept_label.setStyleSheet("color: #fff; border: 2px solid #ccc; border-radius: 12px; padding: 12px 32px; margin-top: 18px; background: transparent;")
+            self.accept_label.setStyleSheet("color: #fff; border: none; border-radius: 0; padding: 12px 32px; margin-top: 18px; background: transparent;")
 
     def select_next(self):
         if self.step_mode == "station_select":
             self.selection_index = (self.selection_index + 1) % (self.num_stations + 1)
         elif self.step_mode == "accept_only":
-            self.selection_index = 0  # Only accept/continue
+            self.selection_index = 0
         self.update_highlight()
 
     def select_prev(self):

@@ -21,7 +21,7 @@ import sys
 import time
 import signal
 import serial
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO # type: ignore
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer, Qt
@@ -562,6 +562,8 @@ def startup(app, timer):
     wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS)
     app.active_dialog = wizard
 
+    wizard.setWindowState(Qt.WindowState.WindowFullScreen)
+
     # Step 0: Station verification (enable/disable stations)
     wizard.set_step(0)
     station_names = [app.tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
@@ -572,11 +574,12 @@ def startup(app, timer):
         connected=station_connected,
         enabled=station_enabled
     )
-    wizard.setWindowState(Qt.WindowState.WindowFullScreen)
-    wizard.exec()
+
+    wizard.exec()  # Only call exec() once, keep dialog open for all steps
+
     station_enabled = wizard.get_station_enabled()
     save_station_enabled(config_file, station_enabled)
-    app.active_dialog = None
+    app.active_dialog = wizard  # Keep reference
 
     # Step 1: Filling mode selection (modal popup, not fullscreen)
     filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
@@ -587,15 +590,13 @@ def startup(app, timer):
     )
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.setModal(True)
-    # Do NOT set to fullscreen for popup:
-    # filling_mode_dialog.setWindowState(Qt.WindowState.WindowFullScreen)
     filling_mode_dialog.exec()
     selected_index = filling_mode_dialog.selected_index
     filling_modes_list = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes_list[selected_index]
     global filling_mode
     filling_mode = app.filling_mode
-    app.active_dialog = None
+    app.active_dialog = wizard  # Restore reference
 
     # If MANUAL mode, show popup, send command, and exit startup
     if filling_mode == "MANUAL":
@@ -609,11 +610,10 @@ def startup(app, timer):
                     logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
         info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
         info.setWindowModality(Qt.WindowModality.ApplicationModal)
-        # Show as popup, not fullscreen
-        # info.setWindowState(Qt.WindowState.WindowFullScreen)
         info.show()
-        QTimer.singleShot(2000, info.accept)  # Close after 2 seconds
+        QTimer.singleShot(2000, info.accept)
         QApplication.processEvents()
+        wizard.accept()  # Close the wizard dialog
         return
 
     # Step 2: Calibration - Remove Weight
@@ -625,9 +625,7 @@ def startup(app, timer):
         connected=station_connected,
         enabled=station_enabled
     )
-    app.active_dialog = wizard
-    wizard.setWindowState(Qt.WindowState.WindowFullScreen)
-    wizard.exec()
+    # Wait for user to continue (handled inside dialog)
 
     # Tare all enabled stations after user confirms remove weight
     for i, arduino in enumerate(arduinos):
@@ -649,10 +647,6 @@ def startup(app, timer):
         connected=station_connected,
         enabled=station_enabled
     )
-    app.active_dialog = wizard
-    wizard.setWindowState(Qt.WindowState.WindowFullScreen)
-    wizard.exec()
-    # (Add your full bottle check logic here, updating wizard as needed)
 
     # Step 4: Empty Bottle Check
     wizard.set_step(4)
@@ -663,10 +657,6 @@ def startup(app, timer):
         connected=station_connected,
         enabled=station_enabled
     )
-    app.active_dialog = wizard
-    wizard.setWindowState(Qt.WindowState.WindowFullScreen)
-    wizard.exec()
-    # (Add your empty bottle check logic here, updating wizard as needed)
 
     # Step 5: Button Check
     wizard.set_step(5)
@@ -677,11 +667,8 @@ def startup(app, timer):
         connected=station_connected,
         enabled=station_enabled
     )
-    app.active_dialog = wizard
-    wizard.setWindowState(Qt.WindowState.WindowFullScreen)
-    wizard.exec()
-    # (Add your button check logic here, updating wizard as needed)
 
+    wizard.accept()  # Close the wizard dialog after all steps
     app.active_dialog = None
 
     # Show the main window after startup is complete
@@ -913,12 +900,19 @@ def poll_hardware(app):
                         'target_weight': getattr(app, "target_weight", target_weight),
                         'scale_calibrations': scale_calibrations,
                         'time_limit': getattr(app, "time_limit", time_limit),
-                        'active_dialog': active_dialog,
-                        'update_station_weight': update_station_weight,
-                        'station_widgets': station_widgets,
-                        'refresh_ui': refresh_ui,
-                        'app': app,  # Pass app for handlers that want it
+                        'active_dialog': getattr(app, "active_dialog", None),
+                        'update_station_weight': None,  # We'll set this below
+                        'station_widgets': getattr(app, "station_widgets", None),
+                        'refresh_ui': getattr(app, "refresh_ui", None),
+                        'app': app,
                     }
+                    # --- Consistent dynamic weight update for StartupWizardDialog step 0 ---
+                    dialog = getattr(app, "active_dialog", None)
+                    if dialog and hasattr(dialog, "set_station_weight") and getattr(dialog, "current_step", None) == 0:
+                        ctx['update_station_weight'] = dialog.set_station_weight
+                    else:
+                        ctx['update_station_weight'] = None
+                    # ------------------------------------------
                     if handler:
                         handler(station_index, arduino, **ctx)
                     else:
