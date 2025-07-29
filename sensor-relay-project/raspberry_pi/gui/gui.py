@@ -9,17 +9,14 @@ import os
 import weakref
 from gui.languages import LANGUAGES
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app_config import DEBUG, QT_STYLESHEET
+from app_config import DEBUG, STATION_COLORS
 
 logging.basicConfig(level=logging.INFO)
 
-STATION_COLORS = [
-    "#CB1212",  # Station 1: Red
-    "#2E4BA8",  # Station 2: Blue
-    "#3f922e",  # Station 3: Green
-    "#EDE021",  # Station 4: Yellow
-]
-
+# Get the absolute path to stylesheet.qss
+STYLESHEET_PATH = os.path.join(os.path.dirname(__file__), "stylesheet.qss")
+with open(STYLESHEET_PATH, "r") as f:
+    QT_STYLESHEET = f.read()
 
 def qt_exception_hook(exctype, value, traceback):
     logging.error("Uncaught Qt exception", exc_info=(exctype, value, traceback))
