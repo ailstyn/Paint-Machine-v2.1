@@ -102,11 +102,11 @@ class StationBoxWidget(QWidget):
                 self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.connected_label.setFont(QFont("Arial", 16))
                 self.connected_label.setProperty("class", "stationStatusLabel")
-                # Only use station color if connected, else black/transparent
+                # Only use station color if connected, else transparent
                 if connected:
                     self.connected_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
-                    self.connected_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    self.connected_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 layout.addWidget(self.connected_label)
             else:
                 self.connected_label = None
@@ -117,11 +117,11 @@ class StationBoxWidget(QWidget):
                 self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.enabled_label.setFont(QFont("Arial", 16))
                 self.enabled_label.setProperty("class", "stationStatusLabel")
-                # Only use station color if enabled, else black/transparent
+                # Only use station color if enabled, else transparent
                 if enabled:
                     self.enabled_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
-                    self.enabled_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    self.enabled_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 layout.addWidget(self.enabled_label)
             else:
                 self.enabled_label = None
@@ -1717,7 +1717,6 @@ class StartupWizardDialog(QDialog):
                 weight_text="--",
                 parent=self
             )
-            # Remove fixed size, allow expansion
             box.setMinimumWidth(216)
             box.setMinimumHeight(110)
             box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
@@ -1733,9 +1732,9 @@ class StartupWizardDialog(QDialog):
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
-        main_layout.addLayout(stations_layout)
+        main_layout.addLayout(stations_layout, stretch=2)  # <-- Add stretch to give more space to station boxes
 
-        main_layout.addStretch(1)
+        main_layout.addStretch(1)  # This will push the accept label down
 
         # Accept/Continue label
         self.accept_label = QLabel("CONTINUE")
@@ -1744,7 +1743,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setObjectName("acceptLabel")
         self.accept_label.setFixedHeight(44)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        main_layout.addWidget(self.accept_label)
+        main_layout.addWidget(self.accept_label, stretch=0)  # <-- No stretch, so it doesn't get squished
 
         # Right-side: button labels
         button_column = ButtonColumnWidget(
