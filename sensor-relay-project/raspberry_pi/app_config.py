@@ -61,3 +61,52 @@ arduino_ports = [
     '/dev/ttyACM2',
     '/dev/ttyACM3'
 ]
+
+# Unified Qt Stylesheet for the GUI
+QT_STYLESHEET = """
+QWidget {
+    background-color: #222;
+    color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+}
+QLabel {
+    color: #fff;
+    background: transparent;
+    border: none;
+}
+QLabel[highlight="true"] {
+    background: #F6EB61;
+    color: #222;
+    border-radius: 8px;
+    padding: 4px;
+}
+QPushButton, QDialog QPushButton {
+    background-color: #444;
+    color: #fff;
+    border-radius: 12px;
+    padding: 8px 24px;
+    font-size: 20px;
+    font-weight: bold;
+}
+QPushButton:hover, QDialog QPushButton:hover {
+    background-color: #F6EB61;
+    color: #222;
+}
+QFrame {
+    background: transparent;
+    border: 2px solid #ccc;
+    border-radius: 14px;
+}
+QDialog {
+    background-color: #222;
+    border: 6px solid #F6EB61;
+    border-radius: 24px;
+}
+
+/* Station color classes */
+.station-red    { background: #CB1212; color: #fff; }
+.station-blue   { background: #2E4BA8; color: #fff; }
+.station-green  { background: #3f922e; color: #fff; }
+.station-yellow { background: #EDE021; color: #222; }
+"""

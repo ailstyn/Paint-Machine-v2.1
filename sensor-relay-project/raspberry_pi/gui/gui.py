@@ -9,7 +9,7 @@ import os
 import weakref
 from gui.languages import LANGUAGES
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app_config import DEBUG
+from app_config import DEBUG, QT_STYLESHEET
 
 logging.basicConfig(level=logging.INFO)
 
@@ -557,6 +557,7 @@ class RelayControlApp(QWidget):
 
             # Arduino serial ports (example initialization)
             self.arduino_ports = []
+            self.setStyleSheet(QT_STYLESHEET)
         except Exception as e:
             logging.error(f"Error in RelayControlApp.__init__: {e}", exc_info=True)
 
@@ -1392,6 +1393,7 @@ class OverlayWidget(QWidget):
 class StartupDialog(QDialog):
     def __init__(self, message, parent=None):
         super().__init__(parent)
+        self.setStyleSheet(QT_STYLESHEET)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setStyleSheet("background-color: #222; color: #fff;")
@@ -1568,6 +1570,7 @@ class CalibrationDialog(QDialog):
     def __init__(self, station_enabled, parent=None):
         try:
             super().__init__(parent)
+            self.setStyleSheet(QT_STYLESHEET)
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
             self.setModal(True)
             self.setStyleSheet("background-color: #222; color: #fff;")
@@ -1738,12 +1741,9 @@ class ButtonColumnWidget(QWidget):
         QTimer.singleShot(duration, restore_style)
 
 class StartupWizardDialog(QDialog):
-    """
-    A single dialog for all startup steps, styled to match the provided wireframe.
-    Uses StationBoxWidget for station display.
-    """
     def __init__(self, parent=None, num_stations=4):
         super().__init__(parent)
+        self.setStyleSheet(QT_STYLESHEET)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setFixedSize(1024, 600)
@@ -1757,16 +1757,20 @@ class StartupWizardDialog(QDialog):
         self.station_names = [f"Station {i+1}" for i in range(num_stations)]
         self.weight_texts = ["--"] * num_stations
 
-        # Main vertical layout
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(16, 16, 16, 16)
-        main_layout.setSpacing(12)
+        main_layout.setContentsMargins(24, 16, 24, 16)
+        main_layout.setSpacing(8)
 
-        # Main label (no border)
+        # Main label in a container for max width
+        main_label_container = QWidget()
+        main_label_layout = QHBoxLayout(main_label_container)
+        main_label_layout.setContentsMargins(0, 0, 0, 0)
+        main_label_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.main_label = QLabel("MAIN LABEL")
-        self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+        self.main_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_label.setFixedHeight(60)
+        self.main_label.setWordWrap(True)
+        self.main_label.setMaximumWidth(600)
         self.main_label.setStyleSheet("""
             background: transparent;
             color: #fff;
@@ -1774,16 +1778,15 @@ class StartupWizardDialog(QDialog):
             border-radius: 0;
             padding: 6px;
         """)
-        main_layout.addWidget(self.main_label)
+        main_label_layout.addWidget(self.main_label)
+        main_layout.addWidget(main_label_container)
 
-        # Info/Prompt area (no border)
+        # Info/Prompt area
         self.info_label = QLabel("Startup Info ....")
-        self.info_label.setFont(QFont("Arial", 22))
+        self.info_label.setFont(QFont("Arial", 20))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-
         self.info_label.setWordWrap(True)
-        self.info_label.setMinimumHeight(60)
-        self.info_label.setMaximumHeight(80)
+        self.info_label.setMaximumHeight(60)
         self.info_label.setStyleSheet("""
             background: transparent;
             color: #fff;
@@ -1793,9 +1796,9 @@ class StartupWizardDialog(QDialog):
         """)
         main_layout.addWidget(self.info_label)
 
-        # Station boxes row (each inside a QFrame with border)
+        # Station boxes row
         stations_layout = QHBoxLayout()
-        stations_layout.setSpacing(16)
+        stations_layout.setSpacing(10)
         self.station_boxes = []
         self.station_frames = []
         for i in range(self.num_stations):
@@ -1808,7 +1811,7 @@ class StartupWizardDialog(QDialog):
                 weight_text="--",
                 parent=self
             )
-            box.setFixedSize(216, 140)
+            box.setFixedSize(216, 110)  # Reduced height
             self.station_boxes.append(box)
             frame = QFrame()
             frame.setFrameShape(QFrame.Shape.StyledPanel)
@@ -1823,28 +1826,29 @@ class StartupWizardDialog(QDialog):
             stations_layout.addWidget(frame)
         main_layout.addLayout(stations_layout)
 
-        # Accept/Continue label (no border)
+        main_layout.addStretch(1)  # Push continue button to bottom
+
+        # Accept/Continue label
         self.accept_label = QLabel("CONTINUE")
-        self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        self.accept_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.accept_label.setFixedHeight(48)
+        self.accept_label.setFixedHeight(44)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.accept_label.setStyleSheet("color: #fff; border: none; border-radius: 0; padding: 8px 24px; margin-top: 8px;")
         main_layout.addWidget(self.accept_label)
 
-        # Right-side: button labels (identical to RelayControlApp)
+        # Right-side: button labels
         button_column = ButtonColumnWidget(
             icons=["▲", "⏎", "▼"],
-            font_size=32,
-            fixed_width=64,
-            margins=(0, 30, 0, 0),
-            spacing=50,
+            font_size=28,
+            fixed_width=56,
+            margins=(0, 20, 0, 0),
+            spacing=36,
             align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-            style="color: #fff; background: #333; border-radius: 12px; padding: 12px 0px;",
+            style="color: #fff; background: #333; border-radius: 12px; padding: 8px 0px;",
             parent=self
         )
 
-        # Place main content and button column in a horizontal layout
         h_layout = QHBoxLayout()
         h_layout.setContentsMargins(0, 0, 0, 0)
         h_layout.setSpacing(0)
@@ -1852,14 +1856,12 @@ class StartupWizardDialog(QDialog):
         h_layout.addWidget(button_column, stretch=0)
         self.setLayout(h_layout)
 
-        # Save reference for flashing, etc.
         self.button_column = button_column
 
-        # Initial highlight
         self.step_mode = "station_select"
         self.update_highlight()
-        self.update_station_widgets()  # Initial update
-
+        self.update_station_widgets()
+    
     @property
     def station_widgets(self):
         # For compatibility with RelayControlApp
@@ -1940,19 +1942,24 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def update_highlight(self):
-        # Highlight station frames or accept label based on selection_index and step_mode
-        for i, frame in enumerate(self.station_frames):
+        # Highlight station boxes by changing their background color
+        for i, box in enumerate(self.station_boxes):
             if self.step_mode == "station_select" and self.selection_index == i:
-                frame.setStyleSheet("border: 4px solid #F6EB61; border-radius: 14px; background: transparent;")
+                # Highlighted: yellow background
+                box.setStyleSheet("background: #F6EB61; border-radius: 14px;")
+                box.name_label.setStyleSheet("background: #F6EB61; color: #222; border-radius: 8px; padding: 4px;")
             else:
-                frame.setStyleSheet("border: 2px solid #ccc; border-radius: 14px; background: transparent;")
+                # Normal: transparent background
+                box.setStyleSheet("background: transparent; border-radius: 14px;")
+                box.name_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; padding: 4px;")
+        # Highlight accept label
         if self.step_mode in ("station_select", "accept_only"):
             if (self.step_mode == "station_select" and self.selection_index == self.num_stations) or (self.step_mode == "accept_only" and self.selection_index == 0):
-                self.accept_label.setStyleSheet("color: #F6EB61; border: none; border-radius: 0; padding: 12px 32px; margin-top: 18px; background: #444;")
+                self.accept_label.setStyleSheet("color: #222; background: #F6EB61; border-radius: 12px; padding: 12px 32px; margin-top: 18px;")
             else:
-                self.accept_label.setStyleSheet("color: #fff; border: none; border-radius: 0; padding: 12px 32px; margin-top: 18px; background: transparent;")
+                self.accept_label.setStyleSheet("color: #fff; background: transparent; border-radius: 12px; padding: 12px 32px; margin-top: 18px;")
         else:
-            self.accept_label.setStyleSheet("color: #fff; border: none; border-radius: 0; padding: 12px 32px; margin-top: 18px; background: transparent;")
+            self.accept_label.setStyleSheet("color: #fff; background: transparent; border-radius: 12px; padding: 12px 32px; margin-top: 18px;")
 
     def select_next(self):
         if self.step_mode == "station_select":
