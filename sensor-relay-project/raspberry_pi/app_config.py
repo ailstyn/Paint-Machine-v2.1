@@ -64,24 +64,31 @@ arduino_ports = [
 
 # Unified Qt Stylesheet for the GUI
 QT_STYLESHEET = """
+/* Unified Qt Stylesheet for Paint Machine GUI */
+
 QWidget {
     background-color: #222;
     color: #fff;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 18px;
 }
+
+/* Generic label styles */
 QLabel {
     color: #fff;
     background: transparent;
     border: none;
 }
+
+/* Highlighted labels (used for selection) */
 QLabel[highlight="true"] {
     background: #F6EB61;
     color: #222;
     border-radius: 8px;
     padding: 4px;
 }
-/* --- Weight label for RelayControlApp --- */
+
+/* Large weight label for RelayControlApp */
 QLabel#weightLabel {
     color: #0f0;
     font-size: 64px;
@@ -90,14 +97,158 @@ QLabel#weightLabel {
     border: none;
     padding: 4px;
 }
+
+/* Small weight label for StartupWizardDialog/StationBoxWidget */
 QLabel#smallweightLabel {
     color: #0f0;
-    font-size: 24px;
+    font-size: 32px;
     font-weight: bold;
     background: transparent;
     border: none;
     padding: 2px;
 }
+
+/* Offline label for RelayControlApp */
+QLabel#offlineLabel {
+    color: #FF2222;
+    font-size: 54px;
+    font-weight: bold;
+    background: transparent;
+    border: none;
+    padding: 4px;
+}
+
+/* Accept/Continue label */
+QLabel#acceptLabel {
+    color: #fff;
+    background: transparent;
+    border-radius: 12px;
+    padding: 12px 32px;
+    margin-top: 18px;
+}
+QLabel#acceptLabel[highlight="true"] {
+    color: #222;
+    background: #F6EB61;
+    border-radius: 12px;
+    padding: 12px 32px;
+    margin-top: 18px;
+}
+QLabel#acceptLabel[highlight="false"] {
+    color: #fff;
+    background: transparent;
+    border-radius: 12px;
+    padding: 12px 32px;
+    margin-top: 18px;
+}
+
+/* Status label */
+QLabel#statusLabel {
+    color: #fff;
+    font-size: 20px;
+}
+
+/* Arrow labels for SetTargetWeightDialog */
+QLabel#arrowLabel {
+    color: #fff;
+    font-size: 28px;
+    background: transparent;
+    border: none;
+    padding: 4px 0;
+    transition: color 0.2s;
+}
+
+/* Digit labels for SetTargetWeightDialog */
+QLabel#digitLabel {
+    color: #fff;
+    font-size: 48px;
+    background: transparent;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    padding: 4px 0;
+    min-width: 48px;
+    transition: color 0.2s, border-color 0.2s;
+}
+
+/* Highlighted digit label */
+QLabel#digitLabel[highlight="true"] {
+    color: #F6EB61;
+    border: 2px solid #F6EB61;
+    background: #222;
+}
+
+/* OutlinedLabel (station name, etc.) */
+OutlinedLabel {
+    background: transparent;
+    padding: 4px;
+}
+
+/* StationBoxWidget connected/enabled labels */
+QLabel.stationStatusLabel {
+    border-radius: 8px;
+    border: none;
+    padding: 4px;
+    color: #fff;
+}
+
+/* InfoDialog title/value labels */
+QLabel#titleLabel {
+    color: #fff;
+    font-size: 32px;
+    font-weight: bold;
+    padding: 12px;
+}
+QLabel#valueLabel {
+    color: #fff;
+    font-size: 48px;
+    font-weight: bold;
+    padding: 12px;
+}
+
+/* Frame styles */
+QFrame {
+    background: transparent;
+    border: 2px solid #ccc;
+    border-radius: 14px;
+}
+QFrame[highlight="true"] {
+    background: #F6EB61;
+    border-radius: 14px;
+}
+QFrame[highlight="false"] {
+    background: transparent;
+    border-radius: 14px;
+}
+
+/* Dialog styles */
+QDialog {
+    background-color: #222;
+    border: 6px solid #F6EB61;
+    border-radius: 24px;
+}
+
+/* Station color classes */
+.station-red    { background: #CB1212; color: #fff; }
+.station-blue   { background: #2E4BA8; color: #fff; }
+.station-green  { background: #3f922e; color: #fff; }
+.station-yellow { background: #EDE021; color: #222; }
+
+/* Button column styles */
+QWidget#buttonColumn {
+    background: transparent;
+    padding: 12px 0px;
+    min-width: 56px;
+    max-width: 64px;
+}
+QLabel.buttonColumnLabel {
+    font-size: 32px;
+    color: #fff;
+    padding: 8px 0px;
+    margin-bottom: 18px;
+    border-radius: 12px;
+    background: #333;
+}
+
+/* QPushButton styles */
 QPushButton, QDialog QPushButton {
     background-color: #444;
     color: #fff;
@@ -110,20 +261,35 @@ QPushButton:hover, QDialog QPushButton:hover {
     background-color: #F6EB61;
     color: #222;
 }
-QFrame {
-    background: transparent;
-    border: 2px solid #ccc;
-    border-radius: 14px;
-}
-QDialog {
-    background-color: #222;
-    border: 6px solid #F6EB61;
-    border-radius: 24px;
+
+/* Menu label style */
+QLabel#menuLabel {
+    font-size: 28px;
+    padding: 12px 0;
 }
 
-/* Station color classes */
-.station-red    { background: #CB1212; color: #fff; }
-.station-blue   { background: #2E4BA8; color: #fff; }
-.station-green  { background: #3f922e; color: #fff; }
-.station-yellow { background: #EDE021; color: #222; }
+OutlinedLabel[highlight="true"], QLabel[highlight="true"] {
+    border: 4px solid #F6EB61;
+    border-radius: 16px;
+    background: transparent;
+    font-size: 24px;
+}
+OutlinedLabel[highlight="false"], QLabel[highlight="false"] {
+    border: 4px solid transparent;
+    border-radius: 16px;
+    background: transparent;
+    font-size: 24px;
+}
+
+/* Overlay styles */
+OverlayWidget {
+    background: rgba(0,0,0,180);
+    border-radius: 32px;
+}
+QLabel#overlayLabel {
+    color: #fff;
+    font-size: 64px;
+    font-weight: bold;
+    background: transparent;
+}
 """
