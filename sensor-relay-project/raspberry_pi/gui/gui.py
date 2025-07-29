@@ -131,7 +131,10 @@ class StationBoxWidget(QWidget):
             self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             layout.addWidget(self.weight_label)
 
-            self.setFixedSize(216, 110)
+            self.setMinimumWidth(216)
+            self.setMinimumHeight(110)
+            # Patch: allow vertical expansion
+            self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
         except Exception as e:
             logging.error(f"Error in StationBoxWidget.__init__ (station_index={station_index}, name={name}): {e}", exc_info=True)
 
@@ -1787,9 +1790,7 @@ class StartupWizardDialog(QDialog):
             if self.station_names and i < len(self.station_names):
                 box.name_label.setText(self.station_names[i])
             # Connected
-            if self.station_connected and i < len(self.station_connected):
-                if box.connected_label:
-                    box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
+                box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
             # Enabled
             if self.station_enabled and i < len(self.station_enabled):
                 if box.enabled_label:
