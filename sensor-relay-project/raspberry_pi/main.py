@@ -27,7 +27,7 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, StartupDialog, CalibrationDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
-from app_config import STATS_LOG_FILE, STATS_LOG_DIR, DEBUG
+from app_config import STATS_LOG_FILE, STATS_LOG_DIR
 
 # ========== CONFIG & CONSTANTS ==========
 LOG_DIR = "logs/errors"
@@ -44,6 +44,7 @@ config_file = "config.txt"
 target_weight = 500.0
 time_limit = 3000
 scale_calibrations = []
+DEBUG = True
 
 # ========== GLOBALS ==========
 E_STOP = False
