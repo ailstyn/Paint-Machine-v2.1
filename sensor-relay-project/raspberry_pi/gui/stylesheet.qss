@@ -31,6 +31,8 @@ QLabel#smallweightLabel {
     background: transparent;
     border: none;
     padding: 2px;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 /* RelayControlApp, StationStatusDialog */
@@ -102,13 +104,11 @@ OutlinedLabel {
 }
 OutlinedLabel[highlight="true"], QLabel[highlight="true"] {
     border: 4px solid #F6EB61;
-    border-radius: 16px;
     background: transparent;
     font-size: 24px;
 }
 OutlinedLabel[highlight="false"], QLabel[highlight="false"] {
     border: 4px solid transparent;
-    border-radius: 16px;
     background: transparent;
     font-size: 24px;
 }

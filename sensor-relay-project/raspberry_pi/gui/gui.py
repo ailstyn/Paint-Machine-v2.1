@@ -92,7 +92,8 @@ class StationBoxWidget(QWidget):
             self.name_label = OutlinedLabel(name)
             self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            # Remove setStyleSheet, rely on stylesheet
+            # Set background color to station color
+            self.name_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
             layout.addWidget(self.name_label)
 
             # Connected/Enabled labels (optional)
@@ -101,8 +102,11 @@ class StationBoxWidget(QWidget):
                 self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.connected_label.setFont(QFont("Arial", 16))
                 self.connected_label.setProperty("class", "stationStatusLabel")
-                # Set background color dynamically if needed
-                self.connected_label.setStyleSheet(f"background: {color if connected else '#000'};")
+                # Set background color to station color only if connected, else transparent
+                if connected:
+                    self.connected_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                else:
+                    self.connected_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 layout.addWidget(self.connected_label)
             else:
                 self.connected_label = None
