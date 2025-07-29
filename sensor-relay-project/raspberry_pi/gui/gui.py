@@ -102,21 +102,26 @@ class StationBoxWidget(QWidget):
                 self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.connected_label.setFont(QFont("Arial", 16))
                 self.connected_label.setProperty("class", "stationStatusLabel")
-                # Set background color to station color only if connected, else transparent
+                # Only use station color if connected, else use black (or transparent)
                 if connected:
                     self.connected_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
-                    self.connected_label.setStyleSheet("background: transparent; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    self.connected_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 layout.addWidget(self.connected_label)
             else:
                 self.connected_label = None
 
+            # Enabled label
             if enabled is not None:
                 self.enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
                 self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.enabled_label.setFont(QFont("Arial", 16))
                 self.enabled_label.setProperty("class", "stationStatusLabel")
-                self.enabled_label.setStyleSheet(f"background: {color if enabled else '#000'};")
+                # Only use station color if enabled, else use black
+                if enabled:
+                    self.enabled_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                else:
+                    self.enabled_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 layout.addWidget(self.enabled_label)
             else:
                 self.enabled_label = None
