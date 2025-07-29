@@ -1896,6 +1896,10 @@ class StartupWizardDialog(QDialog):
             self.accept()
         # If step_mode == "none", do nothing
 
+    def get_station_enabled(self):
+        """Return the current enabled state list for all stations."""
+        return self.station_enabled
+
     def update_highlight(self):
         # Highlight the selected frame and accept label
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
