@@ -634,7 +634,7 @@ def startup(app, timer):
         on_select=filling_mode_selected
     )
     app.active_dialog = filling_mode_dialog
-    filling_mode_dialog.setModal(True)
+    filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)  # <-- Use this
     filling_mode_dialog.show()
     while filling_mode_dialog.isVisible():
         QApplication.processEvents()
