@@ -1193,14 +1193,15 @@ class SelectionDialog(QDialog):
             logging.error(f"Error in SelectionDialog.select_prev: {e}", exc_info=True)
 
     def activate_selected(self):
-        try:
-            index = self.selected_index
-            value = self.options[index][0]
-            if self.on_select_callback:
-                self.on_select_callback(value, index)  # Pass both value and index
-            self.accept()
-        except Exception as e:
-            logging.error(f"Error in SelectionDialog.activate_selected: {e}", exc_info=True)
+        print(f"[DEBUG] SelectionDialog.activate_selected called. selected_index={self.selected_index}")
+        index = self.selected_index
+        value = self.options[index][0]
+        print(f"[DEBUG] SelectionDialog selected value: {value}, index: {index}")
+        if self.on_select_callback:
+            print(f"[DEBUG] Calling on_select_callback with value={value}, index={index}")
+            self.on_select_callback(value, index)
+        print("[DEBUG] SelectionDialog closing (accepting)...")
+        self.accept()
 
 class StationStatusDialog(QDialog):
     station_selected = pyqtSignal(int)
