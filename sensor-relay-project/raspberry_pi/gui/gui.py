@@ -1194,9 +1194,10 @@ class SelectionDialog(QDialog):
 
     def activate_selected(self):
         try:
-            value = self.options[self.selected_index][0]
+            index = self.selected_index
+            value = self.options[index][0]
             if self.on_select_callback:
-                self.on_select_callback(value)
+                self.on_select_callback(value, index)  # Pass both value and index
             self.accept()
         except Exception as e:
             logging.error(f"Error in SelectionDialog.activate_selected: {e}", exc_info=True)

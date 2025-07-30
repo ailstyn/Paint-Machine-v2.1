@@ -594,10 +594,46 @@ def startup(app, timer):
 
     # Step 1: Filling mode selection (modal popup, not fullscreen)
     filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
+
+    def filling_mode_selected(mode, index):
+        app.filling_mode = mode
+        global filling_mode
+        filling_mode = mode
+
+        if index == 1:  # MANUAL
+            MANUAL_FILL_START = b'\x20'
+            for i, arduino in enumerate(arduinos):
+                if arduino and station_enabled[i]:
+                    try:
+                        arduino.write(MANUAL_FILL_START)
+                        arduino.flush()
+                    except Exception as e:
+                        logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+            info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
+            info.setWindowModality(Qt.WindowModality.ApplicationModal)
+            info.show()
+            QTimer.singleShot(2000, info.accept)
+            QApplication.processEvents()
+            wizard.accept()  # Close the wizard dialog
+            return
+
+        elif index == 0:  # AUTO
+            # AUTO mode logic (continue wizard steps)
+            if DEBUG:
+                print("[DEBUG] AUTO mode selected, continuing startup wizard.")
+
+        elif index == 2:  # SMART
+            # SMART mode logic (for now, same as AUTO)
+            if DEBUG:
+                print("[DEBUG] SMART mode selected, continuing startup wizard.")
+
+        # For AUTO and SMART, do NOT close wizard, just continue
+
     filling_mode_dialog = SelectionDialog(
         options=filling_modes,
         parent=app,
-        title=app.tr("SET FILLING MODE")
+        title=app.tr("SET FILLING MODE"),
+        on_select=filling_mode_selected
     )
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.setModal(True)
@@ -608,24 +644,6 @@ def startup(app, timer):
     global filling_mode
     filling_mode = app.filling_mode
     app.active_dialog = wizard  # Restore reference
-
-    # If MANUAL mode, show popup, send command, and exit startup
-    if filling_mode == "MANUAL":
-        MANUAL_FILL_START = b'\x20'
-        for i, arduino in enumerate(arduinos):
-            if arduino and station_enabled[i]:
-                try:
-                    arduino.write(MANUAL_FILL_START)
-                    arduino.flush()
-                except Exception as e:
-                    logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
-        info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
-        info.setWindowModality(Qt.WindowModality.ApplicationModal)
-        info.show()
-        QTimer.singleShot(2000, info.accept)
-        QApplication.processEvents()
-        wizard.accept()  # Close the wizard dialog
-        return
 
     # Step 2: Calibration - Remove Weight
     wizard.set_step(2)
@@ -699,8 +717,7 @@ def startup(app, timer):
                     if DEBUG:
                         print(f"[DEBUG] Failed to send MANUAL_FILL_START to station {i+1}: {e}")
 
-EXIT_MANUAL_END = 0x22
-MANUAL_FILL_START = 0x20
+
 
 def filling_mode_callback(mode):
     global filling_mode
