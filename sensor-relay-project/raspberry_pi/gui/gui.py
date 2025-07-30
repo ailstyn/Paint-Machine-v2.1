@@ -1662,7 +1662,7 @@ class ButtonColumnWidget(QWidget):
         QTimer.singleShot(duration, restore_style)
 
 class StartupWizardDialog(QDialog):
-    def __init__(self, parent=None, num_stations=4):
+    def __init__(self, parent=None, num_stations=4, on_station_verified=None):
         super().__init__(parent)
         self.setStyleSheet(QT_STYLESHEET)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -1881,16 +1881,18 @@ class StartupWizardDialog(QDialog):
             sel = self.selection_indices[self.selection_index]
             parent = self.parent()
             if sel == "accept":
-                print(f"[DEBUG] Station verification accepted, advancing to step {self.current_step + 1}")
-                self.set_step(self.current_step + 1)
-            else:
-                # Toggle enabled state for the selected station
-                self.station_enabled[sel] = not self.station_enabled[sel]
-                if hasattr(parent, "station_enabled"):
-                    parent.station_enabled[sel] = self.station_enabled[sel]
-                if self.station_boxes[sel].enabled_label:
-                    self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
-                self.update_highlight()
+                print("[DEBUG] Station verification accepted, triggering filling mode dialog")
+                if self.on_station_verified:
+                    self.on_station_verified()
+                # Do NOT advance step here; let filling mode dialog control next steps
+                return
+            # Toggle enabled state for the selected station
+            self.station_enabled[sel] = not self.station_enabled[sel]
+            if hasattr(parent, "station_enabled"):
+                parent.station_enabled[sel] = self.station_enabled[sel]
+            if self.station_boxes[sel].enabled_label:
+                self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
+            self.update_highlight()
         elif self.step_mode == "accept_only":
             print(f"[DEBUG] Step {self.current_step} accepted, advancing to step {self.current_step + 1}")
             if self.current_step >= self.last_step:  # Define self.last_step appropriately

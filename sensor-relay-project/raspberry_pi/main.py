@@ -566,8 +566,58 @@ def startup(app, timer):
         time.sleep(0.1)
 
     # --- Use StartupWizardDialog for all startup steps ---
-    print("[DEBUG] Creating StartupWizardDialog")
-    wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS)
+    def show_filling_mode_dialog():
+        print("[DEBUG] Creating SelectionDialog for filling mode")
+        filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
+        def filling_mode_selected(mode, index):
+            print(f"[DEBUG] filling_mode_selected called with mode={mode}, index={index}")
+            app.filling_mode = mode
+            global filling_mode
+            filling_mode = mode
+
+            if index == 1:  # MANUAL
+                print("[DEBUG] MANUAL mode selected, showing InfoDialog and closing wizard.")
+                MANUAL_FILL_START = b'\x20'
+                for i, arduino in enumerate(arduinos):
+                    if arduino and station_enabled[i]:
+                        try:
+                            arduino.write(MANUAL_FILL_START)
+                            arduino.flush()
+                        except Exception as e:
+                            logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+                info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
+                info.setWindowModality(Qt.WindowModality.ApplicationModal)
+                info.show()
+                QTimer.singleShot(2000, info.accept)
+                QApplication.processEvents()
+                print("[DEBUG] Accepting wizard (should close wizard)")
+                wizard.accept()
+                return
+
+            elif index == 0:  # AUTO
+                print("[DEBUG] AUTO mode selected, continuing startup wizard.")
+
+            elif index == 2:  # SMART
+                print("[DEBUG] SMART mode selected, continuing startup wizard.")
+
+            print(f"[DEBUG] After filling_mode_selected: wizard.isVisible={wizard.isVisible()}")
+
+        filling_mode_dialog = SelectionDialog(
+            options=filling_modes,
+            parent=app,
+            title=app.tr("SET FILLING MODE"),
+            on_select=filling_mode_selected
+        )
+        app.active_dialog = filling_mode_dialog
+        filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        filling_mode_dialog.show()
+        while filling_mode_dialog.isVisible():
+            QApplication.processEvents()
+            time.sleep(0.01)
+        print(f"[DEBUG] SelectionDialog closed. wizard.isVisible={wizard.isVisible()}")
+        app.active_dialog = wizard
+
+    wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS, on_station_verified=show_filling_mode_dialog)
     app.active_dialog = wizard
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
 
