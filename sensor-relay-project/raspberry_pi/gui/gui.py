@@ -1762,6 +1762,8 @@ class StartupWizardDialog(QDialog):
 
         self.button_column = button_column
 
+
+
         self.step_mode = "station_select"
         self.update_selection_indices()  # <-- Add this line
         self.update_highlight()
@@ -1833,13 +1835,16 @@ class StartupWizardDialog(QDialog):
 
     def set_step(self, step):
         self.current_step = step
+        self.update_selection_indices()
+        # Always start on "accept" button
+        if "accept" in self.selection_indices:
+            self.selection_index = self.selection_indices.index("accept")
+        else:
+            self.selection_index = len(self.selection_indices) - 1
         if step == 0:
             self.step_mode = "station_select"
-            self.update_selection_indices()
-            self.selection_index = len(self.selection_indices) - 1  # Always start on "accept"
         elif step in (1, 2, 3):
             self.step_mode = "accept_only"
-            self.selection_index = 0
         else:
             self.step_mode = "none"
         self.update_highlight()
