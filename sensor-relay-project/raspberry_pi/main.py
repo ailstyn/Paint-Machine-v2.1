@@ -1,16 +1,16 @@
 import os
 import logging
-import app_config
+import config
 
 
-os.makedirs(app_config.ERROR_LOG_DIR, exist_ok=True)
+os.makedirs(config.ERROR_LOG_DIR, exist_ok=True)
 logging.basicConfig(
-    filename=app_config.ERROR_LOG_FILE,
+    filename=config.ERROR_LOG_FILE,
     level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-print(f"Logging to: {app_config.ERROR_LOG_FILE}")
+print(f"Logging to: {config.ERROR_LOG_FILE}")
 
 # Test log entry
 logging.error("Test error log entry: If you see this, logging is working.")
@@ -27,14 +27,14 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
-from app_config import STATS_LOG_FILE, STATS_LOG_DIR
+from config import STATS_LOG_FILE, STATS_LOG_DIR
 
 # ========== CONFIG & CONSTANTS ==========
 LOG_DIR = "logs/errors"
 os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(app_config.ERROR_LOG_DIR, exist_ok=True)
+os.makedirs(config.ERROR_LOG_DIR, exist_ok=True)
 logging.basicConfig(
-    filename=app_config.ERROR_LOG_FILE,
+    filename=config.ERROR_LOG_FILE,
     level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -67,9 +67,9 @@ def handle_request_target_weight(station_index, arduino, **ctx):
         if ctx['FILL_LOCKED']:
             if ctx['DEBUG']:
                 print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
-            arduino.write(app_config.STOP)
+            arduino.write(config.STOP)
         else:
-            arduino.write(app_config.TARGET_WEIGHT)
+            arduino.write(config.TARGET_WEIGHT)
             arduino.write(f"{ctx['target_weight']}\n".encode('utf-8'))
     except Exception as e:
         logging.error("Error in handle_request_target_weight", exc_info=True)
@@ -78,7 +78,7 @@ def handle_request_calibration(station_index, arduino, **ctx):
     try:
         if ctx['DEBUG']:
             print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {ctx['scale_calibrations'][station_index]}")
-        arduino.write(app_config.REQUEST_CALIBRATION)
+        arduino.write(config.REQUEST_CALIBRATION)
         arduino.write(f"{ctx['scale_calibrations'][station_index]}\n".encode('utf-8'))
     except Exception as e:
         logging.error("Error in handle_request_calibration", exc_info=True)
@@ -87,7 +87,7 @@ def handle_request_time_limit(station_index, arduino, **ctx):
     try:
         if ctx['DEBUG']:
             print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
-        arduino.write(app_config.REQUEST_TIME_LIMIT)
+        arduino.write(config.REQUEST_TIME_LIMIT)
         arduino.write(f"{ctx['time_limit']}\n".encode('utf-8'))
     except Exception as e:
         logging.error("Error in handle_request_time_limit", exc_info=True)
@@ -287,16 +287,16 @@ def handle_max_weight_end(station_index, arduino, **ctx):
         print(f"[INFO] Station {station_index+1}: MAX_WEIGHT_END received, warning cleared.")
 
 MESSAGE_HANDLERS = {
-    app_config.REQUEST_TARGET_WEIGHT: handle_request_target_weight,
-    app_config.REQUEST_CALIBRATION: handle_request_calibration,
-    app_config.REQUEST_TIME_LIMIT: handle_request_time_limit,
-    app_config.CURRENT_WEIGHT: handle_current_weight,
-    app_config.BEGIN_AUTO_FILL: handle_begin_auto_fill,
-    app_config.BEGIN_SMART_FILL: handle_begin_smart_fill,
-    app_config.FINAL_WEIGHT: handle_final_weight,
-    app_config.FILL_TIME: handle_fill_time,
-    app_config.MAX_WEIGHT_WARNING: handle_max_weight_warning,
-    app_config.MAX_WEIGHT_END: handle_max_weight_end,  # <-- Register the new handler
+    config.REQUEST_TARGET_WEIGHT: handle_request_target_weight,
+    config.REQUEST_CALIBRATION: handle_request_calibration,
+    config.REQUEST_TIME_LIMIT: handle_request_time_limit,
+    config.CURRENT_WEIGHT: handle_current_weight,
+    config.BEGIN_AUTO_FILL: handle_begin_auto_fill,
+    config.BEGIN_SMART_FILL: handle_begin_smart_fill,
+    config.FINAL_WEIGHT: handle_final_weight,
+    config.FILL_TIME: handle_fill_time,
+    config.MAX_WEIGHT_WARNING: handle_max_weight_warning,
+    config.MAX_WEIGHT_END: handle_max_weight_end,  # <-- Register the new handler
 }
 
 # ========== UTILITY FUNCTIONS ==========
@@ -397,31 +397,31 @@ def setup_gpio():
         if DEBUG:
             print('setting up GPIO')
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(app_config.UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(app_config.DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(app_config.SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(app_config.E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(app_config.BUZZER_PIN, GPIO.OUT)
-        GPIO.output(app_config.BUZZER_PIN, GPIO.LOW)
-        GPIO.setup(app_config.RELAY_POWER_PIN, GPIO.OUT)
+        GPIO.setup(config.UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(config.DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(config.SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(config.E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(config.BUZZER_PIN, GPIO.OUT)
+        GPIO.output(config.BUZZER_PIN, GPIO.LOW)
+        GPIO.setup(config.RELAY_POWER_PIN, GPIO.OUT)
         if DEBUG:
             print('GPIO setup complete')
     except Exception as e:
         logging.error(f"Error in setup_gpio: {e}")
 
 def ping_buzzer(duration=0.05):
-    GPIO.output(app_config.BUZZER_PIN, GPIO.HIGH)
+    GPIO.output(config.BUZZER_PIN, GPIO.HIGH)
     time.sleep(duration)
-    GPIO.output(app_config.BUZZER_PIN, GPIO.LOW)
+    GPIO.output(config.BUZZER_PIN, GPIO.LOW)
 
 def ping_buzzer_invalid():
-    GPIO.output(app_config.BUZZER_PIN, GPIO.HIGH)
+    GPIO.output(config.BUZZER_PIN, GPIO.HIGH)
     time.sleep(0.15)
-    GPIO.output(app_config.BUZZER_PIN, GPIO.LOW)
+    GPIO.output(config.BUZZER_PIN, GPIO.LOW)
     time.sleep(0.05)
-    GPIO.output(app_config.BUZZER_PIN, GPIO.HIGH)
+    GPIO.output(config.BUZZER_PIN, GPIO.HIGH)
     time.sleep(0.15)
-    GPIO.output(app_config.BUZZER_PIN, GPIO.LOW)
+    GPIO.output(config.BUZZER_PIN, GPIO.LOW)
 
 # ========== SESSION/DATA LOGGING ==========
 
@@ -460,7 +460,7 @@ def startup(app, timer):
     # Connect and setup Arduinos
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
-    for port in app_config.arduino_ports:
+    for port in config.arduino_ports:
         try:
             if DEBUG:
                 print(f"[DEBUG] Trying port {port}...")
@@ -468,7 +468,7 @@ def startup(app, timer):
                 logging.info(f"Trying port {port}...")
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
-            arduino.write(app_config.RESET_HANDSHAKE)
+            arduino.write(config.RESET_HANDSHAKE)
             arduino.flush()
             if DEBUG:
                 print(f"[DEBUG] Sent RESET HANDSHAKE to {port}")
@@ -505,7 +505,7 @@ def startup(app, timer):
                 arduino.close()
                 continue
             station_index = station_serials.index(station_serial_number)
-            arduino.write(app_config.CONFIRM_ID)
+            arduino.write(config.CONFIRM_ID)
             arduino.flush()
             if DEBUG:
                 print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
@@ -515,12 +515,12 @@ def startup(app, timer):
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
-                    if req == app_config.REQUEST_CALIBRATION:
+                    if req == config.REQUEST_CALIBRATION:
                         if DEBUG:
                             print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         else:
                             logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
-                        arduino.write(app_config.REQUEST_CALIBRATION)
+                        arduino.write(config.REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
                         break
@@ -566,7 +566,7 @@ def startup(app, timer):
         print("[DEBUG] Checking E-STOP state...")
     else:
         logging.info("Checking E-STOP state...")
-    while GPIO.input(app_config.E_STOP_PIN) == GPIO.LOW:
+    while GPIO.input(config.E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
 
     # --- Use StartupWizardDialog for all startup steps ---
@@ -642,7 +642,7 @@ def startup(app, timer):
     for i, arduino in enumerate(arduinos):
         if arduino and station_enabled[i]:
             try:
-                arduino.write(app_config.TARE_SCALE)
+                arduino.write(config.TARE_SCALE)
                 arduino.flush()
                 if DEBUG:
                     print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
@@ -746,7 +746,7 @@ def reconnect_arduino(station_index, port):
         arduino.reset_input_buffer()
         time.sleep(1)
 
-        arduino.write(app_config.RESET_HANDSHAKE)
+        arduino.write(config.RESET_HANDSHAKE)
         arduino.flush()
         if DEBUG:
             print(f"Sent RESET_HANDSHAKE to {port}")
@@ -789,7 +789,7 @@ def reconnect_arduino(station_index, port):
 
         station_index = station_serials.index(station_serial_number)
 
-        arduino.write(app_config.CONFIRM_ID)
+        arduino.write(config.CONFIRM_ID)
         arduino.flush()
         if DEBUG:
             print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
@@ -800,12 +800,12 @@ def reconnect_arduino(station_index, port):
         for _ in range(40):
             if arduino.in_waiting > 0:
                 req = arduino.read(1)
-                if req == app_config.REQUEST_CALIBRATION:
+                if req == config.REQUEST_CALIBRATION:
                     if DEBUG:
                         print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     else:
                         logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
-                    arduino.write(app_config.REQUEST_CALIBRATION)
+                    arduino.write(config.REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                     got_request = True
                     break
@@ -834,7 +834,7 @@ def reconnect_arduino(station_index, port):
         return False
 
 def try_connect_station(station_index):
-    port = app_config.arduino_ports[station_index]
+    port = config.arduino_ports[station_index]
     if DEBUG:
         print(f"Attempting to (re)connect to station {station_index+1} on port {port}...")
     try:
@@ -864,7 +864,7 @@ def poll_hardware(app):
         else:
             station_widgets = getattr(app, "station_widgets", None)
 
-        estop_pressed = GPIO.input(app_config.E_STOP_PIN) == GPIO.LOW
+        estop_pressed = GPIO.input(config.E_STOP_PIN) == GPIO.LOW
 
         # Handle E-STOP state change
         if estop_pressed and not E_STOP:
@@ -887,7 +887,7 @@ def poll_hardware(app):
                 )
             for arduino in arduinos:
                 if arduino:
-                    arduino.write(app_config.E_STOP_ACTIVATED)
+                    arduino.write(config.E_STOP_ACTIVATED)
                     arduino.flush()
         elif not estop_pressed and E_STOP:
             if DEBUG:
@@ -936,7 +936,7 @@ def poll_hardware(app):
             except serial.SerialException as e:
                 if DEBUG:
                     print(f"Lost connection to Arduino {station_index+1}: {e}")
-                port = app_config.arduino_ports[station_index]
+                port = config.arduino_ports[station_index]
                 reconnect_arduino(station_index, port)
             except Exception as e:
                 if DEBUG:
@@ -963,14 +963,14 @@ def handle_button_presses(app):
                 app.button_column.flash_icon(index)
 
         # UP BUTTON
-        if GPIO.input(app_config.UP_BUTTON_PIN) == GPIO.LOW:
+        if GPIO.input(config.UP_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             if DEBUG:
                 print(f"UP button pressed, dialog: {dialog}")
             flash_dialog_icon(0)  # Flash UP icon
             if dialog is not None and hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("up")
-            while GPIO.input(app_config.UP_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(config.UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             if dialog is not None:
@@ -980,14 +980,14 @@ def handle_button_presses(app):
             return
 
         # DOWN BUTTON
-        if GPIO.input(app_config.DOWN_BUTTON_PIN) == GPIO.LOW:
+        if GPIO.input(config.DOWN_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             if DEBUG:
                 print(f"DOWN button pressed, dialog: {dialog}")
             flash_dialog_icon(2)  # Flash DOWN icon
             if dialog is not None and hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("down")
-            while GPIO.input(app_config.DOWN_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(config.DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             if dialog is not None:
@@ -997,12 +997,12 @@ def handle_button_presses(app):
             return
 
         # SELECT BUTTON
-        if GPIO.input(app_config.SELECT_BUTTON_PIN) == GPIO.LOW:
+        if GPIO.input(config.SELECT_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             if DEBUG:
                 print(f"SELECT button pressed, dialog: {dialog}")
             flash_dialog_icon(1)  # Flash SELECT icon
-            while GPIO.input(app_config.SELECT_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(config.SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             if dialog is not None:
@@ -1084,7 +1084,7 @@ def main():
             if station_enabled[i]:
                 widget.set_weight(0, target_weight)
 
-        GPIO.output(app_config.RELAY_POWER_PIN, GPIO.HIGH)
+        GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         timer = QTimer()

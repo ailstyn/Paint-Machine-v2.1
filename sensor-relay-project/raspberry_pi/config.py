@@ -62,9 +62,19 @@ arduino_ports = [
     '/dev/ttyACM3'
 ]
 
+# Station colors (for use in Python code and QSS generation)
 STATION_COLORS = [
-    "#CB1212",  # Station 1: Red
-    "#2E4BA8",  # Station 2: Blue
-    "#3f922e",  # Station 3: Green
-    "#EDE021",  # Station 4: Yellow
+    "#b00f0f",  # Station 1 - red
+    "#2314c9",  # Station 2 - blue
+    "#0f9229",  # Station 3 - green
+    "#c1b615",  # Station 4 - yellow
 ]
+
+# Other shared config values
+NUM_STATIONS = 4
+STATS_LOG_FILE = "stats.log"
+STATS_LOG_DIR = "logs/stats"
+ERROR_LOG_FILE = "logs/errors/error.log"
+ERROR_LOG_DIR = "logs/errors"
+
+# Add any other shared constants here

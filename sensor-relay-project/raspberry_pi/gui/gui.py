@@ -9,8 +9,8 @@ import os
 import weakref
 from gui.languages import LANGUAGES
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app_config import DEBUG, STATION_COLORS
-
+from config import STATION_COLORS, NUM_STATIONS, STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
+DEBUG = True
 logging.basicConfig(level=logging.INFO)
 
 # Get the absolute path to stylesheet.qss
@@ -1234,7 +1234,7 @@ class StationStatusDialog(QDialog):
             box_widget = StationBoxWidget(
                 station_index=i,
                 name=f"Station {i+1}",
-                color=bg_colors[i],
+                color=STATION_COLORS[i],
                 connected=station_enabled[i],
                 enabled=station_enabled[i],
                 weight_text=None
@@ -1712,7 +1712,7 @@ class StartupWizardDialog(QDialog):
             box = StationBoxWidget(
                 station_index=i,
                 name=f"Station {i+1}",
-                color=STATION_COLORS[i % len(STATION_COLORS)],
+                color=STATION_COLORS[i],
                 connected=True,
                 enabled=True,
                 weight_text="--",
@@ -1897,7 +1897,7 @@ class StartupWizardDialog(QDialog):
         # If step_mode == "none", do nothing
 
     def get_station_enabled(self):
-        """Return the current enabled state list for all stations."""
+        """Return the current enabled state for all stations."""
         return self.station_enabled
 
     def update_highlight(self):
