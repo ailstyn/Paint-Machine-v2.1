@@ -572,7 +572,7 @@ def startup(app, timer):
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
 
     print("[DEBUG] Showing StartupWizardDialog (exec)")
-    wizard.set_step(0)
+    #wizard.set_step(0)
     station_names = [app.tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
     wizard.set_main_label(app.tr("Are these the filling stations you are using?"))
     wizard.set_info_text(app.tr("Verify which stations are enabled and connected."))
@@ -649,7 +649,7 @@ def startup(app, timer):
 
     print(f"[DEBUG] Proceeding to wizard steps. wizard.isVisible={wizard.isVisible()}")
     # Step 2: Calibration - Remove Weight
-    wizard.set_step(2)
+    #wizard.set_step(2)
     print("[DEBUG] Set wizard to step 2 (Calibration - Remove Weight)")
     wizard.set_main_label(app.tr("CALIBRATION_TITLE"))
     wizard.set_info_text(app.tr("CALIBRATION_REMOVE_WEIGHT"))
@@ -672,7 +672,7 @@ def startup(app, timer):
                 logging.error(f"Failed to send TARE_SCALE to station {i+1}: {e}")
 
     # Step 3: Full Bottle Check
-    wizard.set_step(3)
+    #wizard.set_step(3)
     wizard.set_main_label(app.tr("CALIBRATION_TITLE"))
     wizard.set_info_text(app.tr("Place a full bottle in each active station, then press any button."))
     wizard.set_station_labels(
@@ -682,7 +682,7 @@ def startup(app, timer):
     )
 
     # Step 4: Empty Bottle Check
-    wizard.set_step(4)
+    #wizard.set_step(4)
     wizard.set_main_label(app.tr("CALIBRATION_TITLE"))
     wizard.set_info_text(app.tr("Place an empty bottle in each active station"))
     wizard.set_station_labels(
@@ -692,7 +692,7 @@ def startup(app, timer):
     )
 
     # Step 5: Button Check
-    wizard.set_step(5)
+    #wizard.set_step(5)
     wizard.set_main_label(app.tr("BUTTON CHECK"))
     wizard.set_info_text(app.tr("Checking station buttons for faults..."))
     wizard.set_station_labels(

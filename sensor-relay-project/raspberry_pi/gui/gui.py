@@ -1469,7 +1469,9 @@ class StartupDialog(QDialog):
         sel = self.selection_indices[self.selected_index]
         parent = self.parent()
         if sel == "accept":
-            self.accept()
+            # Instead of self.accept(), do:
+            print("[DEBUG] Station verification accepted, moving to next step (do not close wizard)")
+            self.set_step(1)  # Or whatever your next step is
         else:
             # Toggle enabled state for the selected station
             if hasattr(parent, "station_enabled"):
@@ -1555,16 +1557,6 @@ class CalibrationDialog(QDialog):
             content_layout.addWidget(self.bottom_label)
             main_layout.addLayout(content_layout, stretch=3)
 
-            # Right: button label column
-            self.button_column = ButtonColumnWidget(
-                icons=["▲", "⏎", "▼"],
-                font_size=32,
-                fixed_width=64,
-                margins=(0, 30, 0, 0),
-                spacing=50,
-                parent=self
-            )
-            main_layout.addWidget(self.button_column, stretch=0)
 
             self.setLayout(main_layout)
         except Exception as e:
@@ -1680,6 +1672,7 @@ class StartupWizardDialog(QDialog):
 
         # Step tracking
         self.current_step = 0
+        self.last_step = 6
         self.selection_index = 0
         self.station_enabled = [True] * num_stations
         self.station_connected = [True] * num_stations
@@ -1761,7 +1754,7 @@ class StartupWizardDialog(QDialog):
         )
 
         h_layout = QHBoxLayout()
-        h_layout.setContentsMargins(0, 0, 0, 0)
+        h_layout.setContentsMargins(0, 0, 0,  0)
         h_layout.setSpacing(0)
         h_layout.addLayout(main_layout, stretch=10)
         h_layout.addWidget(button_column, stretch=0)
@@ -1883,19 +1876,23 @@ class StartupWizardDialog(QDialog):
             sel = self.selection_indices[self.selection_index]
             parent = self.parent()
             if sel == "accept":
-                self.accept()
+                print(f"[DEBUG] Station verification accepted, advancing to step {self.current_step + 1}")
+                self.set_step(self.current_step + 1)
             else:
                 # Toggle enabled state for the selected station
                 self.station_enabled[sel] = not self.station_enabled[sel]
-                # Update parent/main.py enabled list if available
                 if hasattr(parent, "station_enabled"):
                     parent.station_enabled[sel] = self.station_enabled[sel]
-                # Update enabled label
                 if self.station_boxes[sel].enabled_label:
                     self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
                 self.update_highlight()
         elif self.step_mode == "accept_only":
-            self.accept()
+            print(f"[DEBUG] Step {self.current_step} accepted, advancing to step {self.current_step + 1}")
+            if self.current_step >= self.last_step:  # Define self.last_step appropriately
+                print("[DEBUG] Last step reached, closing wizard.")
+                self.accept()
+            else:
+                self.set_step(self.current_step + 1)
         # If step_mode == "none", do nothing
 
     def get_station_enabled(self):
