@@ -635,7 +635,10 @@ def startup(app, timer):
     )
     app.active_dialog = filling_mode_dialog
     filling_mode_dialog.setModal(True)
-    filling_mode_dialog.exec()
+    filling_mode_dialog.show()
+    while filling_mode_dialog.isVisible():
+        QApplication.processEvents()
+        time.sleep(0.01)
     selected_index = filling_mode_dialog.selected_index
     filling_modes_list = ["AUTO", "MANUAL", "SMART"]
     app.filling_mode = filling_modes_list[selected_index]
