@@ -1672,13 +1672,13 @@ class StartupWizardDialog(QDialog):
 
         # Step tracking
         self.current_step = 0
-        self.last_step = 6
         self.selection_index = 0
         self.station_enabled = [True] * num_stations
         self.station_connected = [True] * num_stations
         self.station_names = [f"Station {i+1}" for i in range(num_stations)]
         self.weight_texts = ["--"] * num_stations
         self.selection_indices = []
+        self.on_station_verified = on_station_verified
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(24, 16, 24, 16)
@@ -1728,19 +1728,18 @@ class StartupWizardDialog(QDialog):
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
-        main_layout.addLayout(stations_layout, stretch=2)  # <-- Add stretch to give more space to station boxes
+        main_layout.addLayout(stations_layout, stretch=2)
 
-        main_layout.addStretch(1)  # This will push the accept label down
+        main_layout.addStretch(1)
 
         # Accept/Continue label
         self.accept_label = QLabel("CONTINUE")
         self.accept_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setObjectName("acceptLabel")
-        # Remove fixed height, use minimum height instead
         self.accept_label.setMinimumHeight(44)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        main_layout.addWidget(self.accept_label, stretch=0)  # <-- No stretch, so it doesn't get squished
+        main_layout.addWidget(self.accept_label, stretch=0)
 
         # Right-side: button labels
         button_column = ButtonColumnWidget(
@@ -1762,16 +1761,18 @@ class StartupWizardDialog(QDialog):
 
         self.button_column = button_column
 
-
-
         self.step_mode = "station_select"
-        self.update_selection_indices()  # <-- Add this line
+        self.update_selection_indices()
+        # Always start on "accept" button
+        if "accept" in self.selection_indices:
+            self.selection_index = self.selection_indices.index("accept")
+        else:
+            self.selection_index = len(self.selection_indices) - 1
         self.update_highlight()
         self.update_station_widgets()
-    
+
     @property
     def station_widgets(self):
-        # For compatibility with RelayControlApp
         return self.station_boxes
 
     def set_main_label(self, text):
@@ -1793,10 +1794,8 @@ class StartupWizardDialog(QDialog):
 
     def update_station_widgets(self):
         for i, box in enumerate(self.station_boxes):
-            # Name
             if self.station_names and i < len(self.station_names):
                 box.name_label.setText(self.station_names[i])
-            # Connected
             if box.connected_label:
                 box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
                 # Update style based on connection
@@ -1804,7 +1803,6 @@ class StartupWizardDialog(QDialog):
                     box.connected_label.setStyleSheet(f"background: {STATION_COLORS[i % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
                 else:
                     box.connected_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
-            # Enabled
             if self.station_enabled and i < len(self.station_enabled):
                 if box.enabled_label:
                     box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
@@ -1850,12 +1848,10 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def update_selection_indices(self):
-        """Build a list of indices for connected stations plus 'accept'."""
         self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
         self.selection_indices.append("accept")
-        # Clamp selection_index to valid range
         if self.selection_index >= len(self.selection_indices):
-            self.selection_index = len(self.selection_indices) - 1  # Always start on "accept"
+            self.selection_index = len(self.selection_indices) - 1
 
     def select_next(self):
         if self.current_step == 0 and self.step_mode == "station_select":
@@ -1903,13 +1899,11 @@ class StartupWizardDialog(QDialog):
         # If step_mode == "none", do nothing
 
     def get_station_enabled(self):
-        """Return the current enabled state for all stations."""
         return self.station_enabled
 
     def update_highlight(self):
-        # Highlight the selected frame and accept label
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
-            return  # Prevent IndexError if selection_indices is empty or index out of range
+            return
         for i, frame in enumerate(self.station_frames):
             if self.selection_indices[self.selection_index] == i:
                 frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent;")
