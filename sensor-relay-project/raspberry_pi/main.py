@@ -614,16 +614,14 @@ def startup(app, timer):
             info.show()
             QTimer.singleShot(2000, info.accept)
             QApplication.processEvents()
-            wizard.accept()  # Close the wizard dialog
+            wizard.accept()  # Close the wizard dialog after InfoDialog
             return
 
         elif index == 0:  # AUTO
-            # AUTO mode logic (continue wizard steps)
             if DEBUG:
                 print("[DEBUG] AUTO mode selected, continuing startup wizard.")
 
         elif index == 2:  # SMART
-            # SMART mode logic (for now, same as AUTO)
             if DEBUG:
                 print("[DEBUG] SMART mode selected, continuing startup wizard.")
 
