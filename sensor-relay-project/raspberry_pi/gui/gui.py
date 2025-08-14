@@ -107,7 +107,6 @@ class StationBoxWidget(QWidget):
             self.name_label = OutlinedLabel(name)
             self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            # Set background color to station color
             self.name_label.setStyleSheet(f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
             layout.addWidget(self.name_label)
 
@@ -143,9 +142,9 @@ class StationBoxWidget(QWidget):
 
             # Weight label (optional, for calibration)
             if weight_text is not None:
-                self.weight_label = QLabel(weight_text)
+                self.weight_label = OutlinedLabel(weight_text)
             else:
-                self.weight_label = QLabel("--")
+                self.weight_label = OutlinedLabel("--")
             self.weight_label.setObjectName("smallweightLabel")  # Use stylesheet for small weight label
             self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
