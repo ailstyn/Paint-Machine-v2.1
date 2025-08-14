@@ -62,6 +62,8 @@ class OutlinedLabel(QLabel):
     def paintEvent(self, event):
         try:
             painter = QPainter(self)
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
             font = self.font()
             painter.setFont(font)
             text = self.text()
