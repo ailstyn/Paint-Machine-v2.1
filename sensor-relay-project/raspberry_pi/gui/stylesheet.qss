@@ -74,19 +74,23 @@ QDialog {
 
 /* FRAMES IN DIALOGS */
 QFrame {
-    background: transparent;
-    border: 4px solid #444;
+    border: 4px solid red;
     border-radius: 14px;
+    background: transparent;
+}
+QFrame#stationFrame {
+    border: 4px solid green;
+    border-radius: 14px;
+    background: transparent;
 }
 QFrame[highlight="true"] {
-    /* No background here, let animate_frame_bg handle it */
-    border: 4px solid #F6EB61;
+    border: 4px solid blue;
     border-radius: 14px;
 }
-QFrame[highlight="false"] {
-    background: transparent;
-    border: 4px solid #444;
+QFrame#stationFrame[highlight="true"] {
+    border: 4px solid orange;
     border-radius: 14px;
+    background: #F6EB61;
 }
 
 /* BUTTON COLUMN WIDGET */
@@ -265,19 +269,4 @@ QLabel#infoLabel {
     border: none;
     min-height: 150px;
     max-height: 150px;
-}
-QFrame#stationFrame {
-    border: 4px solid transparent !important;
-    border-radius: 14px !important;
-    background: transparent !important;
-}
-QFrame#stationFrame[highlight="true"] {
-    border: 4px solid transparent !important;
-    border-radius: 14px !important;
-    background: #F6EB61 !important;
-}
-QFrame#stationFrame[highlight="false"] {
-    border: 4px solid transparent !important;
-    border-radius: 14px !important;
-    background: transparent !important;
 }

@@ -1922,7 +1922,7 @@ class StartupWizardDialog(QDialog):
                 frame.setProperty("highlight", True)
             else:
                 # Instantly set background to transparent, no animation
-                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 4px solid #444;")
+                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 4px solid lime;")
                 frame.setProperty("highlight", False)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
