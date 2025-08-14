@@ -1733,11 +1733,11 @@ class StartupWizardDialog(QDialog):
             box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
-            frame.setObjectName("stationFrame")  # <-- Add this line
+            frame.setObjectName("stationFrame")
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(0, 0, 0, 0)
+            frame.layout().setContentsMargins(1, 1, 1, 1)  # <-- Set 1px padding inside frame
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
@@ -1758,6 +1758,7 @@ class StartupWizardDialog(QDialog):
 
         # Right-side: button labels
         button_column = ButtonColumnWidget(
+           
             icons=["▲", "⏎", "▼"],
             font_size=28,
             fixed_width=56,
@@ -1881,7 +1882,7 @@ class StartupWizardDialog(QDialog):
             sel = self.selection_indices[self.selection_index]
             parent = self.parent()
             if sel == "accept":
-                print("[DEBUG] Station verification accepted, triggering filling mode dialog")
+                print("[DEBUG] Station verification accepted, moving to next step (do not close wizard)")
                 if self.on_station_verified:
                     self.on_station_verified()
                 return
@@ -1920,8 +1921,7 @@ class StartupWizardDialog(QDialog):
                 animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
                 frame.setProperty("highlight", True)
             else:
-                # Reset background to transparent when not selected
-                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px;")
+                # Do NOT setStyleSheet here; let stylesheet and animation handle appearance
                 frame.setProperty("highlight", False)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
