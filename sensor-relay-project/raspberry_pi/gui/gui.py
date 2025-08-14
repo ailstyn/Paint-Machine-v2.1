@@ -1763,11 +1763,7 @@ class StartupWizardDialog(QDialog):
 
         self.step_mode = "station_select"
         self.update_selection_indices()
-        # Always start on "accept" button
-        if "accept" in self.selection_indices:
-            self.selection_index = self.selection_indices.index("accept")
-        else:
-            self.selection_index = len(self.selection_indices) - 1
+        self.selection_index = self.selection_indices.index("accept")  # Always start on "accept"
         self.update_highlight()
         self.update_station_widgets()
 
@@ -1834,18 +1830,11 @@ class StartupWizardDialog(QDialog):
     def set_step(self, step):
         self.current_step = step
         self.update_selection_indices()
-        # Always start on "accept" button
-        if "accept" in self.selection_indices:
-            self.selection_index = self.selection_indices.index("accept")
-        else:
-            self.selection_index = len(self.selection_indices) - 1
+        self.selection_index = self.selection_indices.index("accept")  # Always start on "accept"
         if step == 0:
             self.step_mode = "station_select"
         elif step in (1, 2, 3):
-            self.step_mode = "accept_only"
-        else:
-            self.step_mode = "none"
-        self.update_highlight()
+            self.step_mode
 
     def update_selection_indices(self):
         self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
