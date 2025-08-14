@@ -268,16 +268,16 @@ QLabel#infoLabel {
 }
 QFrame#stationFrame {
     border: none !important;
-    border-radius: 14px;
-    background: transparent;
+    border-radius: 14px !important;
+    background: transparent !important;
 }
 QFrame#stationFrame[highlight="true"] {
     border: none !important;
-    border-radius: 14px;
-    background: #F6EB61;
+    border-radius: 14px !important;
+    background: #F6EB61 !important;
 }
 QFrame#stationFrame[highlight="false"] {
     border: none !important;
-    border-radius: 14px;
-    background: transparent;
+    border-radius: 14px !important;
+    background: transparent !important;
 }
