@@ -1920,7 +1920,6 @@ class StartupWizardDialog(QDialog):
                 animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
                 frame.setProperty("highlight", True)
             else:
-                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 4px solid #ccc;")
                 frame.setProperty("highlight", False)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
