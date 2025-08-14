@@ -1710,7 +1710,7 @@ class StartupWizardDialog(QDialog):
         self.info_label = QLabel("Startup Info ....")
         self.info_label.setFont(QFont("Arial", 20))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setObjectName("statusLabel")
+        self.info_label.setObjectName("infoLabel")
         main_layout.addWidget(self.info_label)
 
         # Station boxes row

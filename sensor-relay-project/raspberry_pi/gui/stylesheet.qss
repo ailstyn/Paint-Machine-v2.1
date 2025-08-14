@@ -173,8 +173,8 @@ QLabel#statusLabel {
     padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
-    font-size: 32px;
-    border: none; /* Ensure no border is set */
+    font-size: 48px;   /* Increased from 32px to 48px */
+    border: none;
 }
 
 /* If you have a highlight property for statusLabel, also ensure no border */
@@ -247,4 +247,17 @@ QLabel#overlayLabel {
 QWidget#bottleProgressBar {
     min-width: 60px;
     max-width: 60px;
+}
+
+/* Info label: fixed height, about 1/4 of 600px screen = 150px */
+QLabel#infoLabel {
+    color: #fff;
+    background: transparent;
+    padding: 0px 32px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 24px;
+    border: none;
+    min-height: 150px;
+    max-height: 150px;
 }
