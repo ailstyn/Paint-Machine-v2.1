@@ -157,6 +157,12 @@ QLabel#acceptLabel[highlight="false"] {
     margin-top: 18px;
     font-size: 48px; /* <-- Add this line */
 }
+QLabel#acceptLabel, QLabel[objectName="outlinedLabel"] {
+    /* Remove or reduce vertical padding */
+    padding: 0px 32px; /* Only horizontal padding */
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
 
 /* STATIONSTATUSDIALOG, STARTUPWIZARDDIALOG, CALIBRATIONDIALOG, INFODIALOG */
 QLabel#statusLabel {
