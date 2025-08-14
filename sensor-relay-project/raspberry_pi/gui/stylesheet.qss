@@ -75,22 +75,22 @@ QDialog {
 /* FRAMES IN DIALOGS */
 QFrame {
     border: 2px solid #ccc;
-    border-radius: 14px;
+    border-radius:8px;
     background: transparent;
 }
 QFrame#stationFrame {
     border: 2px solid #ccc;
-    border-radius: 14px;
+    border-radius: 8px;
     background: transparent;
 }
 /* Remove background from highlight selectors! */
 QFrame[highlight="true"] {
     border: 2px solid #ccc;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 QFrame#stationFrame[highlight="true"] {
     border: 2px solid #ccc;
-    border-radius: 14px;
+    border-radius: 8px;
 }
 
 /* BUTTON COLUMN WIDGET */
