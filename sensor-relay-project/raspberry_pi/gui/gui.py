@@ -158,15 +158,13 @@ class StationBoxWidget(QWidget):
                 self.enabled_label = None
 
             # Weight label (optional, for calibration)
-            if weight_text is not None:
-                self.weight_label = OutlinedLabel(weight_text)
-            else:
-                self.weight_label = OutlinedLabel("--")
+            self.weight_label = OutlinedLabel(weight_text if weight_text is not None else "--")
+            self.weight_label.setObjectName("stationWeightLabel")  # Add this line
             self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             self.weight_label.setStyleSheet(
-    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: 0px; padding: 8px 2px 8px 2px; min-height: 48px;"
-)
+                "#stationWeightLabel { color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: none; border-width: 0px; padding: 8px 2px 8px 2px; min-height: 48px; }"
+            )
             layout.addWidget(self.weight_label)
 
             # Remove fixed size, allow expansion
