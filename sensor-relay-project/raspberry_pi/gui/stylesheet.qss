@@ -137,29 +137,31 @@ QLabel#acceptLabel {
     color: #fff;
     background: transparent;
     border-radius: 12px;
-    padding: 8px 24px;
-    margin-top: 18px;
-    font-size: 48px; /* <-- Add this line */
+    padding: 0px 32px;      /* Only horizontal padding */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 48px;
 }
 QLabel#acceptLabel[highlight="true"] {
     color: #222;
     background: #F6EB61;
     border-radius: 12px;
-    padding: 8px 24px;
-    margin-top: 18px;
-    font-size: 48px; /* <-- Add this line */
+    padding: 0px 32px;      /* Only horizontal padding */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 48px;
 }
 QLabel#acceptLabel[highlight="false"] {
     color: #fff;
     background: transparent;
     border-radius: 12px;
-    padding: 8px 24px;
-    margin-top: 18px;
-    font-size: 48px; /* <-- Add this line */
+    padding: 0px 32px;      /* Only horizontal padding */
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 48px;
 }
 QLabel#acceptLabel, QLabel[objectName="outlinedLabel"] {
-    /* Remove or reduce vertical padding */
-    padding: 0px 32px; /* Only horizontal padding */
+    padding: 0px 32px;      /* Only horizontal padding */
     margin-top: 0px;
     margin-bottom: 0px;
 }

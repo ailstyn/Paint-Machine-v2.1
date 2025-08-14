@@ -1752,7 +1752,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setObjectName("acceptLabel")
-        self.accept_label.setMinimumHeight(64)
+        self.accept_label.setMinimumHeight(72)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.accept_label.setFixedWidth(360)
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
