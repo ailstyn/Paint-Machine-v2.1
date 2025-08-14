@@ -267,17 +267,17 @@ QLabel#infoLabel {
     max-height: 150px;
 }
 QFrame#stationFrame {
-    border: none;
+    border: none !important;
     border-radius: 14px;
     background: transparent;
 }
 QFrame#stationFrame[highlight="true"] {
-    border: none;
+    border: none !important;
     border-radius: 14px;
     background: #F6EB61;
 }
 QFrame#stationFrame[highlight="false"] {
-    border: none;
+    border: none !important;
     border-radius: 14px;
     background: transparent;
 }
