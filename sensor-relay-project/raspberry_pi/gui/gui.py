@@ -1745,15 +1745,13 @@ class StartupWizardDialog(QDialog):
 
         main_layout.addStretch(1)
 
-        # Accept/Continue label
-        self.accept_label = QLabel("CONTINUE")
-        self.accept_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))  # Double the font size (was 24)
+        self.accept_label = OutlinedLabel("CONTINUE")
+        self.accept_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setObjectName("acceptLabel")
         self.accept_label.setMinimumHeight(64)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.accept_label.setFixedWidth(360)  # Adjust width to fit larger text and padding
-        self.accept_label.setStyleSheet("padding: 16px 48px; border-radius: 12px;")
+        self.accept_label.setFixedWidth(360)
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
@@ -1919,7 +1917,6 @@ class StartupWizardDialog(QDialog):
             frame.setProperty("highlight", self.selection_indices[self.selection_index] == i)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
-        # Use property for accept_label highlight
         self.accept_label.setProperty("highlight", self.selection_indices[self.selection_index] == "accept")
         self.accept_label.style().unpolish(self.accept_label)
         self.accept_label.style().polish(self.accept_label)
