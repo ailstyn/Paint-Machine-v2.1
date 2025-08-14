@@ -1916,12 +1916,10 @@ class StartupWizardDialog(QDialog):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
-            if self.selection_indices[self.selection_index] == i:
-                animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
-            else:
-                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 4px solid #444;")
-        if self.selection_indices[self.selection_index] == "accept":
-            animate_frame_bg(self.accept_label, "#FFF8DC", "#F6EB61", duration=200)
-            self.accept_label.setStyleSheet("color: #222; border: 4px solid #F6EB61; border-radius: 12px; background: #F6EB61;")
-        else:
-            self.accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px; background: transparent;")
+            frame.setProperty("highlight", self.selection_indices[self.selection_index] == i)
+            frame.style().unpolish(frame)
+            frame.style().polish(frame)
+        # Use property for accept_label highlight
+        self.accept_label.setProperty("highlight", self.selection_indices[self.selection_index] == "accept")
+        self.accept_label.style().unpolish(self.accept_label)
+        self.accept_label.style().polish(self.accept_label)
