@@ -1387,6 +1387,7 @@ class StartupDialog(QDialog):
         self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setFixedWidth(220)
+        self.accept_label.setMinimumHeight(72)  # Try matching font size + padding
         accept_layout = QHBoxLayout()
         accept_layout.addWidget(self.accept_label)
         self.layout.addLayout(accept_layout)
