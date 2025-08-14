@@ -169,7 +169,11 @@ QLabel#acceptLabel, QLabel[objectName="outlinedLabel"] {
 /* STATIONSTATUSDIALOG, STARTUPWIZARDDIALOG, CALIBRATIONDIALOG, INFODIALOG */
 QLabel#statusLabel {
     color: #fff;
-    font-size: 28px;
+    background: transparent;
+    padding: 0px 32px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    font-size: 32px;
 }
 
 /* INFODIALOG LABELS */
