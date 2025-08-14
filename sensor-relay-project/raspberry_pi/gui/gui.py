@@ -31,7 +31,7 @@ def animate_frame_bg(frame, start_color, end_color, duration=200):
         animation.setEndValue(QColor(end_color))
         animation.valueChanged.connect(
             lambda color: frame.setStyleSheet(
-                f"background: {color.name()}; border-radius: 14px; border: 2px solid #444;"
+                f"background: {color.name()}; border-radius: 14px; border: 4px solid #444;"
             )
         )
         animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
