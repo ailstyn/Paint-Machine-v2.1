@@ -1482,7 +1482,7 @@ class StartupWizardDialog(QDialog):
         self.info_label = QLabel("Startup Info ....")
         self.info_label.setFont(QFont("Arial", 20))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setStyleSheet("color: #fff; background: transparent; font-size: 20px; border: none;")
+        self.info_label.setStyleSheet("color: #fff; background: transparent; font-size: 20px; border: none; min-height: 150px; max-height: 150px;")
         main_layout.addWidget(self.info_label)
 
         # Station boxes row
