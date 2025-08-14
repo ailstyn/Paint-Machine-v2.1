@@ -24,6 +24,19 @@ def qt_exception_hook(exctype, value, traceback):
 
 sys.excepthook = qt_exception_hook
 
+def animate_frame_bg(frame, start_color, end_color, duration=200):
+        animation = QVariantAnimation(frame)
+        animation.setDuration(duration)
+        animation.setStartValue(QColor(start_color))
+        animation.setEndValue(QColor(end_color))
+        animation.valueChanged.connect(
+            lambda color: frame.setStyleSheet(
+                f"background: {color.name()}; border-radius: 14px; border: 2px solid #444;"
+            )
+        )
+        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+    
+
 class OutlinedLabel(QLabel):
     """
     QLabel with optional outline effect for station names and other prominent labels.
@@ -1889,18 +1902,6 @@ class StartupWizardDialog(QDialog):
 
     def get_station_enabled(self):
         return self.station_enabled
-    
-    def animate_frame_bg(frame, start_color, end_color, duration=200):
-        animation = QVariantAnimation(frame)
-        animation.setDuration(duration)
-        animation.setStartValue(QColor(start_color))
-        animation.setEndValue(QColor(end_color))
-        animation.valueChanged.connect(
-            lambda color: frame.setStyleSheet(
-                f"background: {color.name()}; border-radius: 14px; border: 2px solid #444;"
-            )
-        )
-        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
     
     def update_highlight(self):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
