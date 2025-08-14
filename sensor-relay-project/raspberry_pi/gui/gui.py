@@ -165,7 +165,7 @@ class StationBoxWidget(QWidget):
             self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             self.weight_label.setStyleSheet(
-    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: none; padding: 8px 2px 8px 2px; min-height: 48px;"
+    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: 0px; padding: 8px 2px 8px 2px; min-height: 48px;"
 )
             layout.addWidget(self.weight_label)
 
