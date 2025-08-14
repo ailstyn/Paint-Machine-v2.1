@@ -31,6 +31,13 @@ QLabel#smallweightLabel {
     padding-bottom: 8px;
     min-height: 48px;
 }
+/* Ensure OutlinedLabel weight labels are always borderless */
+OutlinedLabel#smallweightLabel,
+OutlinedLabel#weightLabel {
+    border: none !important;
+    background: transparent;
+}
+
 QLabel.stationStatusLabel {
     background: transparent;
     border-radius: 4px;
