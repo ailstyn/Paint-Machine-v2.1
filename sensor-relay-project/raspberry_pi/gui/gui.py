@@ -1916,7 +1916,14 @@ class StartupWizardDialog(QDialog):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
-            frame.setProperty("highlight", self.selection_indices[self.selection_index] == i)
+            if self.selection_indices[self.selection_index] == i:
+                # Animate background color to highlight
+                animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
+                frame.setProperty("highlight", True)
+            else:
+                # Animate background color back to transparent
+                animate_frame_bg(frame, "#F6EB61", "transparent", duration=200)
+                frame.setProperty("highlight", False)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
         self.accept_label.setProperty("highlight", self.selection_indices[self.selection_index] == "accept")

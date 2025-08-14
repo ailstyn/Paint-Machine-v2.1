@@ -72,7 +72,7 @@ QFrame {
     border-radius: 14px;
 }
 QFrame[highlight="true"] {
-    background: #F6EB61;
+    /* No background here, let animate_frame_bg handle it */
     border: 4px solid #F6EB61;
     border-radius: 14px;
 }
