@@ -82,6 +82,7 @@ QFrame#stationFrame {
     border: 2px solid #ccc;
     border-radius: 8px;
     background: transparent;
+    padding: 1px; /* Add 1px inner padding */
 }
 /* Remove background from highlight selectors! */
 QFrame[highlight="true"] {
@@ -91,6 +92,8 @@ QFrame[highlight="true"] {
 QFrame#stationFrame[highlight="true"] {
     border: 2px solid #ccc;
     border-radius: 8px;
+    background: transparent; /* Let animation handle background */
+    padding: 1px; /* Add 1px inner padding */
 }
 
 /* BUTTON COLUMN WIDGET */
