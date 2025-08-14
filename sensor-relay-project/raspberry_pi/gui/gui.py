@@ -1747,14 +1747,14 @@ class StartupWizardDialog(QDialog):
 
         # Accept/Continue label
         self.accept_label = QLabel("CONTINUE")
-        self.accept_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        self.accept_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))  # Double the font size (was 24)
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setObjectName("acceptLabel")
-        self.accept_label.setMinimumHeight(44)
+        self.accept_label.setMinimumHeight(64)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.accept_label.setFixedWidth(180)  # Or adjust as needed
-        self.accept_label.setStyleSheet("padding: 8px 32px; border-radius: 12px;")
-        main_layout.addWidget(self.accept_label, stretch=0)
+        self.accept_label.setFixedWidth(360)  # Adjust width to fit larger text and padding
+        self.accept_label.setStyleSheet("padding: 16px 48px; border-radius: 12px;")
+        main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
         button_column = ButtonColumnWidget(
