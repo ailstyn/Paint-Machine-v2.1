@@ -1882,7 +1882,6 @@ class StartupWizardDialog(QDialog):
                 print("[DEBUG] Station verification accepted, triggering filling mode dialog")
                 if self.on_station_verified:
                     self.on_station_verified()
-                # Do NOT advance step here; let filling mode dialog control next steps
                 return
             # Toggle enabled state for the selected station
             self.station_enabled[sel] = not self.station_enabled[sel]
@@ -1890,6 +1889,15 @@ class StartupWizardDialog(QDialog):
                 parent.station_enabled[sel] = self.station_enabled[sel]
             if self.station_boxes[sel].enabled_label:
                 self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
+                # Update background color to match enabled/disabled state
+                if self.station_enabled[sel]:
+                    self.station_boxes[sel].enabled_label.setStyleSheet(
+                        f"background: {STATION_COLORS[sel % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
+                    )
+                else:
+                    self.station_boxes[sel].enabled_label.setStyleSheet(
+                        "background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;"
+                    )
             self.update_highlight()
         elif self.step_mode == "accept_only":
             print(f"[DEBUG] Step {self.current_step} accepted, advancing to step {self.current_step + 1}")
@@ -1898,7 +1906,6 @@ class StartupWizardDialog(QDialog):
                 self.accept()
             else:
                 self.set_step(self.current_step + 1)
-        # If step_mode == "none", do nothing
 
     def get_station_enabled(self):
         return self.station_enabled
