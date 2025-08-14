@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics  # <-- Add QFontMetrics here
 import sys
 import logging
@@ -1889,15 +1889,27 @@ class StartupWizardDialog(QDialog):
 
     def get_station_enabled(self):
         return self.station_enabled
-
+    
+    def animate_frame_bg(frame, start_color, end_color, duration=200):
+        animation = QVariantAnimation(frame)
+        animation.setDuration(duration)
+        animation.setStartValue(QColor(start_color))
+        animation.setEndValue(QColor(end_color))
+        animation.valueChanged.connect(
+            lambda color: frame.setStyleSheet(
+                f"background: {color.name()}; border-radius: 14px; border: 2px solid #444;"
+            )
+        )
+        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+    
     def update_highlight(self):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
             if self.selection_indices[self.selection_index] == i:
-                frame.setStyleSheet("border: 6px solid #F6EB61; border-radius: 14px; background: transparent;")
+                animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)  # Fade to yellow
             else:
-                frame.setStyleSheet("border: 2px solid #444; border-radius: 14px; background: transparent;")
+                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 2px solid #444;")
         if self.selection_indices[self.selection_index] == "accept":
             self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
         else:
