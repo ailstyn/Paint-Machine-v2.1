@@ -962,6 +962,7 @@ def poll_hardware(app):
 # ========== GUI/BUTTON HANDLING ==========
 
 def handle_button_presses(app):
+    global DEBUG
     try:
         dialog = getattr(app, "active_dialog", None)
 

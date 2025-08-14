@@ -44,15 +44,15 @@ QLabel.stationStatusLabel {
 OutlinedLabel {
     background: transparent;
     padding: 2px;
-    margin: 2px;         /* Reduced margin */
-    border-radius: 4px;  /* Small radius for subtle rounding */
+    margin: 2px;
+    border-radius: 4px;
 }
-OutlinedLabel[highlight="true"], QLabel[highlight="true"] {
+OutlinedLabel[highlight="true"] {
     border: 4px solid #F6EB61;
     background: transparent;
     font-size: 24px;
 }
-OutlinedLabel[highlight="false"], QLabel[highlight="false"] {
+OutlinedLabel[highlight="false"] {
     border: 4px solid transparent;
     background: transparent;
     font-size: 24px;
@@ -137,7 +137,7 @@ QLabel#acceptLabel {
     color: #fff;
     background: transparent;
     border-radius: 12px;
-    padding: 0px 32px;      /* Only horizontal padding */
+    padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
     font-size: 48px;
@@ -146,7 +146,7 @@ QLabel#acceptLabel[highlight="true"] {
     color: #222;
     background: #F6EB61;
     border-radius: 12px;
-    padding: 0px 32px;      /* Only horizontal padding */
+    padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
     font-size: 48px;
@@ -155,13 +155,13 @@ QLabel#acceptLabel[highlight="false"] {
     color: #fff;
     background: transparent;
     border-radius: 12px;
-    padding: 0px 32px;      /* Only horizontal padding */
+    padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
     font-size: 48px;
 }
 QLabel#acceptLabel, QLabel[objectName="outlinedLabel"] {
-    padding: 0px 32px;      /* Only horizontal padding */
+    padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
 }
@@ -173,16 +173,14 @@ QLabel#statusLabel {
     padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
-    font-size: 48px;   /* Increased from 32px to 48px */
+    font-size: 48px;
     border: none;
 }
-
-/* If you have a highlight property for statusLabel, also ensure no border */
 QLabel#statusLabel[highlight="true"], QLabel#statusLabel[highlight="false"] {
     border: none;
     background: transparent;
     color: #fff;
-    font-size: 32px;
+    font-size: 48px;
     padding: 0px 32px;
     margin-top: 0px;
     margin-bottom: 0px;
