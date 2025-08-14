@@ -1751,7 +1751,9 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setObjectName("acceptLabel")
         self.accept_label.setMinimumHeight(44)
-        self.accept_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.accept_label.setFixedWidth(180)  # Or adjust as needed
+        self.accept_label.setStyleSheet("padding: 8px 32px; border-radius: 12px;")
         main_layout.addWidget(self.accept_label, stretch=0)
 
         # Right-side: button labels
