@@ -1733,9 +1733,9 @@ class StartupWizardDialog(QDialog):
             box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
+            frame.setObjectName("stationFrame")  # <-- Add this line
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
-            frame.setProperty("highlight", False)
             frame.setLayout(QVBoxLayout())
             frame.layout().setContentsMargins(0, 0, 0, 0)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
