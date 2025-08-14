@@ -1918,13 +1918,13 @@ class StartupWizardDialog(QDialog):
             return
         for i, frame in enumerate(self.station_frames):
             if self.selection_indices[self.selection_index] == i:
+                # Animate highlight for selected frame
                 animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
-                frame.setProperty("highlight", True)
             else:
-                # Do NOT setStyleSheet here; let stylesheet and animation handle appearance
-                frame.setProperty("highlight", False)
-            frame.style().unpolish(frame)
-            frame.style().polish(frame)
-        self.accept_label.setProperty("highlight", self.selection_indices[self.selection_index] == "accept")
-        self.accept_label.style().unpolish(self.accept_label)
-        self.accept_label.style().polish(self.accept_label)
+                # Instantly reset background for non-selected frames
+                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px;")
+        # For the CONTINUE button, you can animate or just set style directly:
+        if self.selection_indices[self.selection_index] == "accept":
+            animate_frame_bg(self.accept_label, "#FFF8DC", "#F6EB61", duration=200)
+        else:
+            self.accept_label.setStyleSheet("background: transparent; border-radius: 12px; border: 2px solid #ccc; padding: 8px 24px; color: #fff;")
