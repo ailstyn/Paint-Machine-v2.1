@@ -83,6 +83,7 @@ QFrame#stationFrame {
     border-radius: 14px;
     background: transparent;
 }
+/* Remove background from highlight selectors! */
 QFrame[highlight="true"] {
     border: 4px solid #ccc;
     border-radius: 14px;
@@ -90,7 +91,6 @@ QFrame[highlight="true"] {
 QFrame#stationFrame[highlight="true"] {
     border: 4px solid #ccc;
     border-radius: 14px;
-    background: #F6EB61;
 }
 
 /* BUTTON COLUMN WIDGET */
