@@ -550,7 +550,59 @@ def startup(app, timer):
         time.sleep(0.1)
 
     # --- Startup Wizard Dialog ---
-    wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS)
+    def on_station_verified():
+        print("[DEBUG] Station verification accepted, triggering filling mode dialog")
+        filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
+
+        def filling_mode_selected(mode, index):
+            print(f"[DEBUG] filling_mode_selected called with mode={mode}, index={index}")
+            app.filling_mode = mode
+            global filling_mode
+            filling_mode = mode
+
+            if index == 1:  # MANUAL
+                print("[DEBUG] MANUAL mode selected, showing InfoDialog and closing wizard.")
+                MANUAL_FILL_START = b'\x20'
+                for i, arduino in enumerate(arduinos):
+                    if arduino and station_enabled[i]:
+                        try:
+                            arduino.write(MANUAL_FILL_START)
+                            arduino.flush()
+                        except Exception as e:
+                            logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
+                info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
+                info.setWindowModality(Qt.WindowModality.ApplicationModal)
+                info.show()
+                QTimer.singleShot(2000, info.accept)
+                QApplication.processEvents()
+                print("[DEBUG] Accepting wizard (should close wizard)")
+                wizard.accept()
+                return
+
+            elif index == 0:  # AUTO
+                print("[DEBUG] AUTO mode selected, continuing startup wizard.")
+
+            elif index == 2:  # SMART
+                print("[DEBUG] SMART mode selected, continuing startup wizard.")
+
+            print(f"[DEBUG] After filling_mode_selected: wizard.isVisible={wizard.isVisible()}")
+
+        filling_mode_dialog = SelectionDialog(
+            options=filling_modes,
+            parent=wizard,  # Show on top of wizard
+            title=app.tr("SET FILLING MODE"),
+            on_select=filling_mode_selected
+        )
+        app.active_dialog = filling_mode_dialog
+        print("[DEBUG] Showing SelectionDialog")
+        filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        filling_mode_dialog.show()
+        while filling_mode_dialog.isVisible():
+            QApplication.processEvents()
+            time.sleep(0.01)
+        print(f"[DEBUG] SelectionDialog closed. wizard.isVisible={wizard.isVisible()}")
+
+    wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS, on_station_verified=on_station_verified)
     app.active_dialog = wizard
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
 
@@ -575,58 +627,6 @@ def startup(app, timer):
     save_station_enabled(config_file, station_enabled)
     app.active_dialog = wizard
 
-    # --- Filling Mode Selection ---
-    print("[DEBUG] Creating SelectionDialog for filling mode")
-    filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
-
-    def filling_mode_selected(mode, index):
-        print(f"[DEBUG] filling_mode_selected called with mode={mode}, index={index}")
-        app.filling_mode = mode
-        global filling_mode
-        filling_mode = mode
-
-        if index == 1:  # MANUAL
-            print("[DEBUG] MANUAL mode selected, showing InfoDialog and closing wizard.")
-            MANUAL_FILL_START = b'\x20'
-            for i, arduino in enumerate(arduinos):
-                if arduino and station_enabled[i]:
-                    try:
-                        arduino.write(MANUAL_FILL_START)
-                        arduino.flush()
-                    except Exception as e:
-                        logging.error(f"Failed to send MANUAL_FILL_START to station {i+1}: {e}")
-            info = InfoDialog(app.tr("MANUAL FILLING MODE"), app.tr("Manual filling mode selected.<br>Startup complete."), app)
-            info.setWindowModality(Qt.WindowModality.ApplicationModal)
-            info.show()
-            QTimer.singleShot(2000, info.accept)
-            QApplication.processEvents()
-            print("[DEBUG] Accepting wizard (should close wizard)")
-            wizard.accept()
-            return
-
-        elif index == 0:  # AUTO
-            print("[DEBUG] AUTO mode selected, continuing startup wizard.")
-
-        elif index == 2:  # SMART
-            print("[DEBUG] SMART mode selected, continuing startup wizard.")
-
-        print(f"[DEBUG] After filling_mode_selected: wizard.isVisible={wizard.isVisible()}")
-
-    filling_mode_dialog = SelectionDialog(
-        options=filling_modes,
-        parent=app,
-        title=app.tr("SET FILLING MODE"),
-        on_select=filling_mode_selected
-    )
-    app.active_dialog = filling_mode_dialog
-    print("[DEBUG] Showing SelectionDialog")
-    filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-    filling_mode_dialog.show()
-    while filling_mode_dialog.isVisible():
-        QApplication.processEvents()
-        time.sleep(0.01)
-    print(f"[DEBUG] SelectionDialog closed. wizard.isVisible={wizard.isVisible()}")
-
     # If MANUAL mode was selected, wizard is already closed, so exit startup
     if not wizard.isVisible():
         print("[DEBUG] Wizard closed after MANUAL mode, exiting startup.")
@@ -635,8 +635,10 @@ def startup(app, timer):
     # --- Step 2: Calibration - Remove Weight ---
     wizard.set_step(2)
     print("[DEBUG] Set wizard to step 2 (Calibration - Remove Weight)")
-    wizard.set_main_label(app.tr("CALIBRATION_TITLE"))
-    wizard.set_info_text(app.tr("CALIBRATION_REMOVE_WEIGHT"))
+    wizard.set_main_label(f"CALIBRATION STEP {wizard.current_step + 1}")
+    wizard.set_info_text(
+        "Remove all weight from each active station.\nPress CONTINUE when ready."
+    )
     wizard.set_station_labels(
         names=station_names,
         connected=station_connected,
@@ -656,8 +658,10 @@ def startup(app, timer):
 
     # --- Step 3: Full Bottle Check ---
     wizard.set_step(3)
-    wizard.set_main_label(app.tr("CALIBRATION_TITLE"))
-    wizard.set_info_text(app.tr("Place a full bottle in each active station, then press any button."))
+    wizard.set_main_label(f"CALIBRATION STEP {wizard.current_step + 1}")
+    wizard.set_info_text(
+        "Place a full bottle in each active station.\nPress CONTINUE when ready."
+    )
     wizard.set_station_labels(
         names=station_names,
         connected=station_connected,
@@ -666,8 +670,10 @@ def startup(app, timer):
 
     # --- Step 4: Empty Bottle Check ---
     wizard.set_step(4)
-    wizard.set_main_label(app.tr("CALIBRATION_TITLE"))
-    wizard.set_info_text(app.tr("Place an empty bottle in each active station"))
+    wizard.set_main_label(f"CALIBRATION STEP {wizard.current_step + 1}")
+    wizard.set_info_text(
+        "Place an empty bottle in each active station.\nPress CONTINUE when ready."
+    )
     wizard.set_station_labels(
         names=station_names,
         connected=station_connected,
@@ -676,8 +682,10 @@ def startup(app, timer):
 
     # --- Step 5: Button Check ---
     wizard.set_step(5)
-    wizard.set_main_label(app.tr("BUTTON CHECK"))
-    wizard.set_info_text(app.tr("Checking station buttons for faults..."))
+    wizard.set_main_label(f"CALIBRATION STEP {wizard.current_step + 1}")
+    wizard.set_info_text(
+        "Checking station buttons for faults...\nPress CONTINUE when ready."
+    )
     wizard.set_station_labels(
         names=station_names,
         connected=station_connected,
