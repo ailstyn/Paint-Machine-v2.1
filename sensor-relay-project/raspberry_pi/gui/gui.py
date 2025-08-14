@@ -1912,6 +1912,7 @@ class StartupWizardDialog(QDialog):
             else:
                 frame.setStyleSheet("background: transparent; border-radius: 14px; border: 2px solid #444;")
         if self.selection_indices[self.selection_index] == "accept":
-            self.accept_label.setStyleSheet("color: #F6EB61; border: 4px solid #F6EB61; border-radius: 12px;")
+            animate_frame_bg(self.accept_label, "#FFF8DC", "#F6EB61", duration=200)  # Animate accept button
+            self.accept_label.setStyleSheet("color: #222; border: 4px solid #F6EB61; border-radius: 12px;")
         else:
-            self.accept_label.setStyleSheet("color: #fff; border: 4px solid transparent; border-radius: 12px;")
+            self.accept_label.setStyleSheet("background: transparent; color: #fff; border: 4px solid transparent; border-radius: 12px;")
