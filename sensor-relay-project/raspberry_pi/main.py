@@ -537,6 +537,7 @@ def startup(app, timer):
                 app.show()
                 return
             print("[DEBUG] AUTO/SMART mode selected, returning to wizard for step 2.")
+            app.active_dialog = wizard
             wizard.set_step(2)
             wizard.set_main_label("CALIBRATION STEP 2")
             wizard.set_info_text(
