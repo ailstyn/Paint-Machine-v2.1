@@ -26,17 +26,10 @@ def set_frame_highlight(frame, highlighted):
     if highlighted:
         shadow = QGraphicsDropShadowEffect(frame)
         shadow.setOffset(0, 0)
-        shadow.setBlurRadius(0)  # Start at 0 for animation
-        shadow.setColor(QColor(246, 235, 97, 180))  # Light yellow, semi-transparent
+        shadow.setBlurRadius(48)  # Large shadow, instant
+        # More opaque and saturated yellow
+        shadow.setColor(QColor(255, 240, 80, 230))  # Higher alpha (was 180), brighter yellow
         frame.setGraphicsEffect(shadow)
-
-        # Animate blur radius for faster fade-in and larger shadow
-        animation = QVariantAnimation(frame)
-        animation.setDuration(120)  # Faster fade-in (was 250)
-        animation.setStartValue(0)
-        animation.setEndValue(48)   # Larger shadow (was 32)
-        animation.valueChanged.connect(lambda val: shadow.setBlurRadius(val))
-        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
     else:
         frame.setGraphicsEffect(None)
 
