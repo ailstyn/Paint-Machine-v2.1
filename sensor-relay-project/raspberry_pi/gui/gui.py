@@ -1658,14 +1658,15 @@ class ButtonColumnWidget(QWidget):
         icons = ["▲", "⏎", "▼"]
         font_size = 32
         fixed_width = 64
-        margins = (0, 40, 0, 0)  # Top margin 40px
+        margins = (0, 40, 0, 0)
         align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        spacing = 100  # Double spacing between buttons
+        spacing = 100
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(*margins)
         layout.setSpacing(spacing)
         self.labels = []
+        self.animations = [None] * len(icons)  # Store animations per button
         for icon in icons:
             lbl = QLabel(icon)
             lbl.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
@@ -1684,16 +1685,36 @@ class ButtonColumnWidget(QWidget):
         if not (0 <= index < len(self.labels)):
             return
         label = self.labels[index]
-        original_palette = label.palette()
-        flash_palette = QPalette()
-        flash_palette.setColor(QPalette.ColorRole.WindowText, QColor(flash_color))
-        label.setPalette(flash_palette)
-        label_ref = weakref.ref(label)
-        def restore_palette():
-            lbl = label_ref()
-            if lbl is not None:
-                lbl.setPalette(original_palette)
-        QTimer.singleShot(duration, restore_palette)
+        start_color = QColor(flash_color)
+        end_color = QColor(Qt.GlobalColor.white)
+
+        # If an animation is running, stop it
+        if self.animations[index] is not None:
+            self.animations[index].stop()
+            self.animations[index].deleteLater()
+            self.animations[index] = None
+
+        animation = QVariantAnimation(label)
+        animation.setDuration(duration)
+        animation.setStartValue(start_color)
+        animation.setEndValue(end_color)
+
+        def on_value_changed(value):
+            palette = label.palette()
+            palette.setColor(QPalette.ColorRole.WindowText, value)
+            label.setPalette(palette)
+
+        animation.valueChanged.connect(on_value_changed)
+
+        def on_finished():
+            palette = label.palette()
+            palette.setColor(QPalette.ColorRole.WindowText, end_color)
+            label.setPalette(palette)
+            self.animations[index] = None
+
+        animation.finished.connect(on_finished)
+        self.animations[index] = animation
+        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
 class StartupWizardDialog(QDialog):
     def __init__(self, parent=None, num_stations=4, on_station_verified=None):
@@ -1845,7 +1866,7 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
-        print(f"[DEBUG] set_weight called: current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
+        # print(f"[DEBUG] set_weight called: current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
         if 0 <= station_index < len(self.station_boxes):
             box = self.station_boxes[station_index]
             box.set_weight(current_weight, target_weight, unit)
