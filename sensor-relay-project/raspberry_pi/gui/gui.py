@@ -22,7 +22,6 @@ sys.excepthook = qt_exception_hook
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 def set_frame_highlight(frame, highlighted):
-    # Remove any existing effect
     frame.setGraphicsEffect(None)
     if highlighted:
         shadow = QGraphicsDropShadowEffect(frame)
@@ -31,16 +30,27 @@ def set_frame_highlight(frame, highlighted):
         shadow.setColor(QColor(246, 235, 97, 180))  # Light yellow, semi-transparent
         frame.setGraphicsEffect(shadow)
 
-        # Animate blur radius for smooth appearance
+        # Animate blur radius for faster fade-in and larger shadow
         animation = QVariantAnimation(frame)
-        animation.setDuration(250)
+        animation.setDuration(120)  # Faster fade-in (was 250)
         animation.setStartValue(0)
-        animation.setEndValue(32)
+        animation.setEndValue(48)   # Larger shadow (was 32)
         animation.valueChanged.connect(lambda val: shadow.setBlurRadius(val))
         animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
     else:
         frame.setGraphicsEffect(None)
-        
+
+def set_label_highlight(label, highlighted):
+    label.setGraphicsEffect(None)
+    if highlighted:
+        shadow = QGraphicsDropShadowEffect(label)
+        shadow.setOffset(0, 0)
+        shadow.setBlurRadius(48)  # Large shadow
+        shadow.setColor(QColor(246, 235, 97, 180))  # Light yellow, semi-transparent
+        label.setGraphicsEffect(shadow)
+    else:
+        label.setGraphicsEffect(None)
+
 class OutlinedLabel(QLabel):
     """
     QLabel with optional outline effect for station names and other prominent labels.
@@ -1924,8 +1934,10 @@ class StartupWizardDialog(QDialog):
             set_frame_highlight(frame, is_highlighted)
             frame.update()
         if self.selection_indices[self.selection_index] == "accept":
-            self.accept_label.set_highlight(True)
+            set_label_highlight(self.accept_label, True)
+            self.accept_label.set_highlight(False)  # Don't use yellow fill
         else:
+            set_label_highlight(self.accept_label, False)
             self.accept_label.set_highlight(False)
 
     def paintEvent(self, event):
