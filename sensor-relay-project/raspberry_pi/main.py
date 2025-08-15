@@ -611,7 +611,8 @@ def startup(app, timer):
     wizard.set_main_label(f"CALIBRATION STEP {wizard.current_step + 1}")
     wizard.set_info_text(
         "Are these the filling stations you are using?\n"
-        "Verify which stations are enabled and connected, press CONTINUE when ready"
+        "Verify which stations are enabled and connected\n"
+        "Press CONTINUE when ready"
     )
     wizard.set_station_labels(
         names=station_names,
