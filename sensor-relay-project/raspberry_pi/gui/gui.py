@@ -1888,6 +1888,7 @@ class StartupWizardDialog(QDialog):
         rect = self.rect()
         painter.setBrush(QColor("#222"))  # Dark grey background
         painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(rect)
         super().paintEvent(event)
 
 # Add this to QFrame subclass or monkey-patch QFrame if you want to handle highlight in paintEvent:
