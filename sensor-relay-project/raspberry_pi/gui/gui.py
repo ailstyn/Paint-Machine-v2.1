@@ -130,7 +130,7 @@ class StationBoxWidget(QWidget):
 
         tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
 
-        # Font size for name, connected, enabled labels
+        # Font size for name label
         label_font_size = int(20 * 1.1)  # 22
 
         # Station name label
@@ -148,40 +148,40 @@ class StationBoxWidget(QWidget):
         self.name_label.setMaximumHeight(44)
         layout.addWidget(self.name_label)
 
-        # Connected label
+        # Connected label (smaller font, no rounded edges)
         self.connected_label = None
         if connected is not None:
             self.connected_label = OutlinedLabel(
                 tr("CONNECTED") if connected else tr("DISCONNECTED"),
-                font_size=label_font_size,
+                font_size=16,  # Reduced font size
                 bold=True,
                 color="#fff",
                 bg_color=color if connected else "#333",
-                border_radius=8,
+                border_radius=0,  # No rounded edges
                 padding=4,
                 outline_width=2
             )
             self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.connected_label.setMinimumHeight(40)
-            self.connected_label.setMaximumHeight(44)
+            self.connected_label.setMinimumHeight(36)
+            self.connected_label.setMaximumHeight(40)
             layout.addWidget(self.connected_label)
 
-        # Enabled label
+        # Enabled label (smaller font, no rounded edges)
         self.enabled_label = None
         if enabled is not None:
             self.enabled_label = OutlinedLabel(
                 tr("ENABLED") if enabled else tr("DISABLED"),
-                font_size=label_font_size,
+                font_size=16,  # Reduced font size
                 bold=True,
                 color="#fff",
                 bg_color=color if enabled else "#333",
-                border_radius=8,
+                border_radius=0,  # No rounded edges
                 padding=4,
                 outline_width=2
             )
             self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.enabled_label.setMinimumHeight(40)
-            self.enabled_label.setMaximumHeight(44)
+            self.enabled_label.setMinimumHeight(36)
+            self.enabled_label.setMaximumHeight(40)
             layout.addWidget(self.enabled_label)
 
         # Weight label (unchanged)
