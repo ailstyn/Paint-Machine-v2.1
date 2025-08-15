@@ -1845,6 +1845,7 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
+        print(f"[DEBUG] set_weight called: current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
         if 0 <= station_index < len(self.station_boxes):
             box = self.station_boxes[station_index]
             if box.weight_label:
