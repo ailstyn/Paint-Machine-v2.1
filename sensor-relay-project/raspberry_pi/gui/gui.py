@@ -45,7 +45,7 @@ class OutlinedLabel(QLabel):
     QLabel with optional outline effect for station names and other prominent labels.
     Uses native Qt methods for appearance, no stylesheets.
     """
-    def __init__(self, text="", parent=None, font_size=24, bold=True, color="#fff", bg_color=None, border_radius=14, padding=4):
+    def __init__(self, text="", parent=None, font_size=24, bold=True, color="#fff", bg_color=None, border_radius=14, padding=4, outline_width=6):
         super().__init__(text, parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
@@ -62,6 +62,7 @@ class OutlinedLabel(QLabel):
         self._normal_border_color = QColor("transparent")
         self._normal_border_width = 4
         self._normal_bg = None
+        self._outline_width = outline_width  # <-- Add this line
 
     def set_highlight(self, highlighted: bool):
         """
@@ -104,9 +105,8 @@ class OutlinedLabel(QLabel):
         path = QPainterPath()
         path.addText(x, y, font, text)
 
-        # Draw black outline (stroke)
-        outline_width = 6
-        painter.setPen(QPen(QColor("black"), outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        # Use self._outline_width for the outline
+        painter.setPen(QPen(QColor("black"), self._outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
@@ -130,64 +130,69 @@ class StationBoxWidget(QWidget):
 
         tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
 
-        # Station name label (smaller font, more padding)
+        # Font size for name, connected, enabled labels
+        label_font_size = int(20 * 1.1)  # 22
+
+        # Station name label
         self.name_label = OutlinedLabel(
             name,
-            font_size=20,           # Reduced from 26
+            font_size=label_font_size,
             bold=True,
             color="#fff",
             bg_color=color,
             border_radius=10,
-            padding=2              # Increased padding
+            padding=4
         )
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.name_label.setMinimumHeight(32)
-        self.name_label.setMaximumHeight(36)
+        self.name_label.setMinimumHeight(40)
+        self.name_label.setMaximumHeight(44)
         layout.addWidget(self.name_label)
 
-        # Connected label (smaller font, more padding)
+        # Connected label
         self.connected_label = None
         if connected is not None:
             self.connected_label = OutlinedLabel(
                 tr("CONNECTED") if connected else tr("DISCONNECTED"),
-                font_size=12,        # Reduced from 16
+                font_size=label_font_size,
                 bold=True,
                 color="#fff",
                 bg_color=color if connected else "#333",
                 border_radius=8,
-                padding=2          # Increased padding
+                padding=4,
+                outline_width=2
             )
             self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.connected_label.setMinimumHeight(22)
-            self.connected_label.setMaximumHeight(26)
+            self.connected_label.setMinimumHeight(40)
+            self.connected_label.setMaximumHeight(44)
             layout.addWidget(self.connected_label)
 
-        # Enabled label (smaller font, more padding)
+        # Enabled label
         self.enabled_label = None
         if enabled is not None:
             self.enabled_label = OutlinedLabel(
                 tr("ENABLED") if enabled else tr("DISABLED"),
-                font_size=12,        # Reduced from 16
+                font_size=label_font_size,
                 bold=True,
                 color="#fff",
                 bg_color=color if enabled else "#333",
                 border_radius=8,
-                padding=2              # Increased padding
+                padding=4,
+                outline_width=2
             )
             self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.enabled_label.setMinimumHeight(22)
-            self.enabled_label.setMaximumHeight(26)
+            self.enabled_label.setMinimumHeight(40)
+            self.enabled_label.setMaximumHeight(44)
             layout.addWidget(self.enabled_label)
 
-        # Weight label (smaller font, more padding)
+        # Weight label (unchanged)
         self.weight_label = OutlinedLabel(
             weight_text if weight_text is not None else "--",
-            font_size=24,           # Reduced from 32
+            font_size=24,
             bold=True,
             color="#0f0",
             bg_color=None,
             border_radius=8,
-            padding=2              # Increased padding
+            padding=2
         )
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setMinimumHeight(36)
@@ -1807,7 +1812,7 @@ class StartupWizardDialog(QDialog):
         if 0 <= station_index < len(self.station_boxes):
             box = self.station_boxes[station_index]
             if box.weight_label:
-                if unit == "g":
+                               if unit == "g":
                     new_text = f"{int(round(current_weight))} g"
                 else:
                     oz = current_weight / 28.3495
