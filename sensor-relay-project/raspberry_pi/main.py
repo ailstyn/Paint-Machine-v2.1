@@ -700,17 +700,6 @@ def startup(app, timer):
     )
 
     wizard.exec()
-    print(f"[DEBUG] StartupWizardDialog closed? isVisible={wizard.isVisible()}")
-
-    # Save enabled states after verification
-    station_enabled = wizard.get_station_enabled()
-    save_station_enabled(config_file, station_enabled)
-    app.active_dialog = wizard
-
-    # If MANUAL mode was selected, wizard is already closed, so exit startup
-    if not wizard.isVisible():
-        print("[DEBUG] Wizard closed after MANUAL mode, exiting startup.")
-        return
 
     # --- Step 2: Calibration - Remove Weight ---
     wizard.set_step(2)
