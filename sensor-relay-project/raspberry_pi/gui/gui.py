@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
-from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics  # <-- Add QFontMetrics here
+from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
 import sys
 import logging
 import os
@@ -39,229 +39,262 @@ def animate_frame_bg(frame, start_color, end_color, duration=200):
                 )
     animation.valueChanged.connect(update_styles)
     animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+
 class OutlinedLabel(QLabel):
     """
     QLabel with optional outline effect for station names and other prominent labels.
-    Directly sets style in Python, no stylesheet required.
+    Uses native Qt methods for appearance, no stylesheets.
     """
-    def __init__(self, text="", parent=None, font_size=24, bold=True, color="#fff", bg_color="transparent", border_radius=14, padding=4):
+    def __init__(self, text="", parent=None, font_size=24, bold=True, color="#fff", bg_color=None, border_radius=14, padding=4):
         super().__init__(text, parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
         self.setFont(QFont("Arial", font_size, weight))
-        self._default_color = color
-        self._default_bg = bg_color
+        self._default_color = QColor(color)
+        self._default_bg = QColor(bg_color) if bg_color else None
         self._default_border_radius = border_radius
         self._default_padding = padding
         self._highlighted = False
-        self.update_style()
+        self._highlight_color = QColor("#F6EB61")
+        self._highlight_text_color = QColor("#222")
+        self._highlight_border_color = QColor("#F6EB61")
+        self._highlight_border_width = 4
+        self._normal_border_color = QColor("transparent")
+        self._normal_border_width = 4
+        self._normal_bg = None
 
     def set_highlight(self, highlighted: bool):
         """
         Highlight the label (yellow background, dark text).
         """
         self._highlighted = highlighted
-        self.update_style()
-
-    def update_style(self):
-        if self._highlighted:
-            self.setStyleSheet(
-                f"color: #222; background: #F6EB61; border-radius: {self._default_border_radius}px; "
-                f"border: 4px solid #F6EB61; padding: {self._default_padding}px; font-size: {self.font().pointSize()}px;"
-            )
-        else:
-            self.setStyleSheet(
-                f"color: {self._default_color}; background: {self._default_bg}; border-radius: {self._default_border_radius}px; "
-                f"border: 4px solid transparent; padding: {self._default_padding}px; font-size: {self.font().pointSize()}px;"
-            )
+        self.update()
 
     def paintEvent(self, event):
-        try:
-            painter = QPainter(self)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-            painter.setRenderHint(QPainter.RenderHint.TextAntialiasing)
-            font = self.font()
-            painter.setFont(font)
-            text = self.text()
-            rect = self.rect()
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
 
-            # Center the text
-            metrics = painter.fontMetrics()
-            text_width = metrics.horizontalAdvance(text)
-            text_height = metrics.height()
-            x = rect.x() + (rect.width() - text_width) / 2
-            y = rect.y() + (rect.height() + text_height) / 2 - metrics.descent()
+        # Padding
+        pad = self._default_padding
+        inner_rect = rect.adjusted(pad, pad, -pad, -pad)
 
-            # Create path for the text
-            path = QPainterPath()
-            path.addText(x, y, font, text)
+        # Draw background and border
+        if self._highlighted:
+            painter.setBrush(self._highlight_color)
+            painter.setPen(QPen(self._highlight_border_color, self._highlight_border_width))
+            text_color = self._highlight_text_color
+        else:
+            painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(self._normal_border_color, self._normal_border_width))
+            text_color = self._default_color
 
-            # Draw black outline (stroke)
-            outline_width = 6  # Adjust for desired thickness
-            painter.setPen(QPen(QColor("black"), outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawPath(path)
+        painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
 
-            # Draw white fill
-            painter.setPen(QPen(QColor("white"), 1))
-            painter.setBrush(QColor("white"))
-            painter.drawPath(path)
-        except Exception as e:
-            logging.error(f"Error in OutlinedLabel.paintEvent: {e}", exc_info=True)
+        # Draw text with outline effect
+        font = self.font()
+        painter.setFont(font)
+        text = self.text()
+        metrics = painter.fontMetrics()
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+        x = inner_rect.x() + (inner_rect.width() - text_width) / 2
+        y = inner_rect.y() + (inner_rect.height() + text_height) / 2 - metrics.descent()
+
+        path = QPainterPath()
+        path.addText(x, y, font, text)
+
+        # Draw black outline (stroke)
+        outline_width = 6
+        painter.setPen(QPen(QColor("black"), outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(path)
+
+        # Draw fill
+        painter.setPen(QPen(text_color, 1))
+        painter.setBrush(text_color)
+        painter.drawPath(path)
 
 class StationBoxWidget(QWidget):
     def __init__(self, station_index, name, color, connected=None, enabled=None, weight_text=None, parent=None):
-        try:
-            super().__init__(parent)
-            layout = QVBoxLayout(self)
-            layout.setContentsMargins(0, 0, 0, 0)
-            layout.setSpacing(4)
+        super().__init__(parent)
+        self.station_index = station_index
+        self.color = color
+        self.connected = connected
+        self.enabled = enabled
+        self.weight_text = weight_text if weight_text is not None else "--"
 
-            tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
 
-            # Station name label with outline
-            self.name_label = OutlinedLabel(name)
-            self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            self.name_label.setStyleSheet(
-                f"background: {color}; color: #fff; border-radius: 10px; border: none; padding: 6px 0px; font-size: 26px; font-weight: bold;"
-            )
-            layout.addWidget(self.name_label)
+        tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
 
-            # Connected/Enabled labels (optional)
-            if connected is not None:
-                self.connected_label = QLabel(tr("CONNECTED") if connected else tr("DISCONNECTED"))
-                self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.connected_label.setFont(QFont("Arial", 16))
-                # Only use station color if connected, else transparent
-                if connected:
-                    self.connected_label.setStyleSheet(
-                        f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px 0px; font-size: 16px;"
-                    )
-                else:
-                    self.connected_label.setStyleSheet(
-                        "background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px 0px;"
-                    )
-                layout.addWidget(self.connected_label)
-            else:
-                self.connected_label = None
+        # Station name label
+        self.name_label = QLabel(name)
+        self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        self.name_label.setMinimumHeight(36)
+        self.name_label.setMaximumHeight(40)
+        # Set background color and rounded corners using palette and paintEvent
+        self.name_label.setAutoFillBackground(True)
+        name_palette = self.name_label.palette()
+        name_palette.setColor(QPalette.ColorRole.Window, QColor(color))
+        name_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        self.name_label.setPalette(name_palette)
+        layout.addWidget(self.name_label)
 
-            # Enabled label
-            if enabled is not None:
-                self.enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
-                self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.enabled_label.setFont(QFont("Arial", 16))
-                # Only use station color if enabled, else transparent
-                if enabled:
-                    self.enabled_label.setStyleSheet(
-                        f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px 0px; font-size: 16px;"
-                    )
-                else:
-                    self.enabled_label.setStyleSheet(
-                        "background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px 0px;"
-                    )
-                layout.addWidget(self.enabled_label)
-            else:
-                self.enabled_label = None
+        # Connected label
+        self.connected_label = None
+        if connected is not None:
+            self.connected_label = QLabel(tr("CONNECTED") if connected else tr("DISCONNECTED"))
+            self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.connected_label.setFont(QFont("Arial", 16))
+            self.connected_label.setMinimumHeight(28)
+            self.connected_label.setMaximumHeight(32)
+            self.connected_label.setAutoFillBackground(True)
+            conn_palette = self.connected_label.palette()
+            conn_palette.setColor(QPalette.ColorRole.Window, QColor(color if connected else "#000"))
+            conn_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.connected_label.setPalette(conn_palette)
+            layout.addWidget(self.connected_label)
 
-            # Weight label (optional, for calibration)
-            self.weight_label = OutlinedLabel(weight_text if weight_text is not None else "--")
-            self.weight_label.setObjectName("stationWeightLabel")  # Add this line
-            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
-            self.weight_label.setStyleSheet(
-                "color: #0f0; font-size: 32px; font-weight: bold; background: none; background-color: none; border: none; border-width: 0px; border-radius: 8px; padding: 8px 2px 8px 2px; min-height: 48px;"
-            )
-            layout.addWidget(self.weight_label)
+        # Enabled label
+        self.enabled_label = None
+        if enabled is not None:
+            self.enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
+            self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.enabled_label.setFont(QFont("Arial", 16))
+            self.enabled_label.setMinimumHeight(28)
+            self.enabled_label.setMaximumHeight(32)
+            self.enabled_label.setAutoFillBackground(True)
+            en_palette = self.enabled_label.palette()
+            en_palette.setColor(QPalette.ColorRole.Window, QColor(color if enabled else "#000"))
+            en_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.enabled_label.setPalette(en_palette)
+            layout.addWidget(self.enabled_label)
 
-            # Remove fixed size, allow expansion
-            self.setMinimumWidth(216)
-            self.setMinimumHeight(110)
-            self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
-        except Exception as e:
-            logging.error(f"Error in StationBoxWidget.__init__ (station_index={station_index}, name={name}): {e}", exc_info=True)
+        # Weight label
+        self.weight_label = QLabel(self.weight_text)
+        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.weight_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        self.weight_label.setMinimumHeight(48)
+        self.weight_label.setMaximumHeight(56)
+        # Only set text color, no background or border
+        weight_palette = self.weight_label.palette()
+        weight_palette.setColor(QPalette.ColorRole.WindowText, QColor("#0f0"))
+        self.weight_label.setPalette(weight_palette)
+        layout.addWidget(self.weight_label)
+
+        self.setMinimumWidth(216)
+        self.setMinimumHeight(110)
+        self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
+
+    def set_connected(self, connected, color):
+        self.connected = connected
+        if self.connected_label:
+            self.connected_label.setText("CONNECTED" if connected else "DISCONNECTED")
+            conn_palette = self.connected_label.palette()
+            conn_palette.setColor(QPalette.ColorRole.Window, QColor(color if connected else "#000"))
+            conn_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.connected_label.setPalette(conn_palette)
+
+    def set_enabled(self, enabled, color):
+        self.enabled = enabled
+        if self.enabled_label:
+            self.enabled_label.setText("ENABLED" if enabled else "DISABLED")
+            en_palette = self.enabled_label.palette()
+            en_palette.setColor(QPalette.ColorRole.Window, QColor(color if enabled else "#000"))
+            en_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.enabled_label.setPalette(en_palette)
+
+    def set_weight(self, weight_text):
+        self.weight_text = weight_text
+        if self.weight_label:
+            self.weight_label.setText(weight_text)
+
+    def paintEvent(self, event):
+        # Draw rounded corners for the widget background
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(QColor("#222"))
+        painter.setPen(QPen(QColor("#ccc"), 2))
+        painter.drawRoundedRect(rect, 14, 14)
+        super().paintEvent(event)
 
 class StationWidget(QWidget):
     def __init__(self, station_number, bg_color, enabled=True, *args, **kwargs):
-        try:
-            super().__init__(*args, **kwargs)
-            self.station_number = station_number
+        super().__init__(*args, **kwargs)
+        self.station_number = station_number
 
-            # Use parent's tr if available, else fallback to English
-            if hasattr(self.parent(), "tr"):
-                self.tr = self.parent().tr
+        # Use parent's tr if available, else fallback to English
+        if hasattr(self.parent(), "tr"):
+            self.tr = self.parent().tr
+        else:
+            self.tr = lambda k: LANGUAGES["en"].get(k, k)
+
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.bg_color = QColor(bg_color)
+        self.enabled = enabled
+
+        # Always define these attributes
+        self.weight_label = None
+        self.status_label = None
+        self.progress_bar = None
+        self.offline_label = None
+
+        # Flashing status attributes
+        self._status_flash_timer = None
+        self._status_flash_state = False
+        self._status_flash_color = QColor("#FF2222")
+        self._status_flash_text = ""
+        self._status_flash_interval = 500  # ms
+
+        if enabled:
+            main_layout = QHBoxLayout(self)
+            main_layout.setContentsMargins(0, 0, 0, 0)
+            main_layout.setSpacing(0)
+
+            # Use BottleProgressBar instead of QProgressBar
+            self.progress_bar = BottleProgressBar(parent=self)
+
+            content_layout = QVBoxLayout()
+            content_layout.setContentsMargins(0, 0, 0, 0)
+            content_layout.setSpacing(0)
+
+            # Large weight label
+            self.weight_label = OutlinedLabel("0.0 / 0.0 g", font_size=64, bold=True, color="#0f0")
+            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.weight_label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
+            content_layout.addWidget(self.weight_label, stretch=2)
+
+            # Status label
+            self.status_label = QLabel(self.tr("READY"))
+            self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.status_label.setFont(QFont("Arial", 20))
+            status_palette = self.status_label.palette()
+            status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.status_label.setPalette(status_palette)
+            content_layout.addWidget(self.status_label, stretch=1)
+
+            # Add widgets to layout
+            if hasattr(self, "bar_on_left") and self.bar_on_left:
+                main_layout.addWidget(self.progress_bar)
+                main_layout.addLayout(content_layout)
             else:
-                self.tr = lambda k: LANGUAGES["en"].get(k, k)
-
-            self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            self.setStyleSheet(f"background-color: {bg_color}; border: 2px solid #222;")
-
-            # Always define these attributes
-            self.weight_label = None
-            self.status_label = None
-            self.progress_bar = None
-            self.offline_label = None
-
-            # Flashing status attributes
-            self._status_flash_timer = None
-            self._status_flash_state = False
-            self._status_flash_color = "#FF2222"
-            self._status_flash_text = ""
-            self._status_flash_interval = 500  # ms
-
-            if enabled:
-                main_layout = QHBoxLayout(self)
-                main_layout.setContentsMargins(0, 0, 0, 0)
-                main_layout.setSpacing(0)
-
-                # Use BottleProgressBar instead of QProgressBar
-                self.progress_bar = BottleProgressBar(parent=self)
-                # Optionally set initial value/max here if needed
-
-                content_layout = QVBoxLayout()
-                content_layout.setContentsMargins(0, 0, 0, 0)
-                content_layout.setSpacing(0)
-
-                # Large weight label
-                self.weight_label = OutlinedLabel("0.0 / 0.0 g")
-                self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.weight_label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
-                self.weight_label.setStyleSheet(
-                    "color: #0f0; font-size: 64px; font-weight: bold; background: transparent; border: none; padding: 8px 2px 8px 2px; min-height: 48px;"
-                )
-                content_layout.addWidget(self.weight_label, stretch=2)
-
-                # Status label
-                self.status_label = QLabel(self.tr("READY"))
-                self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.status_label.setFont(QFont("Arial", 20))
-                self.status_label.setStyleSheet(
-                    "color: #fff; background: transparent; border: none; font-size: 20px;"
-                )
-                content_layout.addWidget(self.status_label, stretch=1)
-
-                # Add widgets to layout
-                if hasattr(self, "bar_on_left") and self.bar_on_left:
-                    main_layout.addWidget(self.progress_bar)
-                    main_layout.addLayout(content_layout)
-                else:
-                    main_layout.addLayout(content_layout)
-                    main_layout.addWidget(self.progress_bar)
-                self.setLayout(main_layout)
-            else:
-                offline_layout = QVBoxLayout(self)
-                offline_layout.setContentsMargins(0, 0, 0, 0)
-                offline_layout.setSpacing(0)
-                self.offline_label = OutlinedLabel(self.tr("STATION_OFFLINE"))
-                self.offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-                self.offline_label.setStyleSheet(
-                    "color: #FF2222; background: transparent; border: none; font-size: 32px;"
-                )
-                offline_layout.addWidget(self.offline_label)
-                self.setLayout(offline_layout)
-        except Exception as e:
-            logging.error(f"Error in StationWidget.__init__ (station_number={station_number}): {e}", exc_info=True)
+                main_layout.addLayout(content_layout)
+                main_layout.addWidget(self.progress_bar)
+            self.setLayout(main_layout)
+        else:
+            offline_layout = QVBoxLayout(self)
+            offline_layout.setContentsMargins(0, 0, 0, 0)
+            offline_layout.setSpacing(0)
+            self.offline_label = OutlinedLabel(self.tr("STATION_OFFLINE"), font_size=32, bold=True, color="#FF2222")
+            self.offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.offline_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+            offline_layout.addWidget(self.offline_label)
+            self.setLayout(offline_layout)
 
     def set_weight(self, current_weight, target_weight, unit="g"):
         try:
@@ -318,13 +351,10 @@ class StationWidget(QWidget):
     def set_status(self, text, color="#fff"):
         try:
             if self.status_label is not None:
-                print(f"set_status called: {text}")
                 self.status_label.setText(text)
-                # Only set color dynamically if needed, otherwise rely on default style
-                if color != "#fff":
-                    self.status_label.setStyleSheet(f"color: {color}; background: transparent; border: none; font-size: 20px;")
-                else:
-                    self.status_label.setStyleSheet("color: #fff; background: transparent; border: none; font-size: 20px;")
+                status_palette = self.status_label.palette()
+                status_palette.setColor(QPalette.ColorRole.WindowText, QColor(color))
+                self.status_label.setPalette(status_palette)
         except Exception as e:
             logging.error(f"Error in StationWidget.set_status (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
 
@@ -335,10 +365,14 @@ class StationWidget(QWidget):
             self._status_flash_state = not self._status_flash_state
             if self._status_flash_state:
                 self.status_label.setText(self._status_flash_text)
-                self.status_label.setStyleSheet(f"color: {self._status_flash_color}; background: transparent; border: none; font-size: 20px;")
+                status_palette = self.status_label.palette()
+                status_palette.setColor(QPalette.ColorRole.WindowText, self._status_flash_color)
+                self.status_label.setPalette(status_palette)
             else:
                 self.status_label.setText("")
-                self.status_label.setStyleSheet("color: #fff; background: transparent; border: none; font-size: 20px;")
+                status_palette = self.status_label.palette()
+                status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                self.status_label.setPalette(status_palette)
         except Exception as e:
             logging.error(f"Error in StationWidget._toggle_status_flash (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
 
@@ -348,7 +382,9 @@ class StationWidget(QWidget):
                 self._status_flash_timer.stop()
             if self.status_label is not None:
                 self.status_label.setText("")
-                self.status_label.setStyleSheet("color: #fff; background: transparent; border: none; font-size: 20px;")
+                status_palette = self.status_label.palette()
+                status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                self.status_label.setPalette(status_palette)
         except Exception as e:
             logging.error(f"Error in StationWidget.clear_status (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
 
@@ -361,134 +397,115 @@ class StationWidget(QWidget):
         except Exception as e:
             logging.error(f"Error in StationWidget.update_language (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
 
+    def paintEvent(self, event):
+        # Draw background and border for the widget
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(self.bg_color)
+        painter.setPen(QPen(QColor("#222"), 2))
+        painter.drawRoundedRect(rect, 14, 14)
+        super().paintEvent(event)
+
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
-        try:
-            super().__init__(parent)
-            self.selected_index = 0
-            self.menu_keys = [
-                "SET TARGET WEIGHT",
-                "SET TIME LIMIT",
-                "SET LANGUAGE",
-                "CHANGE UNITS",
-                "SET FILLING MODE",
-                "EXIT"
-            ]
-            self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
-            layout = QVBoxLayout(self)
-            self.labels = []
-            for item in self.menu_items:
-                label = OutlinedLabel(item)
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                label.setFixedSize(320, 64)
-                label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-                label.setStyleSheet(
-                    "color: #fff; background: transparent; border-radius: 14px; border: 4px solid transparent; padding: 8px; font-size: 28px;"
-                )
-                self.labels.append(label)
-                layout.addWidget(label)
-            self.setLayout(layout)
-            self.update_selection_box()
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.__init__: {e}", exc_info=True)
+        super().__init__(parent)
+        self.selected_index = 0
+        self.menu_keys = [
+            "SET TARGET WEIGHT",
+            "SET TIME LIMIT",
+            "SET LANGUAGE",
+            "CHANGE UNITS",
+            "SET FILLING MODE",
+            "EXIT"
+        ]
+        self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
+        layout = QVBoxLayout(self)
+        self.labels = []
+        for item in self.menu_items:
+            label = OutlinedLabel(item, font_size=28, bold=True, color="#fff")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setFixedSize(320, 64)
+            self.labels.append(label)
+            layout.addWidget(label)
+        self.setLayout(layout)
+        self.update_selection_box()
 
     def update_selection_box(self):
-        try:
-            for i, label in enumerate(self.labels):
-                if i == self.selected_index:
-                    label.setStyleSheet(
-                        "color: #222; background: #F6EB61; border-radius: 14px; border: 4px solid #F6EB61; padding: 8px; font-size: 28px;"
-                    )
-                else:
-                    label.setStyleSheet(
-                        "color: #fff; background: transparent; border-radius: 14px; border: 4px solid transparent; padding: 8px; font-size: 28px;"
-                    )
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.update_selection_box: {e}", exc_info=True)
+        for i, label in enumerate(self.labels):
+            if i == self.selected_index:
+                label.set_highlight(True)
+            else:
+                label.set_highlight(False)
 
     def select_next(self):
-        try:
-            self.selected_index = (self.selected_index + 1) % len(self.labels)
-            self.update_selection_box()
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.select_next: {e}", exc_info=True)
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
+        self.update_selection_box()
 
     def select_prev(self):
-        try:
-            self.selected_index = (self.selected_index - 1) % len(self.labels)
-            self.update_selection_box()
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.select_prev: {e}", exc_info=True)
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
+        self.update_selection_box()
 
     def activate_selected(self):
-        try:
-            selected_key = self.menu_keys[self.selected_index]
-            parent = self.parent()
-            if selected_key == "EXIT":
-                self.accept()
-            elif selected_key == "SET TARGET WEIGHT":
-                self.hide()
-                parent.target_weight_dialog = SetTargetWeightDialog(parent)
-                parent.active_dialog = parent.target_weight_dialog
-                parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
-                parent.target_weight_dialog.finished.connect(self.show_again)
-                parent.target_weight_dialog.show()
-            elif selected_key == "SET TIME LIMIT":
-                self.hide()
-                parent.time_limit_dialog = SetTimeLimitDialog(parent)
-                parent.active_dialog = parent.time_limit_dialog
-                parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
-                parent.time_limit_dialog.show()
-            elif selected_key == "SET LANGUAGE":
-                self.hide()
-                parent.language_dialog = SelectionDialog(
-                    options=[("en", parent.tr("English")), ("es", parent.tr("Español"))],
-                    parent=parent,
-                    title=parent.tr("SET LANGUAGE"),
-                    on_select=parent.set_language
-                )
-                parent.active_dialog = parent.language_dialog
-                parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
-                parent.language_dialog.show()
-            elif selected_key == "CHANGE UNITS":
-                self.hide()
-                parent.change_units_dialog = SelectionDialog(
-                    options=[("g", parent.tr("Grams")), ("oz", parent.tr("Ounces"))],
-                    parent=parent,
-                    title=parent.tr("CHANGE UNITS"),
-                    on_select=parent.set_units
-                )
-                parent.active_dialog = parent.change_units_dialog
-                parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
-                parent.change_units_dialog.show()
-            elif selected_key == "SET FILLING MODE":
-                self.hide()
-                parent.open_filling_mode_dialog()
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.activate_selected: {e}", exc_info=True)
+        selected_key = self.menu_keys[self.selected_index]
+        parent = self.parent()
+        if selected_key == "EXIT":
+            self.accept()
+        elif selected_key == "SET TARGET WEIGHT":
+            self.hide()
+            parent.target_weight_dialog = SetTargetWeightDialog(parent)
+            parent.active_dialog = parent.target_weight_dialog
+            parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.target_weight_dialog.finished.connect(self.show_again)
+            parent.target_weight_dialog.show()
+        elif selected_key == "SET TIME LIMIT":
+            self.hide()
+            parent.time_limit_dialog = SetTimeLimitDialog(parent)
+            parent.active_dialog = parent.time_limit_dialog
+            parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.time_limit_dialog.show()
+        elif selected_key == "SET LANGUAGE":
+            self.hide()
+            parent.language_dialog = SelectionDialog(
+                options=[("en", parent.tr("English")), ("es", parent.tr("Español"))],
+                parent=parent,
+                title=parent.tr("SET LANGUAGE"),
+                on_select=parent.set_language
+            )
+            parent.active_dialog = parent.language_dialog
+            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.language_dialog.show()
+        elif selected_key == "CHANGE UNITS":
+            self.hide()
+            parent.change_units_dialog = SelectionDialog(
+                options=[("g", parent.tr("Grams")), ("oz", parent.tr("Ounces"))],
+                parent=parent,
+                title=parent.tr("CHANGE UNITS"),
+                on_select=parent.set_units
+            )
+            parent.active_dialog = parent.change_units_dialog
+            parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.change_units_dialog.show()
+        elif selected_key == "SET FILLING MODE":
+            self.hide()
+            parent.open_filling_mode_dialog()
 
     def show_again(self):
-        try:
-            self.show()
-            parent = self.parent()
-            if hasattr(parent, "target_weight_dialog"):
-                parent.target_weight_dialog = None
-            if hasattr(parent, "time_limit_dialog"):
-                parent.time_limit_dialog = None
-            if hasattr(parent, "language_dialog"):
-                parent.language_dialog = None
-            if hasattr(parent, "change_units_dialog"):
-                parent.change_units_dialog = None
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.show_again: {e}", exc_info=True)
+        self.show()
+        parent = self.parent()
+        if hasattr(parent, "target_weight_dialog"):
+            parent.target_weight_dialog = None
+        if hasattr(parent, "time_limit_dialog"):
+            parent.time_limit_dialog = None
+        if hasattr(parent, "language_dialog"):
+            parent.language_dialog = None
+        if hasattr(parent, "change_units_dialog"):
+            parent.change_units_dialog = None
 
     def update_menu_language(self):
-        try:
-            self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
-            for label, text in zip(self.labels, self.menu_items):
-                label.setText(text)
-        except Exception as e:
-            logging.error(f"Error in MenuDialog.update_menu_language: {e}", exc_info=True)
+        self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
+        for label, text in zip(self.labels, self.menu_items):
+            label.setText(text)
 
 class RelayControlApp(QWidget):
     def __init__(self, station_enabled=None, filling_mode_callback=None):
@@ -500,7 +517,6 @@ class RelayControlApp(QWidget):
             else:
                 logging.info(f"RelayControlApp.__init__ called with station_enabled={station_enabled}")
             self.setWindowTitle("Four Station Control")
-            self.setStyleSheet("background-color: #222; color: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 18px;")
             self.setFixedSize(1024, 600)  # Ensure window fits screen exactly
 
             # Define station colors
@@ -520,11 +536,6 @@ class RelayControlApp(QWidget):
             for i in range(4):
                 widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
                 widget.setFixedSize(475, 280)
-                # Directly set style for weight label
-                if widget.weight_label is not None:
-                    widget.weight_label.setStyleSheet(
-                        "color: #0f0; font-size: 64px; font-weight: bold; background: transparent; border: none; padding: 8px 2px 8px 2px; min-height: 48px;"
-                    )
                 self.station_widgets[i] = widget
             grid.addWidget(self.station_widgets[0], 0, 0)
             grid.addWidget(self.station_widgets[1], 1, 0)
@@ -798,23 +809,39 @@ class InfoDialog(QDialog):
             super().__init__(parent)
             self.setWindowTitle(title)
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-            self.setStyleSheet("background-color: #222; color: #fff; border-radius: 24px;")
+            self.setModal(True)
+            self.setMinimumWidth(400)
+            self.setMinimumHeight(220)
+            self.setMaximumHeight(320)
+
+            # Set background color and rounded corners using paintEvent
+            self._bg_color = QColor("#222")
+            self._border_radius = 24
+
             layout = QVBoxLayout(self)
+            layout.setContentsMargins(24, 24, 24, 24)
+            layout.setSpacing(12)
 
             self.title_label = QLabel(title)
             self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.title_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            self.title_label.setStyleSheet("color: #fff; font-size: 32px; font-weight: bold; padding: 12px; background: transparent; border: none;")
+            title_palette = self.title_label.palette()
+            title_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.title_label.setPalette(title_palette)
+            self.title_label.setMinimumHeight(48)
             layout.addWidget(self.title_label)
 
             self.value_label = QLabel(message)
             self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.value_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
-            self.value_label.setStyleSheet("color: #fff; font-size: 48px; font-weight: bold; padding: 12px; background: transparent; border: none;")
+            value_palette = self.value_label.palette()
+            value_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            self.value_label.setPalette(value_palette)
+            self.value_label.setMinimumHeight(72)
+            self.value_label.setMaximumHeight(150)
             layout.addWidget(self.value_label)
 
             self.setLayout(layout)
-            self.setModal(True)
         except Exception as e:
             logging.error(f"Error in InfoDialog.__init__: {e}", exc_info=True)
 
@@ -831,16 +858,25 @@ class InfoDialog(QDialog):
         self.show()
         QTimer.singleShot(delay_ms, self.accept)
 
+    def paintEvent(self, event):
+        # Draw rounded background for the dialog
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(self._bg_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        super().paintEvent(event)
+
 class BottleProgressBar(QWidget):
     def __init__(self, max_value=100, value=0, bar_color="#4FC3F7", parent=None):
         try:
             super().__init__(parent)
             self.max_value = max_value
             self.value = value
-            self.bar_color = bar_color
+            self.bar_color = QColor(bar_color)
             self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-            # Directly set style for background and border
-            self.setStyleSheet("background: transparent; border: none;")
+            # No stylesheet needed
         except Exception as e:
             logging.error(f"Error in BottleProgressBar.__init__: {e}", exc_info=True)
 
@@ -920,7 +956,7 @@ class BottleProgressBar(QWidget):
                 fill_height
             )
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(self.bar_color))
+            painter.setBrush(self.bar_color)
             painter.setClipPath(bottle_path)
             painter.drawRect(fill_rect)
             painter.setClipping(False)
@@ -933,15 +969,25 @@ class SetTargetWeightDialog(QDialog):
         try:
             super().__init__(parent)
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-            self.setStyleSheet("background-color: #222; color: #fff; border-radius: 24px;")
+            self.setModal(True)
+            self.setMinimumWidth(400)
+            self.setMinimumHeight(320)
+            self._bg_color = QColor("#222")
+            self._border_radius = 24
+
             tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
             self.setWindowTitle(tr("SET_TARGET_WEIGHT"))
             layout = QVBoxLayout(self)
+            layout.setContentsMargins(24, 24, 24, 24)
+            layout.setSpacing(12)
 
             label = QLabel(tr("ENTER_NEW_TARGET_WEIGHT"))
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            label.setStyleSheet("color: #fff; background: transparent; font-size: 20px; border: none;")
+            label_palette = label.palette()
+            label_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            label.setPalette(label_palette)
+            label.setMinimumHeight(36)
             layout.addWidget(label)
 
             # Start with parent's target_weight or 500, clamp to 5 digits
@@ -960,7 +1006,9 @@ class SetTargetWeightDialog(QDialog):
                 up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
                 up.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 up.setFixedWidth(48)
-                up.setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                up_palette = up.palette()
+                up_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                up.setPalette(up_palette)
                 self.up_labels.append(up)
                 up_arrows_layout.addWidget(up)
             layout.addLayout(up_arrows_layout)
@@ -973,7 +1021,9 @@ class SetTargetWeightDialog(QDialog):
                 lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 lbl.setFixedWidth(48)
-                lbl.setStyleSheet("color: #fff; background: transparent; font-size: 48px; border: none; border-radius: 8px;")
+                lbl_palette = lbl.palette()
+                lbl_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                lbl.setPalette(lbl_palette)
                 self.digit_labels.append(lbl)
                 digits_layout.addWidget(lbl)
             layout.addLayout(digits_layout)
@@ -986,7 +1036,9 @@ class SetTargetWeightDialog(QDialog):
                 down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
                 down.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 down.setFixedWidth(48)
-                down.setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                down_palette = down.palette()
+                down_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                down.setPalette(down_palette)
                 self.down_labels.append(down)
                 down_arrows_layout.addWidget(down)
             layout.addLayout(down_arrows_layout)
@@ -999,19 +1051,21 @@ class SetTargetWeightDialog(QDialog):
 
     def set_arrow_active(self, direction):
         try:
+            color = QColor("#00FF00")
             if direction == "up":
-                self.up_labels[self.current_digit].setStyleSheet("color: #00FF00; background: transparent; font-size: 28px; border: none;")
+                self.up_labels[self.current_digit].setPalette(self._make_palette(color))
             elif direction == "down":
-                self.down_labels[self.current_digit].setStyleSheet("color: #00FF00; background: transparent; font-size: 28px; border: none;")
+                self.down_labels[self.current_digit].setPalette(self._make_palette(color))
         except Exception as e:
             logging.error(f"Error in SetTargetWeightDialog.set_arrow_active: {e}", exc_info=True)
 
     def set_arrow_inactive(self, direction):
         try:
+            color = Qt.GlobalColor.white
             if direction == "up":
-                self.up_labels[self.current_digit].setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                self.up_labels[self.current_digit].setPalette(self._make_palette(color))
             elif direction == "down":
-                self.down_labels[self.current_digit].setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                self.down_labels[self.current_digit].setPalette(self._make_palette(color))
         except Exception as e:
             logging.error(f"Error in SetTargetWeightDialog.set_arrow_inactive: {e}", exc_info=True)
 
@@ -1033,9 +1087,11 @@ class SetTargetWeightDialog(QDialog):
         try:
             for i, lbl in enumerate(self.digit_labels):
                 if i == self.current_digit:
-                    lbl.setStyleSheet("color: #F6EB61; background: #222; border: 2px solid #F6EB61; border-radius: 8px; font-size: 48px;")
+                    lbl.setPalette(self._make_palette(QColor("#F6EB61")))
+                    lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 else:
-                    lbl.setStyleSheet("color: #fff; background: transparent; border: 2px solid transparent; border-radius: 8px; font-size: 48px;")
+                    lbl.setPalette(self._make_palette(Qt.GlobalColor.white))
+                    lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 lbl.setText(str(self.digits[i]))
         except Exception as e:
             logging.error(f"Error in SetTargetWeightDialog.update_display: {e}", exc_info=True)
@@ -1060,20 +1116,45 @@ class SetTargetWeightDialog(QDialog):
         except Exception as e:
             logging.error(f"Error in SetTargetWeightDialog.activate_selected: {e}", exc_info=True)
 
+    def _make_palette(self, color):
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.WindowText, color)
+        return palette
+
+    def paintEvent(self, event):
+        # Draw rounded background for the dialog
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(self._bg_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        super().paintEvent(event)
+
 class SetTimeLimitDialog(QDialog):
     def __init__(self, parent=None):
         try:
             super().__init__(parent)
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-            self.setStyleSheet("background-color: #222; color: #fff; border-radius: 24px;")
+            self.setModal(True)
+            self.setMinimumWidth(400)
+            self.setMinimumHeight(320)
+            self._bg_color = QColor("#222")
+            self._border_radius = 24
+
             tr = parent.tr if parent else (lambda k: LANGUAGES["en"].get(k, k))
             self.setWindowTitle(tr("SET_TIME_LIMIT"))
             layout = QVBoxLayout(self)
+            layout.setContentsMargins(24, 24, 24, 24)
+            layout.setSpacing(12)
 
             label = QLabel(tr("ENTER_NEW_TIME_LIMIT"))
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
-            label.setStyleSheet("color: #fff; background: transparent; font-size: 20px; border: none;")
+            label_palette = label.palette()
+            label_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            label.setPalette(label_palette)
+            label.setMinimumHeight(36)
             layout.addWidget(label)
 
             # Start with parent's time_limit or 3.0 seconds, clamp to 1 decimal
@@ -1093,7 +1174,9 @@ class SetTimeLimitDialog(QDialog):
                 up.setFont(QFont("Arial", 28, QFont.Weight.Bold))
                 up.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 up.setFixedWidth(48)
-                up.setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                up_palette = up.palette()
+                up_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                up.setPalette(up_palette)
                 self.up_labels.append(up)
                 up_arrows_layout.addWidget(up)
                 if i == 2:  # After the third arrow, add a spacer for the decimal point
@@ -1109,7 +1192,9 @@ class SetTimeLimitDialog(QDialog):
                 lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 lbl.setFixedWidth(48)
-                lbl.setStyleSheet("color: #fff; background: transparent; font-size: 48px; border: none; border-radius: 8px;")
+                lbl_palette = lbl.palette()
+                lbl_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                lbl.setPalette(lbl_palette)
                 self.digit_labels.append(lbl)
                 digits_layout.addWidget(lbl)
                 if i == 2:  # After the third digit, add the decimal point
@@ -1117,7 +1202,9 @@ class SetTimeLimitDialog(QDialog):
                     dot.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                     dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     dot.setFixedWidth(24)
-                    dot.setStyleSheet("color: #fff; background: transparent; border: none;")
+                    dot_palette = dot.palette()
+                    dot_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                    dot.setPalette(dot_palette)
                     digits_layout.addWidget(dot)
             layout.addLayout(digits_layout)
 
@@ -1129,7 +1216,9 @@ class SetTimeLimitDialog(QDialog):
                 down.setFont(QFont("Arial", 28, QFont.Weight.Bold))
                 down.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 down.setFixedWidth(48)
-                down.setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                down_palette = down.palette()
+                down_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                down.setPalette(down_palette)
                 self.down_labels.append(down)
                 down_arrows_layout.addWidget(down)
                 if i == 2:  # After the third arrow, add a spacer for the decimal point
@@ -1145,19 +1234,21 @@ class SetTimeLimitDialog(QDialog):
 
     def set_arrow_active(self, direction):
         try:
+            color = QColor("#00FF00")
             if direction == "up":
-                self.up_labels[self.current_digit].setStyleSheet("color: #00FF00; background: transparent; font-size: 28px; border: none;")
+                self.up_labels[self.current_digit].setPalette(self._make_palette(color))
             elif direction == "down":
-                self.down_labels[self.current_digit].setStyleSheet("color: #00FF00; background: transparent; font-size: 28px; border: none;")
+                self.down_labels[self.current_digit].setPalette(self._make_palette(color))
         except Exception as e:
             logging.error(f"Error in SetTimeLimitDialog.set_arrow_active: {e}", exc_info=True)
 
     def set_arrow_inactive(self, direction):
         try:
+            color = Qt.GlobalColor.white
             if direction == "up":
-                self.up_labels[self.current_digit].setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                self.up_labels[self.current_digit].setPalette(self._make_palette(color))
             elif direction == "down":
-                self.down_labels[self.current_digit].setStyleSheet("color: #fff; background: transparent; font-size: 28px; border: none;")
+                self.down_labels[self.current_digit].setPalette(self._make_palette(color))
         except Exception as e:
             logging.error(f"Error in SetTimeLimitDialog.set_arrow_inactive: {e}", exc_info=True)
 
@@ -1179,9 +1270,11 @@ class SetTimeLimitDialog(QDialog):
         try:
             for i, lbl in enumerate(self.digit_labels):
                 if i == self.current_digit:
-                    lbl.setStyleSheet("color: #F6EB61; background: #222; border: 2px solid #F6EB61; border-radius: 8px; font-size: 48px;")
+                    lbl.setPalette(self._make_palette(QColor("#F6EB61")))
+                    lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 else:
-                    lbl.setStyleSheet("color: #fff; background: transparent; border: 2px solid transparent; border-radius: 8px; font-size: 48px;")
+                    lbl.setPalette(self._make_palette(Qt.GlobalColor.white))
+                    lbl.setFont(QFont("Arial", 48, QFont.Weight.Bold))
                 lbl.setText(str(self.digits[i]))
         except Exception as e:
             logging.error(f"Error in SetTimeLimitDialog.update_display: {e}", exc_info=True)
@@ -1206,23 +1299,43 @@ class SetTimeLimitDialog(QDialog):
         except Exception as e:
             logging.error(f"Error in SetTimeLimitDialog.activate_selected: {e}", exc_info=True)
 
+    def _make_palette(self, color):
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.WindowText, color)
+        return palette
+
+    def paintEvent(self, event):
+        # Draw rounded background for the dialog
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(self._bg_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        super().paintEvent(event)
+
 class SelectionDialog(QDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
         try:
             super().__init__(parent)
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-            self.setStyleSheet("background-color: #222; color: #fff; border-radius: 24px;")
+            self.setModal(True)
+            self.setMinimumWidth(400)
+            self.setMinimumHeight(320)
+            self._bg_color = QColor("#222")
+            self._border_radius = 24
+
             self.selected_index = 0
             self.options = options
             self.on_select_callback = on_select
             layout = QVBoxLayout(self)
+            layout.setContentsMargins(24, 24, 24, 24)
+            layout.setSpacing(12)
 
             # Title label (optional)
             if title:
-                title_label = OutlinedLabel(title)
-                title_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+                title_label = OutlinedLabel(title, font_size=32, bold=True, color="#fff")
                 title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                title_label.setStyleSheet("color: #fff; background: transparent; border-radius: 14px; border: none; font-size: 32px; padding: 8px;")
                 layout.addWidget(title_label)
 
             # Option labels
@@ -1231,13 +1344,14 @@ class SelectionDialog(QDialog):
             button_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
             self.labels = []
             for _, display_text in self.options:
-                item_label = OutlinedLabel(display_text) if outlined else QLabel(display_text)
+                item_label = OutlinedLabel(display_text, font_size=28, bold=True, color="#fff") if outlined else QLabel(display_text)
                 item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 item_label.setFixedSize(320, 64)
-                item_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-                item_label.setStyleSheet(
-                    "color: #fff; background: transparent; border-radius: 14px; border: 4px solid transparent; padding: 8px; font-size: 28px;"
-                )
+                if not outlined:
+                    item_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+                    palette = item_label.palette()
+                    palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                    item_label.setPalette(palette)
                 self.labels.append(item_label)
                 button_layout.addWidget(item_label)
             layout.addWidget(button_container)
@@ -1250,14 +1364,20 @@ class SelectionDialog(QDialog):
     def update_selection_box(self):
         try:
             for i, label in enumerate(self.labels):
-                if i == self.selected_index:
-                    label.setStyleSheet(
-                        "color: #222; background: #F6EB61; border-radius: 14px; border: 4px solid #F6EB61; padding: 8px; font-size: 28px;"
-                    )
+                if isinstance(label, OutlinedLabel):
+                    label.set_highlight(i == self.selected_index)
                 else:
-                    label.setStyleSheet(
-                        "color: #fff; background: transparent; border-radius: 14px; border: 4px solid transparent; padding: 8px; font-size: 28px;"
-                    )
+                    # For plain QLabel, set background color and text color directly
+                    palette = label.palette()
+                    if i == self.selected_index:
+                        palette.setColor(QPalette.ColorRole.Window, QColor("#F6EB61"))
+                        palette.setColor(QPalette.ColorRole.WindowText, QColor("#222"))
+                        label.setAutoFillBackground(True)
+                    else:
+                        palette.setColor(QPalette.ColorRole.Window, Qt.GlobalColor.transparent)
+                        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+                        label.setAutoFillBackground(False)
+                    label.setPalette(palette)
         except Exception as e:
             logging.error(f"Error in SelectionDialog.update_selection_box: {e}", exc_info=True)
 
@@ -1285,13 +1405,28 @@ class SelectionDialog(QDialog):
         except Exception as e:
             logging.error(f"Error in SelectionDialog.activate_selected: {e}", exc_info=True)
 
+    def paintEvent(self, event):
+        # Draw rounded background for the dialog
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(self._bg_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        super().paintEvent(event)
+
 class StationStatusDialog(QDialog):
     station_selected = pyqtSignal(int)
 
     def __init__(self, parent=None, station_enabled=None, bg_colors=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.setStyleSheet("background-color: #222; color: #fff; border-radius: 24px;")
+        self.setModal(True)
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(320)
+        self._bg_color = QColor("#222")
+        self._border_radius = 24
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(24)
@@ -1326,48 +1461,40 @@ class StationStatusDialog(QDialog):
             self.station_boxes.append(box_widget)
 
             frame = QFrame()
-            frame.setObjectName(f"stationFrame_{i}")  # <-- Set unique object name
+            frame.setObjectName(f"stationFrame_{i}")
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(1, 1, 1, 1)  # 1px padding inside frame
+            frame.layout().setContentsMargins(1, 1, 1, 1)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            frame.setStyleSheet(
-                f"QFrame#stationFrame_{i} {{ background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px; }}"
-            )
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         layout.addLayout(stations_layout)
 
         # Accept button
-        self.accept_label = QLabel("ACCEPT")
-        self.accept_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
+        self.accept_label = OutlinedLabel("ACCEPT", font_size=28, bold=True, color="#fff")
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setFixedWidth(220)
         self.accept_label.setMinimumHeight(72)
-        self.accept_label.setStyleSheet("color: #fff; border-radius: 12px; border: 2px solid #ccc; background: transparent;")
-        accept_layout = QHBoxLayout()
-        accept_layout.addWidget(self.accept_label)
-        layout.addLayout(accept_layout)
+        layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.setLayout(layout)
         self.setModal(True)
         self.update_selection_box()
 
     def update_selection_box(self):
-        # Highlight station frames by directly setting style
+        # Highlight station frames by setting a property and using paintEvent
         for i, frame in enumerate(self.station_frames):
             if self.selected_index == i:
-                frame.setStyleSheet("border: 4px solid #F6EB61; border-radius: 14px; background: #F6EB61;")
+                frame.setProperty("highlighted", True)
+                frame.update()
             else:
-                frame.setStyleSheet("border: 2px solid #ccc; border-radius: 14px; background: transparent;")
+                frame.setProperty("highlighted", False)
+                frame.update()
         # Highlight accept button
-        if self.selected_index == self.num_stations:
-            self.accept_label.setStyleSheet("color: #222; background: #F6EB61; border-radius: 12px; border: 4px solid #F6EB61;")
-        else:
-            self.accept_label.setStyleSheet("color: #fff; background: transparent; border-radius: 12px; border: 2px solid #ccc;")
+        self.accept_label.set_highlight(self.selected_index == self.num_stations)
 
     def select_prev(self):
         self.selected_index = (self.selected_index - 1) % (self.num_stations + 1)
@@ -1383,16 +1510,33 @@ class StationStatusDialog(QDialog):
         else:
             self.station_selected.emit(self.selected_index)
 
+    def paintEvent(self, event):
+        # Draw rounded background for the dialog
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(self._bg_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        super().paintEvent(event)
+
 class OverlayWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        # Directly set overlay style here, no stylesheet import needed
-        self.setStyleSheet("border: 8px solid #CD0A0A; border-radius: 32px; background: rgba(0,0,0,180);")
+        self._border_color = QColor("#CD0A0A")
+        self._border_radius = 32
+        self._border_width = 8
+        self._bg_color = QColor(0, 0, 0, 180)  # semi-transparent black
+
         self.label = QLabel("", self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet("color: #fff; font-size: 64px; font-weight: bold; background: transparent;")
+        self.label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
+        label_palette = self.label.palette()
+        label_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        self.label.setPalette(label_palette)
+
         layout = QVBoxLayout(self)
         layout.addWidget(self.label)
         self.setLayout(layout)
@@ -1400,8 +1544,7 @@ class OverlayWidget(QWidget):
 
     def show_overlay(self, html, color="#CD0A0A"):
         self.label.setText(html)
-        # Set border color dynamically
-        self.setStyleSheet(f"border: 8px solid {color}; border-radius: 32px; background: rgba(0,0,0,180);")
+        self._border_color = QColor(color)
         self.resize(self.parent().size())
         self.move(0, 0)
         self.show()
@@ -1409,6 +1552,23 @@ class OverlayWidget(QWidget):
 
     def hide_overlay(self):
         self.hide()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        # Draw semi-transparent background
+        painter.setBrush(self._bg_color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        # Draw border
+        painter.setPen(QPen(self._border_color, self._border_width))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(rect.adjusted(
+            self._border_width // 2, self._border_width // 2,
+            -self._border_width // 2, -self._border_width // 2
+        ), self._border_radius, self._border_radius)
+        super().paintEvent(event)
 
 class ButtonColumnWidget(QWidget):
     def __init__(
@@ -1423,8 +1583,6 @@ class ButtonColumnWidget(QWidget):
         style=None
     ):
         super().__init__(parent)
-        # Directly set style for the button column container
-        self.setStyleSheet("background: transparent;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(*margins)
         layout.setSpacing(spacing)
@@ -1434,8 +1592,11 @@ class ButtonColumnWidget(QWidget):
             lbl.setFont(QFont("Arial", font_size, QFont.Weight.Bold))
             lbl.setAlignment(align)
             lbl.setFixedWidth(fixed_width)
-            # Directly set style for each button label
-            lbl.setStyleSheet("color: #fff; background: #333; border-radius: 12px; padding: 8px 0px; margin-bottom: 18px;")
+            lbl.setMinimumHeight(48)
+            # Set text color and background using palette and paintEvent
+            palette = lbl.palette()
+            palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+            lbl.setPalette(palette)
             self.labels.append(lbl)
             layout.addWidget(lbl)
         layout.addStretch(1)
@@ -1448,14 +1609,16 @@ class ButtonColumnWidget(QWidget):
         if not (0 <= index < len(self.labels)):
             return
         label = self.labels[index]
-        original_style = label.styleSheet()
-        label.setStyleSheet(original_style + f"; color: {flash_color}; background: #444;")
+        original_palette = label.palette()
+        flash_palette = QPalette()
+        flash_palette.setColor(QPalette.ColorRole.WindowText, QColor(flash_color))
+        label.setPalette(flash_palette)
         label_ref = weakref.ref(label)
-        def restore_style():
+        def restore_palette():
             lbl = label_ref()
             if lbl is not None:
-                lbl.setStyleSheet(original_style)
-        QTimer.singleShot(duration, restore_style)
+                lbl.setPalette(original_palette)
+        QTimer.singleShot(duration, restore_palette)
 
 class StartupWizardDialog(QDialog):
     def __init__(self, parent=None, num_stations=4, on_station_verified=None):
@@ -1481,16 +1644,16 @@ class StartupWizardDialog(QDialog):
 
         # Main label
         self.main_label = QLabel("Welcome to Paint Machine")
-        self.main_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_label.setStyleSheet("color: #fff; background: transparent; font-size: 36px; font-weight: bold; border: none;")
         main_layout.addWidget(self.main_label)
 
         # Info/Prompt area
         self.info_label = QLabel("Startup Info ....")
-        self.info_label.setFont(QFont("Arial", 20))
+        self.info_label.setFont(QFont("Arial", 22))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setStyleSheet("color: #fff; background: transparent; font-size: 22px; border: none; min-height: 150px; max-height: 150px;")
+        self.info_label.setMinimumHeight(150)
+        self.info_label.setMaximumHeight(150)
         main_layout.addWidget(self.info_label)
 
         # Station boxes row
@@ -1513,17 +1676,15 @@ class StartupWizardDialog(QDialog):
             box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
-            frame.setObjectName(f"stationFrame_{i}")  # <-- Set unique object name
+            frame.setObjectName(f"stationFrame_{i}")
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(1, 1, 1, 1)  # 1px padding inside frame
+            frame.layout().setContentsMargins(1, 1, 1, 1)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            frame.setStyleSheet(
-                f"QFrame#stationFrame_{i} {{ background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px; }}"
-            )
+            # Set frame color/border using palette and paintEvent
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         main_layout.addLayout(stations_layout, stretch=2)
@@ -1536,9 +1697,6 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setMinimumHeight(72)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.accept_label.setFixedWidth(360)
-        self.accept_label.setStyleSheet(
-            "background: transparent; border-radius: 16px; border: 2px solid #ccc; padding: 12px 32px; color: #fff; font-size: 48px; font-weight: bold;"
-        )
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
@@ -1594,25 +1752,17 @@ class StartupWizardDialog(QDialog):
                 box.name_label.setText(self.station_names[i])
             if box.connected_label:
                 box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
-                # Update style based on connection
-                if self.station_connected[i]:
-                    box.connected_label.setStyleSheet(f"background: {STATION_COLORS[i % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
-                else:
-                    box.connected_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                box.set_connected(self.station_connected[i], STATION_COLORS[i % len(STATION_COLORS)])
             if self.station_enabled and i < len(self.station_enabled):
                 if box.enabled_label:
                     box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
-                    # Update style based on enabled state
-                    if self.station_enabled[i]:
-                        box.enabled_label.setStyleSheet(f"background: {STATION_COLORS[i % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;")
-                    else:
-                        box.enabled_label.setStyleSheet("background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;")
+                    box.set_enabled(self.station_enabled[i], STATION_COLORS[i % len(STATION_COLORS)])
             # Weight
             weight = "--"
             if self.weight_texts and i < len(self.weight_texts) and self.weight_texts[i] is not None:
                 weight = self.weight_texts[i]
             if box.weight_label:
-                box.weight_label.setText(weight)
+                box.set_weight(weight)
         self.update_highlight()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
@@ -1624,7 +1774,7 @@ class StartupWizardDialog(QDialog):
                 else:
                     oz = current_weight / 28.3495
                     new_text = f"{oz:.1f} oz"
-                box.weight_label.setText(new_text)
+                box.set_weight(new_text)
                 self.weight_texts[station_index] = new_text
 
     def set_step(self, step):
@@ -1660,6 +1810,7 @@ class StartupWizardDialog(QDialog):
             self.selection_index = 0
             self.update_highlight()
 
+   
     def activate_selected(self):
         if self.current_step == 0 and self.step_mode == "station_select":
             self.update_selection_indices()
@@ -1671,21 +1822,13 @@ class StartupWizardDialog(QDialog):
                     self.on_station_verified()
                 return
             # Toggle enabled state for the selected station
-
             self.station_enabled[sel] = not self.station_enabled[sel]
+
             if hasattr(parent, "station_enabled"):
                 parent.station_enabled[sel] = self.station_enabled[sel]
             if self.station_boxes[sel].enabled_label:
                 self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
-                # Update background color to match enabled/disabled state
-                if self.station_enabled[sel]:
-                    self.station_boxes[sel].enabled_label.setStyleSheet(
-                        f"background: {STATION_COLORS[sel % len(STATION_COLORS)]}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
-                    )
-                else:
-                    self.station_boxes[sel].enabled_label.setStyleSheet(
-                        "background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px;"
-                    )
+                self.station_boxes[sel].set_enabled(self.station_enabled[sel], STATION_COLORS[sel % len(STATION_COLORS)])
             self.update_highlight()
         elif self.step_mode == "accept_only":
             print(f"[DEBUG] Step {self.current_step} accepted, advancing to step {self.current_step + 1}")
@@ -1697,25 +1840,36 @@ class StartupWizardDialog(QDialog):
 
     def get_station_enabled(self):
         return self.station_enabled
-    
+
     def update_highlight(self):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
             if self.selection_indices[self.selection_index] == i:
                 # Animate highlight for selected frame
-                animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
+                # Instead of stylesheet, set a property and use paintEvent for highlight
+                frame.setProperty("highlighted", True)
+                frame.update()
             else:
-                # Instantly reset background for non-selected frames
-                frame.setStyleSheet(f"QFrame#stationFrame_{i} {{ background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px; }}")
-            # --- Ensure weight label has no border ---
-            box = self.station_boxes[i]
-            if box.weight_label:
-                box.weight_label.setStyleSheet(
-                    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: none; border-width: 0px; padding: 8px 2px 8px 2px; min-height: 48px;"
-                )
-        # For the CONTINUE button, you can animate or just set style directly:
+                frame.setProperty("highlighted", False)
+                frame.update()
+        # For the CONTINUE button, you can set a property and update its style
         if self.selection_indices[self.selection_index] == "accept":
-            animate_frame_bg(self.accept_label, "#FFF8DC", "#F6EB61", duration=200)
+            self.accept_label.set_highlight(True)
         else:
-            self.accept_label.setStyleSheet("background: transparent; border-radius: 12px; border: 2px solid #ccc; padding: 8px 24px; color: #fff;")
+            self.accept_label.set_highlight(False)
+
+# Add this to QFrame subclass or monkey-patch QFrame if you want to handle highlight in paintEvent:
+def frame_paintEvent(self, event):
+    painter = QPainter(self)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    rect = self.rect()
+    highlighted = self.property("highlighted") if self.property("highlighted") is not None else False
+    if highlighted:
+        painter.setBrush(QColor("#F6EB61"))
+        painter.setPen(QPen(QColor("#F6EB61"), 4))
+    else:
+        painter.setBrush(QColor("#222"))
+        painter.setPen(QPen(QColor("#ccc"), 2))
+    painter.drawRoundedRect(rect, 14, 14)
+    QFrame.paintEvent(self, event)
