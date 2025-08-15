@@ -1092,7 +1092,7 @@ def main():
 
         for i, widget in enumerate(app.station_widgets):
             if station_enabled[i]:
-                widget.set_weight(0, target_weight)
+                widget.set_weight(0, target_weight, "g")
 
         GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
