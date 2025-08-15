@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame
+    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame, QGraphicsDropShadowEffect
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
@@ -19,27 +19,28 @@ def qt_exception_hook(exctype, value, traceback):
 
 sys.excepthook = qt_exception_hook
 
-def animate_frame_bg(frame, start_color, end_color, duration=200):
-    animation = QVariantAnimation(frame)
-    animation.setDuration(duration)
-    animation.setStartValue(QColor(start_color))
-    animation.setEndValue(QColor(end_color))
-    selector = f"QFrame#{frame.objectName()}" if frame.objectName() else "QFrame"
-    def update_styles(color):
-        # Keep the frame border and animate the background
-        frame.setStyleSheet(
-            f"{selector} {{ background: {color.name()}; border-radius: 14px; border: 4px solid #F6EB61; padding: 1px; }}"
-        )
-        # If the frame contains a StationBoxWidget, ensure its weight label is always transparent and borderless
-        if frame.layout() and frame.layout().count() > 0:
-            box = frame.layout().itemAt(0).widget()
-            if hasattr(box, "weight_label") and box.weight_label:
-                box.weight_label.setStyleSheet(
-                    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: none; border-width: 0px; border-radius: 8px; padding: 8px 2px 8px 2px; min-height: 48px;"
-                )
-    animation.valueChanged.connect(update_styles)
-    animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
+def set_frame_highlight(frame, highlighted):
+    # Remove any existing effect
+    frame.setGraphicsEffect(None)
+    if highlighted:
+        shadow = QGraphicsDropShadowEffect(frame)
+        shadow.setOffset(0, 0)
+        shadow.setBlurRadius(0)  # Start at 0 for animation
+        shadow.setColor(QColor(246, 235, 97, 180))  # Light yellow, semi-transparent
+        frame.setGraphicsEffect(shadow)
+
+        # Animate blur radius for smooth appearance
+        animation = QVariantAnimation(frame)
+        animation.setDuration(250)
+        animation.setStartValue(0)
+        animation.setEndValue(32)
+        animation.valueChanged.connect(lambda val: shadow.setBlurRadius(val))
+        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+    else:
+        frame.setGraphicsEffect(None)
+        
 class OutlinedLabel(QLabel):
     """
     QLabel with optional outline effect for station names and other prominent labels.
@@ -1788,7 +1789,7 @@ class StartupWizardDialog(QDialog):
         self.button_column = ButtonColumnWidget(parent=self)
 
         h_layout = QHBoxLayout()
-        h_layout.setContentsMargins(0, 0, 0,  0)
+        h_layout.setContentsMargins(0, 0, 0, 0)
         h_layout.setSpacing(0)
         h_layout.addLayout(main_layout, stretch=10)
         h_layout.addWidget(self.button_column, stretch=0)
@@ -1919,12 +1920,9 @@ class StartupWizardDialog(QDialog):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
-            if self.selection_indices[self.selection_index] == i:
-                frame.setProperty("highlighted", True)
-                frame.update()
-            else:
-                frame.setProperty("highlighted", False)
-                frame.update()
+            is_highlighted = self.selection_indices[self.selection_index] == i
+            set_frame_highlight(frame, is_highlighted)
+            frame.update()
         if self.selection_indices[self.selection_index] == "accept":
             self.accept_label.set_highlight(True)
         else:
