@@ -626,13 +626,7 @@ class RelayControlApp(QWidget):
             grid.addWidget(self.station_widgets[3], 1, 1)
 
             # --- Right-side column for button labels ---
-            self.button_column = ButtonColumnWidget(
-                icons=["▲", "⏎", "▼"],
-                font_size=32,
-                fixed_width=64,
-                margins=(0, 30, 0, 0),
-                parent=self
-            )
+            self.button_column = ButtonColumnWidget(parent=self)
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
             main_layout.setSpacing(0)
@@ -1655,19 +1649,14 @@ class OverlayWidget(QWidget):
         super().paintEvent(event)
 
 class ButtonColumnWidget(QWidget):
-    def __init__(
-        self,
-        icons=["▲", "⏎", "▼"],
-        parent=None,
-        font_size=32,
-        fixed_width=64,
-        margins=(0, 30, 0, 0),
-        align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-        style=None
-    ):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        # Double the default spacing between buttons
-        spacing = 100  # Was 50, now doubled
+        icons = ["▲", "⏎", "▼"]
+        font_size = 32
+        fixed_width = 64
+        margins = (0, 40, 0, 0)  # Top margin 40px
+        align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        spacing = 100  # Double spacing between buttons
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(*margins)
