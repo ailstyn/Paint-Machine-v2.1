@@ -1876,6 +1876,15 @@ class StartupWizardDialog(QDialog):
         else:
             self.accept_label.set_highlight(False)
 
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(QColor("#222"))  # Dark grey background
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, 24, 24)
+        super().paintEvent(event)
+
 # Add this to QFrame subclass or monkey-patch QFrame if you want to handle highlight in paintEvent:
 def frame_paintEvent(self, event):
     painter = QPainter(self)
