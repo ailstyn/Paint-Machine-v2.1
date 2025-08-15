@@ -560,7 +560,7 @@ def startup(app, timer):
             global filling_mode
             filling_mode = mode
 
-            if index == 1:  # MANUAL
+            if mode == "MANUAL":  # MANUAL
                 print("[DEBUG] MANUAL mode selected, showing InfoDialog and closing wizard.")
                 MANUAL_FILL_START = b'\x20'
                 for i, arduino in enumerate(arduinos):
@@ -579,10 +579,10 @@ def startup(app, timer):
                 wizard.accept()
                 return
 
-            elif index == 0:  # AUTO
+            elif mode == "AUTO":  # AUTO
                 print("[DEBUG] AUTO mode selected, continuing startup wizard.")
 
-            elif index == 2:  # SMART
+            elif mode == "SMART":  # SMART
                 print("[DEBUG] SMART mode selected, continuing startup wizard.")
 
             print(f"[DEBUG] After filling_mode_selected: wizard.isVisible={wizard.isVisible()}")
