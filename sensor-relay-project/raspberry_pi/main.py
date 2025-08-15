@@ -432,17 +432,24 @@ def log_final_weight(station_index, final_weight):
 def startup(app, timer):
     global arduinos, scale_calibrations, station_enabled, station_serials
 
+    print("[DEBUG] === Startup sequence initiated ===")
+
     # --- Setup: Load calibration, serials, enabled states ---
+    print("[DEBUG] Loading calibration and serials...")
     load_scale_calibrations()
     station_serials = load_station_serials()
     station_enabled = load_station_enabled(config_file)
     station_names = [app.tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
+    print(f"[DEBUG] station_serials: {station_serials}")
+    print(f"[DEBUG] station_enabled: {station_enabled}")
 
     # --- Setup: Connect and initialize Arduinos ---
+    print("[DEBUG] Connecting and initializing Arduinos...")
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
     for port in config.arduino_ports:
         try:
+            print(f"[DEBUG] Trying port {port}...")
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
             arduino.write(config.RESET_HANDSHAKE)
@@ -453,22 +460,27 @@ def startup(app, timer):
             for _ in range(60):
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                    print(f"[DEBUG] Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
+                        print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
+                print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
             station_index = station_serials.index(station_serial_number)
             arduino.write(config.CONFIRM_ID)
             arduino.flush()
+            print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == config.REQUEST_CALIBRATION:
+                        print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(config.REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
@@ -477,35 +489,22 @@ def startup(app, timer):
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
+                print(f"[DEBUG] Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
             arduinos[station_index] = arduino
             station_connected[station_index] = True
+            print(f"[DEBUG] Station {station_index+1} on {port} initialized and ready.")
         except Exception as e:
-            logging.error(f"Error initializing Arduino on {port}: {e}")
+            print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
 
-    # Load enabled states
-    try:
-        if DEBUG:
-            print("[DEBUG] Loading enabled states...")
-        else:
-            logging.info("Loading enabled states...")
-        station_enabled = load_station_enabled("config.txt")
-        if DEBUG:
-            print(f"[DEBUG] station_enabled: {station_enabled}")
-        else:
-            logging.info(f"station_enabled: {station_enabled}")
-    except Exception as e:
-        if DEBUG:
-            print(f"[DEBUG] Error loading enabled states: {e}")
-        logging.error(f"Error loading enabled states: {e}")
-
-    # Wait for E-STOP to be released
     print("[DEBUG] Checking E-STOP state...")
     while GPIO.input(config.E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
+    print("[DEBUG] E-STOP released, continuing startup.")
 
     # --- Step 0: StartupWizardDialog, station verification ---
+    print("[DEBUG] Creating StartupWizardDialog...")
     wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS)
     app.active_dialog = wizard
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
@@ -523,19 +522,21 @@ def startup(app, timer):
     )
 
     def after_station_verified():
-        # --- Step 1: Filling mode selection ---
+        print("[DEBUG] Station verification complete, opening filling mode dialog.")
         filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
         def filling_mode_selected(mode, index):
+            print(f"[DEBUG] Filling mode selected: {mode} (index={index})")
             app.filling_mode = mode
             global filling_mode
             filling_mode = mode
             filling_mode_dialog.accept()
             if mode == "MANUAL":
+                print("[DEBUG] MANUAL mode selected, closing wizard and opening RelayControlApp.")
                 wizard.accept()
                 app.active_dialog = None
                 app.show()
                 return
-            # If AUTO or SMART, go to step 2 in wizard
+            print("[DEBUG] AUTO/SMART mode selected, returning to wizard for step 2.")
             wizard.set_step(2)
             wizard.set_main_label("CALIBRATION STEP 2")
             wizard.set_info_text(
@@ -557,16 +558,16 @@ def startup(app, timer):
         app.active_dialog = filling_mode_dialog
         filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
         filling_mode_dialog.show()
-
-        # When filling mode dialog closes, if not manual, wizard will be shown again for step 2
+        print("[DEBUG] Filling mode dialog shown.")
 
     wizard.on_station_verified = after_station_verified
     wizard.show()
+    print("[DEBUG] StartupWizardDialog shown.")
 
-    # --- Step 2, 3, 4: handled by wizard.activate_selected ---
     def wizard_continue_logic():
+        print(f"[DEBUG] wizard_continue_logic called, current_step={wizard.current_step}")
         if wizard.current_step == 2:
-            # Send TARE_SCALE to all enabled stations
+            print("[DEBUG] CONTINUE pressed on step 2, sending TARE_SCALE to enabled stations.")
             for i, arduino in enumerate(arduinos):
                 if arduino and station_enabled[i]:
                     try:
@@ -574,7 +575,7 @@ def startup(app, timer):
                         arduino.flush()
                         print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
                     except Exception as e:
-                        logging.error(f"Failed to send TARE_SCALE to station {i+1}: {e}")
+                        print(f"[DEBUG] Failed to send TARE_SCALE to station {i+1}: {e}")
             wizard.set_step(3)
             wizard.set_main_label("CALIBRATION STEP 3")
             wizard.set_info_text(
@@ -586,6 +587,7 @@ def startup(app, timer):
                 enabled=station_enabled
             )
         elif wizard.current_step == 3:
+            print("[DEBUG] CONTINUE pressed on step 3, moving to step 4.")
             wizard.set_step(4)
             wizard.set_main_label("CALIBRATION STEP 4")
             wizard.set_info_text(
@@ -597,13 +599,14 @@ def startup(app, timer):
                 enabled=station_enabled
             )
         elif wizard.current_step == 4:
+            print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
             wizard.accept()
             app.active_dialog = None
             app.show()
 
     wizard._original_activate_selected = wizard.activate_selected
     def patched_activate_selected():
-        # Only handle accept button in accept_only mode
+        print(f"[DEBUG] patched_activate_selected called, step_mode={wizard.step_mode}, current_step={wizard.current_step}")
         if wizard.step_mode == "accept_only":
             wizard_continue_logic()
         else:
@@ -611,6 +614,7 @@ def startup(app, timer):
     wizard.activate_selected = patched_activate_selected
 
     wizard.exec()
+    print("[DEBUG] StartupWizardDialog exec() finished.")
 def filling_mode_callback(mode):
     global filling_mode
     filling_mode = mode
