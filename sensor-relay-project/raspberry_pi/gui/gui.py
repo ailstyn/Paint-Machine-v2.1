@@ -1962,3 +1962,19 @@ class StartupWizardDialog(QDialog):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(rect)
         super().paintEvent(event)
+
+# Add this to QFrame subclass or monkey-patch QFrame if you want to handle highlight in paintEvent:
+def frame_paintEvent(self, event):
+    painter = QPainter(self)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    rect = self.rect()
+    highlighted = self.property("highlighted") if self.property("highlighted") is not None else False
+    radius = 10  # Match the name label's border_radius
+    if highlighted:
+        painter.setBrush(QColor("#F6EB61"))
+        painter.setPen(QPen(QColor("#F6EB61"), 4))
+    else:
+        painter.setBrush(QColor("#222"))
+        painter.setPen(QPen(QColor("#ccc"), 2))
+    painter.drawRoundedRect(rect, radius, radius)
+    QFrame.paintEvent(self, event)
