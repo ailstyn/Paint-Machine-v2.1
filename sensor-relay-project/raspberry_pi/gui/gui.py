@@ -1901,22 +1901,24 @@ class StartupWizardDialog(QDialog):
             self.selection_index = len(self.selection_indices) - 1
 
     def select_next(self):
+        # Only allow up/down navigation on step 0
         if self.current_step == 0 and self.step_mode == "station_select":
             self.update_selection_indices()
             self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
             self.update_highlight()
-        elif self.step_mode == "accept_only":
-            self.selection_index = 0
-            self.update_highlight()
+        else:
+            # Ignore up/down for steps > 0
+            pass
 
     def select_prev(self):
+        # Only allow up/down navigation on step 0
         if self.current_step == 0 and self.step_mode == "station_select":
             self.update_selection_indices()
             self.selection_index = (self.selection_index - 1) % len(self.selection_indices)
             self.update_highlight()
-        elif self.step_mode == "accept_only":
-            self.selection_index = 0
-            self.update_highlight()
+        else:
+            # Ignore up/down for steps > 0
+            pass
 
     def activate_selected(self):
         if self.current_step == 0 and self.step_mode == "station_select":
