@@ -208,10 +208,19 @@ class StationBoxWidget(QWidget):
             en_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
             self.enabled_label.setPalette(en_palette)
 
-    def set_weight(self, weight_text):
-        self.weight_text = weight_text
+    def set_weight(self, current_weight, target_weight=None, unit="g"):
+        if unit == "g":
+            text = f"{int(round(current_weight))} / {int(round(target_weight))} g" if target_weight is not None else f"{int(round(current_weight))} g"
+        else:
+            current_oz = current_weight / 28.3495
+            if target_weight is not None:
+                target_oz = target_weight / 28.3495
+                text = f"{current_oz:.1f} / {target_oz:.1f} oz"
+            else:
+                text = f"{current_oz:.1f} oz"
+        self.weight_text = text
         if self.weight_label:
-            self.weight_label.setText(weight_text)
+            self.weight_label.setText(text)
 
     def paintEvent(self, event):
         # Draw rounded corners for the widget background
