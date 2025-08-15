@@ -209,6 +209,14 @@ class StationBoxWidget(QWidget):
             self.enabled_label.setPalette(en_palette)
 
     def set_weight(self, current_weight, target_weight=None, unit="g"):
+        try:
+            current_weight = float(current_weight)
+            if target_weight is not None:
+                target_weight = float(target_weight)
+        except (TypeError, ValueError):
+            current_weight = 0
+            target_weight = 0 if target_weight is not None else None
+    
         if unit == "g":
             text = f"{int(round(current_weight))} / {int(round(target_weight))} g" if target_weight is not None else f"{int(round(current_weight))} g"
         else:
