@@ -1785,23 +1785,14 @@ class StartupWizardDialog(QDialog):
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
-        button_column = ButtonColumnWidget(
-            icons=["▲", "⏎", "▼"],
-            font_size=28,
-            fixed_width=56,
-            margins=(0, 20, 0, 0),
-            align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-            parent=self
-        )
+        self.button_column = ButtonColumnWidget(parent=self)
 
         h_layout = QHBoxLayout()
         h_layout.setContentsMargins(0, 0, 0,  0)
         h_layout.setSpacing(0)
         h_layout.addLayout(main_layout, stretch=10)
-        h_layout.addWidget(button_column, stretch=0)
+        h_layout.addWidget(self.button_column, stretch=0)
         self.setLayout(h_layout)
-
-        self.button_column = button_column
 
         self.step_mode = "station_select"
         self.update_selection_indices()
