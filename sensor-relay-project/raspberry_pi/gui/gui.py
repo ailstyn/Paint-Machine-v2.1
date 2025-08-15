@@ -20,17 +20,18 @@ def qt_exception_hook(exctype, value, traceback):
 sys.excepthook = qt_exception_hook
 
 def animate_frame_bg(frame, start_color, end_color, duration=200):
-        animation = QVariantAnimation(frame)
-        animation.setDuration(duration)
-        animation.setStartValue(QColor(start_color))
-        animation.setEndValue(QColor(end_color))
-        animation.valueChanged.connect(
-            lambda color: frame.setStyleSheet(
-                f"background: {color.name()}; border-radius: 14px; border: 4px solid #444;"
-            )
+    animation = QVariantAnimation(frame)
+    animation.setDuration(duration)
+    animation.setStartValue(QColor(start_color))
+    animation.setEndValue(QColor(end_color))
+    # Use objectName selector to avoid affecting children
+    selector = f"QFrame#{frame.objectName()}" if frame.objectName() else "QFrame"
+    animation.valueChanged.connect(
+        lambda color: frame.setStyleSheet(
+            f"{selector} {{ background: {color.name()}; border-radius: 14px; border: 4px solid #444; }}"
         )
-        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-    
+    )
+    animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
 class OutlinedLabel(QLabel):
     """
