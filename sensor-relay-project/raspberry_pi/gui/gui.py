@@ -133,7 +133,7 @@ class StationBoxWidget(QWidget):
         # Font size for name label
         label_font_size = int(20 * 1.1)  # 22
 
-        # Station name label
+        # Station name label (rounded only on top corners)
         self.name_label = OutlinedLabel(
             name,
             font_size=label_font_size,
@@ -146,6 +146,8 @@ class StationBoxWidget(QWidget):
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_label.setMinimumHeight(40)
         self.name_label.setMaximumHeight(44)
+        # Override paintEvent for top-only rounded rectangle
+        self.name_label.paintEvent = lambda event, lbl=self.name_label: self._draw_top_rounded_label(lbl, event)
         layout.addWidget(self.name_label)
 
         # Connected label (smaller font, no rounded edges)
@@ -252,6 +254,57 @@ class StationBoxWidget(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(rect, 24, 24)
         super().paintEvent(event)
+
+    def _draw_top_rounded_label(self, label, event):
+        painter = QPainter(label)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = label.rect()
+        pad = label._default_padding
+        inner_rect = rect.adjusted(pad, pad, -pad, -pad)
+        radius = label._default_border_radius
+
+        # Create a path with only top corners rounded
+        x, y, w, h = inner_rect.x(), inner_rect.y(), inner_rect.width(), inner_rect.height()
+        path = QPainterPath()
+        path.moveTo(x + radius, y)
+        path.lineTo(x + w - radius, y)
+        path.arcTo(x + w - 2*radius, y, 2*radius, 2*radius, 90, -90)  # Top-right
+        path.lineTo(x + w, y + h)
+        path.lineTo(x, y + h)
+        path.lineTo(x, y + radius)
+        path.arcTo(x, y, 2*radius, 2*radius, 180, -90)  # Top-left
+        path.closeSubpath()
+
+        # Draw background and border
+        if label._highlighted:
+            painter.setBrush(label._highlight_color)
+            painter.setPen(QPen(label._highlight_border_color, label._highlight_border_width))
+            text_color = label._default_color
+        else:
+            painter.setBrush(label._default_bg if label._default_bg else Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(label._normal_border_color, label._normal_border_width))
+            text_color = label._default_color
+
+        painter.drawPath(path)
+
+        # Draw text with outline effect
+        font = label.font()
+        painter.setFont(font)
+        text = label.text()
+        metrics = painter.fontMetrics()
+        text_width = metrics.horizontalAdvance(text)
+        text_height = metrics.height()
+        tx = inner_rect.x() + (inner_rect.width() - text_width) / 2
+        ty = inner_rect.y() + (inner_rect.height() + text_height) / 2 - metrics.descent()
+
+        text_path = QPainterPath()
+        text_path.addText(tx, ty, font, text)
+        painter.setPen(QPen(QColor("black"), label._outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(text_path)
+        painter.setPen(QPen(text_color, 1))
+        painter.setBrush(text_color)
+        painter.drawPath(text_path)
 
 class StationWidget(QWidget):
     def __init__(self, station_number, bg_color, enabled=True, *args, **kwargs):
@@ -1739,6 +1792,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setMinimumHeight(72)
         self.accept_label.setFixedWidth(360)
+       
         self.accept_label.set_highlight(False)  # Always use white infill
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
