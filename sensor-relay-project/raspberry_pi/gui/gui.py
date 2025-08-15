@@ -1729,6 +1729,7 @@ class StartupWizardDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(1024, 600)
         self.num_stations = num_stations
+        self.last_step = 5
 
         # Step tracking
         self.current_step = 0
