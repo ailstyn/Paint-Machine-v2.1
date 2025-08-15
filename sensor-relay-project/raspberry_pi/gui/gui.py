@@ -83,7 +83,7 @@ class OutlinedLabel(QLabel):
         if self._highlighted:
             painter.setBrush(self._highlight_color)
             painter.setPen(QPen(self._highlight_border_color, self._highlight_border_width))
-            text_color = self._highlight_text_color
+            text_color = self._default_color  # Always use white fill
         else:
             painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
             painter.setPen(QPen(self._normal_border_color, self._normal_border_width))
