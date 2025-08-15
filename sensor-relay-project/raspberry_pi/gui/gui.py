@@ -235,9 +235,9 @@ class StationBoxWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
-        painter.setBrush(QColor("#222"))
-        painter.setPen(QPen(QColor("#ccc"), 2))
-        painter.drawRoundedRect(rect, 14, 14)
+        painter.setBrush(QColor("#222"))  # Dark grey background
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(rect, 24, 24)
         super().paintEvent(event)
 
 class StationWidget(QWidget):
