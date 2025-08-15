@@ -138,7 +138,7 @@ class StationBoxWidget(QWidget):
             color="#fff",
             bg_color=color,
             border_radius=10,
-            padding=10              # Increased padding
+            padding=2              # Increased padding
         )
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_label.setMinimumHeight(32)
@@ -155,7 +155,7 @@ class StationBoxWidget(QWidget):
                 color="#fff",
                 bg_color=color if connected else "#333",
                 border_radius=8,
-                padding=8            # Increased padding
+                padding=2          # Increased padding
             )
             self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.connected_label.setMinimumHeight(22)
@@ -172,7 +172,7 @@ class StationBoxWidget(QWidget):
                 color="#fff",
                 bg_color=color if enabled else "#333",
                 border_radius=8,
-                padding=8            # Increased padding
+                padding=2              # Increased padding
             )
             self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.enabled_label.setMinimumHeight(22)
@@ -187,7 +187,7 @@ class StationBoxWidget(QWidget):
             color="#0f0",
             bg_color=None,
             border_radius=8,
-            padding=12              # Increased padding
+            padding=2              # Increased padding
         )
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setMinimumHeight(36)
