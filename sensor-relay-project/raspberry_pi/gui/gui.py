@@ -1403,7 +1403,9 @@ class SelectionDialog(QDialog):
             self.setMinimumWidth(400)
             self.setMinimumHeight(320)
             self._bg_color = QColor("#222")
-            self._border_radius = 24
+            self._border_radius = 0  # No rounded corners
+            self._border_color = QColor("#888")  # Medium grey
+            self._border_width = 3   # Thin border
 
             self.selected_index = 0
             self.options = options
@@ -1444,20 +1446,15 @@ class SelectionDialog(QDialog):
     def update_selection_box(self):
         try:
             for i, label in enumerate(self.labels):
-                if isinstance(label, OutlinedLabel):
-                    label.set_highlight(i == self.selected_index)
+                # Use drop shadow for highlight, no background color change
+                if i == self.selected_index:
+                    set_frame_highlight(label, True)
+                    if isinstance(label, OutlinedLabel):
+                        label.set_highlight(False)
                 else:
-                    # For plain QLabel, set background color and text color directly
-                    palette = label.palette()
-                    if i == self.selected_index:
-                        palette.setColor(QPalette.ColorRole.Window, QColor("#F6EB61"))
-                        palette.setColor(QPalette.ColorRole.WindowText, QColor("#222"))
-                        label.setAutoFillBackground(True)
-                    else:
-                        palette.setColor(QPalette.ColorRole.Window, Qt.GlobalColor.transparent)
-                        palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-                        label.setAutoFillBackground(False)
-                    label.setPalette(palette)
+                    set_frame_highlight(label, False)
+                    if isinstance(label, OutlinedLabel):
+                        label.set_highlight(False)
         except Exception as e:
             logging.error(f"Error in SelectionDialog.update_selection_box: {e}", exc_info=True)
 
@@ -1486,13 +1483,13 @@ class SelectionDialog(QDialog):
             logging.error(f"Error in SelectionDialog.activate_selected: {e}", exc_info=True)
 
     def paintEvent(self, event):
-        # Draw rounded background for the dialog
+        # Draw regular rectangle background and thin border
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
         painter.setBrush(self._bg_color)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        painter.setPen(QPen(self._border_color, self._border_width))
+        painter.drawRect(rect)
         super().paintEvent(event)
 
 class StationStatusDialog(QDialog):
