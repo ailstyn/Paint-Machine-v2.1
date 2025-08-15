@@ -1552,6 +1552,8 @@ class StationStatusDialog(QDialog):
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            # Use custom paintEvent for highlight and rounded corners
+            frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         layout.addLayout(stations_layout)
@@ -1773,7 +1775,8 @@ class StartupWizardDialog(QDialog):
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            # Set frame color/border using palette and paintEvent
+            # Use custom paintEvent for highlight and rounded corners
+            frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         main_layout.addLayout(stations_layout, stretch=2)
@@ -1792,8 +1795,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setMinimumHeight(72)
         self.accept_label.setFixedWidth(360)
-       
-        self.accept_label.set_highlight(False)  # Always use white infill
+        self.accept_label.set_highlight(False)   # Always use white infill
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
@@ -1907,7 +1909,6 @@ class StartupWizardDialog(QDialog):
             self.selection_index = 0
             self.update_highlight()
 
-   
     def activate_selected(self):
         if self.current_step == 0 and self.step_mode == "station_select":
             self.update_selection_indices()
@@ -1943,14 +1944,11 @@ class StartupWizardDialog(QDialog):
             return
         for i, frame in enumerate(self.station_frames):
             if self.selection_indices[self.selection_index] == i:
-                # Animate highlight for selected frame
-                # Instead of stylesheet, set a property and use paintEvent for highlight
                 frame.setProperty("highlighted", True)
                 frame.update()
             else:
                 frame.setProperty("highlighted", False)
                 frame.update()
-        # For the CONTINUE button, you can set a property and update its style
         if self.selection_indices[self.selection_index] == "accept":
             self.accept_label.set_highlight(True)
         else:
