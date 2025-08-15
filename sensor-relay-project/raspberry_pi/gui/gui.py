@@ -24,15 +24,21 @@ def animate_frame_bg(frame, start_color, end_color, duration=200):
     animation.setDuration(duration)
     animation.setStartValue(QColor(start_color))
     animation.setEndValue(QColor(end_color))
-    # Use objectName selector to avoid affecting children
     selector = f"QFrame#{frame.objectName()}" if frame.objectName() else "QFrame"
-    animation.valueChanged.connect(
-        lambda color: frame.setStyleSheet(
-            f"{selector} {{ background: {color.name()}; border-radius: 14px; border: 4px solid #444; }}"
+    def update_styles(color):
+        # Keep the frame border and animate the background
+        frame.setStyleSheet(
+            f"{selector} {{ background: {color.name()}; border-radius: 14px; border: 4px solid #F6EB61; padding: 1px; }}"
         )
-    )
+        # If the frame contains a StationBoxWidget, ensure its weight label is always transparent and borderless
+        if frame.layout() and frame.layout().count() > 0:
+            box = frame.layout().itemAt(0).widget()
+            if hasattr(box, "weight_label") and box.weight_label:
+                box.weight_label.setStyleSheet(
+                    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: none; border-width: 0px; border-radius: 8px; padding: 8px 2px 8px 2px; min-height: 48px;"
+                )
+    animation.valueChanged.connect(update_styles)
     animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
-
 class OutlinedLabel(QLabel):
     """
     QLabel with optional outline effect for station names and other prominent labels.
