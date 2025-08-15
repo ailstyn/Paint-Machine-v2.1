@@ -631,7 +631,6 @@ class RelayControlApp(QWidget):
                 font_size=32,
                 fixed_width=64,
                 margins=(0, 30, 0, 0),
-                spacing=50,
                 parent=self
             )
             main_layout = QHBoxLayout(self)
@@ -1663,11 +1662,13 @@ class ButtonColumnWidget(QWidget):
         font_size=32,
         fixed_width=64,
         margins=(0, 30, 0, 0),
-        spacing=50,
         align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
         style=None
     ):
         super().__init__(parent)
+        # Double the default spacing between buttons
+        spacing = 100  # Was 50, now doubled
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(*margins)
         layout.setSpacing(spacing)
@@ -1678,7 +1679,6 @@ class ButtonColumnWidget(QWidget):
             lbl.setAlignment(align)
             lbl.setFixedWidth(fixed_width)
             lbl.setMinimumHeight(48)
-            # Set text color and background using palette and paintEvent
             palette = lbl.palette()
             palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
             lbl.setPalette(palette)
@@ -1688,9 +1688,6 @@ class ButtonColumnWidget(QWidget):
         self.setLayout(layout)
 
     def flash_icon(self, index, flash_color="#11BD33", duration=150):
-        """
-        Flash the icon at the given index with the specified color for a short duration.
-        """
         if not (0 <= index < len(self.labels)):
             return
         label = self.labels[index]
@@ -1785,7 +1782,7 @@ class StartupWizardDialog(QDialog):
 
         self.accept_label = OutlinedLabel(
             "CONTINUE",
-            font_size=48,
+            font_size=36,
             bold=True,
             color="#fff",          # White infill
             bg_color=None,         # Transparent background
@@ -1804,7 +1801,6 @@ class StartupWizardDialog(QDialog):
             font_size=28,
             fixed_width=56,
             margins=(0, 20, 0, 0),
-            spacing=36,
             align=Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             parent=self
         )
@@ -1977,4 +1973,3 @@ def frame_paintEvent(self, event):
         painter.setBrush(QColor("#222"))
         painter.setPen(QPen(QColor("#ccc"), 2))
     painter.drawRoundedRect(rect, radius, radius)
-    QFrame.paintEvent(self, event)
