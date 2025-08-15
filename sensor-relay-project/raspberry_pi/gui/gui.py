@@ -1812,7 +1812,7 @@ class StartupWizardDialog(QDialog):
         if 0 <= station_index < len(self.station_boxes):
             box = self.station_boxes[station_index]
             if box.weight_label:
-                               if unit == "g":
+                if unit == "g":
                     new_text = f"{int(round(current_weight))} g"
                 else:
                     oz = current_weight / 28.3495
