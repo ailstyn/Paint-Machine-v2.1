@@ -130,10 +130,9 @@ class StationBoxWidget(QWidget):
 
         tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
 
-        # Font size for name label
         label_font_size = int(20 * 1.1)  # 22
 
-        # Station name label (rounded only on top corners)
+        # Station name label (always colored)
         self.name_label = OutlinedLabel(
             name,
             font_size=label_font_size,
@@ -146,20 +145,21 @@ class StationBoxWidget(QWidget):
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_label.setMinimumHeight(40)
         self.name_label.setMaximumHeight(44)
-        # Override paintEvent for top-only rounded rectangle
         self.name_label.paintEvent = lambda event, lbl=self.name_label: self._draw_top_rounded_label(lbl, event)
         layout.addWidget(self.name_label)
 
-        # Connected label (smaller font, no rounded edges)
+        # Connected label (colored only if connected)
         self.connected_label = None
         if connected is not None:
+            connected_text = tr("CONNECTED") if connected else tr("DISCONNECTED")
+            connected_bg = color if connected else None  # None = transparent
             self.connected_label = OutlinedLabel(
-                tr("CONNECTED") if connected else tr("DISCONNECTED"),
-                font_size=16,  # Reduced font size
+                connected_text,
+                font_size=16,
                 bold=True,
                 color="#fff",
-                bg_color=color if connected else "#333",
-                border_radius=0,  # No rounded edges
+                bg_color=connected_bg,
+                border_radius=0,
                 padding=4,
                 outline_width=2
             )
@@ -168,16 +168,18 @@ class StationBoxWidget(QWidget):
             self.connected_label.setMaximumHeight(40)
             layout.addWidget(self.connected_label)
 
-        # Enabled label (smaller font, no rounded edges)
+        # Enabled label (colored only if enabled)
         self.enabled_label = None
         if enabled is not None:
+            enabled_text = tr("ENABLED") if enabled else tr("DISABLED")
+            enabled_bg = color if enabled else None  # None = transparent
             self.enabled_label = OutlinedLabel(
-                tr("ENABLED") if enabled else tr("DISABLED"),
-                font_size=16,  # Reduced font size
+                enabled_text,
+                font_size=16,
                 bold=True,
                 color="#fff",
-                bg_color=color if enabled else "#333",
-                border_radius=0,  # No rounded edges
+                bg_color=enabled_bg,
+                border_radius=0,
                 padding=4,
                 outline_width=2
             )
@@ -209,19 +211,17 @@ class StationBoxWidget(QWidget):
         self.connected = connected
         if self.connected_label:
             self.connected_label.setText("CONNECTED" if connected else "DISCONNECTED")
-            conn_palette = self.connected_label.palette()
-            conn_palette.setColor(QPalette.ColorRole.Window, QColor(color if connected else "#000"))
-            conn_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.connected_label.setPalette(conn_palette)
+            # Update background color based on state
+            self.connected_label._default_bg = QColor(color) if connected else None
+            self.connected_label.update()
 
     def set_enabled(self, enabled, color):
         self.enabled = enabled
         if self.enabled_label:
             self.enabled_label.setText("ENABLED" if enabled else "DISABLED")
-            en_palette = self.enabled_label.palette()
-            en_palette.setColor(QPalette.ColorRole.Window, QColor(color if enabled else "#000"))
-            en_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.enabled_label.setPalette(en_palette)
+            # Update background color based on state
+            self.enabled_label._default_bg = QColor(color) if enabled else None
+            self.enabled_label.update()
 
     def set_weight(self, current_weight, target_weight=None, unit="g"):
         try:
@@ -1971,11 +1971,12 @@ def frame_paintEvent(self, event):
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     rect = self.rect()
     highlighted = self.property("highlighted") if self.property("highlighted") is not None else False
+    radius = 10  # Match the name label's border_radius
     if highlighted:
         painter.setBrush(QColor("#F6EB61"))
         painter.setPen(QPen(QColor("#F6EB61"), 4))
     else:
         painter.setBrush(QColor("#222"))
         painter.setPen(QPen(QColor("#ccc"), 2))
-    painter.drawRoundedRect(rect, 14, 14)
+    painter.drawRoundedRect(rect, radius, radius)
     QFrame.paintEvent(self, event)
