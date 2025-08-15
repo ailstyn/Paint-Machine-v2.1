@@ -117,7 +117,7 @@ class StationBoxWidget(QWidget):
             self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
             self.name_label.setStyleSheet(
-                f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
+                f"background: {color}; color: #fff; border-radius: 10px; border: none; padding: 6px 0px; font-size: 26px; font-weight: bold;"
             )
             layout.addWidget(self.name_label)
 
@@ -129,11 +129,11 @@ class StationBoxWidget(QWidget):
                 # Only use station color if connected, else transparent
                 if connected:
                     self.connected_label.setStyleSheet(
-                        f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
+                        f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px 0px; font-size: 16px;"
                     )
                 else:
                     self.connected_label.setStyleSheet(
-                        "background: transparent; color: #fff; border-radius: 4px; border: none; padding: 2px; margin: 2px;"
+                        "background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px 0px;"
                     )
                 layout.addWidget(self.connected_label)
             else:
@@ -147,11 +147,11 @@ class StationBoxWidget(QWidget):
                 # Only use station color if enabled, else transparent
                 if enabled:
                     self.enabled_label.setStyleSheet(
-                        f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px;"
+                        f"background: {color}; color: #fff; border-radius: 8px; border: none; padding: 4px 0px; font-size: 16px;"
                     )
                 else:
                     self.enabled_label.setStyleSheet(
-                        "background: transparent; color: #fff; border-radius: 4px; border: none; padding: 2px; margin: 2px;"
+                        "background: #000; color: #fff; border-radius: 8px; border: none; padding: 4px 0px;"
                     )
                 layout.addWidget(self.enabled_label)
             else:
@@ -1319,14 +1319,17 @@ class StationStatusDialog(QDialog):
             self.station_boxes.append(box_widget)
 
             frame = QFrame()
+            frame.setObjectName(f"stationFrame_{i}")  # <-- Set unique object name
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(16, 16, 16, 16)
+            frame.layout().setContentsMargins(1, 1, 1, 1)  # 1px padding inside frame
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            frame.setStyleSheet("border: 2px solid #ccc; border-radius: 14px; background: transparent;")
+            frame.setStyleSheet(
+                f"QFrame#stationFrame_{i} {{ background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px; }}"
+            )
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         layout.addLayout(stations_layout)
@@ -1473,14 +1476,14 @@ class StartupWizardDialog(QDialog):
         self.main_label = QLabel("Welcome to Paint Machine")
         self.main_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.main_label.setStyleSheet("color: #fff; background: transparent; font-size: 32px; border: none;")
+        self.main_label.setStyleSheet("color: #fff; background: transparent; font-size: 36px; font-weight: bold; border: none;")
         main_layout.addWidget(self.main_label)
 
         # Info/Prompt area
         self.info_label = QLabel("Startup Info ....")
         self.info_label.setFont(QFont("Arial", 20))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setStyleSheet("color: #fff; background: transparent; font-size: 20px; border: none; min-height: 150px; max-height: 150px;")
+        self.info_label.setStyleSheet("color: #fff; background: transparent; font-size: 22px; border: none; min-height: 150px; max-height: 150px;")
         main_layout.addWidget(self.info_label)
 
         # Station boxes row
@@ -1503,6 +1506,7 @@ class StartupWizardDialog(QDialog):
             box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
+            frame.setObjectName(f"stationFrame_{i}")  # <-- Set unique object name
             frame.setFrameShape(QFrame.Shape.StyledPanel)
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
@@ -1510,7 +1514,9 @@ class StartupWizardDialog(QDialog):
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            frame.setStyleSheet("background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px;")
+            frame.setStyleSheet(
+                f"QFrame#stationFrame_{i} {{ background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px; }}"
+            )
             self.station_frames.append(frame)
             stations_layout.addWidget(frame)
         main_layout.addLayout(stations_layout, stretch=2)
@@ -1523,7 +1529,9 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setMinimumHeight(72)
         self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.accept_label.setFixedWidth(360)
-        self.accept_label.setStyleSheet("background: transparent; border-radius: 12px; border: 2px solid #ccc; padding: 8px 24px; color: #fff;")
+        self.accept_label.setStyleSheet(
+            "background: transparent; border-radius: 16px; border: 2px solid #ccc; padding: 12px 32px; color: #fff; font-size: 48px; font-weight: bold;"
+        )
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
@@ -1692,7 +1700,13 @@ class StartupWizardDialog(QDialog):
                 animate_frame_bg(frame, "#FFF8DC", "#F6EB61", duration=200)
             else:
                 # Instantly reset background for non-selected frames
-                frame.setStyleSheet("background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px;")
+                frame.setStyleSheet(f"QFrame#stationFrame_{i} {{ background: transparent; border-radius: 14px; border: 2px solid #ccc; padding: 1px; }}")
+            # --- Ensure weight label has no border ---
+            box = self.station_boxes[i]
+            if box.weight_label:
+                box.weight_label.setStyleSheet(
+                    "color: #0f0; font-size: 32px; font-weight: bold; background: transparent; border: none; border-width: 0px; padding: 8px 2px 8px 2px; min-height: 48px;"
+                )
         # For the CONTINUE button, you can animate or just set style directly:
         if self.selection_indices[self.selection_index] == "accept":
             animate_frame_bg(self.accept_label, "#FFF8DC", "#F6EB61", duration=200)
