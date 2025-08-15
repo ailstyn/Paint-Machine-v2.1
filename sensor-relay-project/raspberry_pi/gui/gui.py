@@ -1848,14 +1848,13 @@ class StartupWizardDialog(QDialog):
         print(f"[DEBUG] set_weight called: current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
         if 0 <= station_index < len(self.station_boxes):
             box = self.station_boxes[station_index]
-            if box.weight_label:
-                if unit == "g":
-                    new_text = f"{int(round(current_weight))} g"
-                else:
-                    oz = current_weight / 28.3495
-                    new_text = f"{oz:.1f} oz"
-                box.set_weight(new_text)
-                self.weight_texts[station_index] = new_text
+            box.set_weight(current_weight, target_weight, unit)
+            # Optionally update self.weight_texts for other uses
+            if unit == "g":
+                self.weight_texts[station_index] = f"{int(round(current_weight))} g"
+            else:
+                oz = current_weight / 28.3495
+                self.weight_texts[station_index] = f"{oz:.1f} oz"
 
     def set_step(self, step):
         self.current_step = step
