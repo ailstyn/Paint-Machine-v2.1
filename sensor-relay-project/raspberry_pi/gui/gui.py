@@ -1663,6 +1663,9 @@ class StartupWizardDialog(QDialog):
         self.main_label = QLabel("Welcome to Paint Machine")
         self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_palette = self.main_label.palette()
+        main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))  # Light grey
+        self.main_label.setPalette(main_palette)
         main_layout.addWidget(self.main_label)
 
         # Info/Prompt area
@@ -1671,6 +1674,9 @@ class StartupWizardDialog(QDialog):
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.info_label.setMinimumHeight(150)
         self.info_label.setMaximumHeight(150)
+        info_palette = self.info_label.palette()
+        info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))  # Light grey
+        self.info_label.setPalette(info_palette)
         main_layout.addWidget(self.info_label)
 
         # Station boxes row
@@ -1882,7 +1888,6 @@ class StartupWizardDialog(QDialog):
         rect = self.rect()
         painter.setBrush(QColor("#222"))  # Dark grey background
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(rect, 24, 24)
         super().paintEvent(event)
 
 # Add this to QFrame subclass or monkey-patch QFrame if you want to handle highlight in paintEvent:
