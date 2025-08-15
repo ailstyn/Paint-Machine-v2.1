@@ -1681,7 +1681,7 @@ class ButtonColumnWidget(QWidget):
         layout.addStretch(1)
         self.setLayout(layout)
 
-    def flash_icon(self, index, flash_color="#11BD33", duration=150):
+    def flash_icon(self, index, flash_color="#11BD33", duration=150, fade_duration=350):
         if not (0 <= index < len(self.labels)):
             return
         label = self.labels[index]
@@ -1694,8 +1694,14 @@ class ButtonColumnWidget(QWidget):
             self.animations[index].deleteLater()
             self.animations[index] = None
 
+        # Flash to color instantly
+        palette = label.palette()
+        palette.setColor(QPalette.ColorRole.WindowText, start_color)
+        label.setPalette(palette)
+
+        # Animate fade out to white
         animation = QVariantAnimation(label)
-        animation.setDuration(duration)
+        animation.setDuration(fade_duration)  # Slower fade out
         animation.setStartValue(start_color)
         animation.setEndValue(end_color)
 
@@ -1802,6 +1808,7 @@ class StartupWizardDialog(QDialog):
             bg_color=None,         # Transparent background
             border_radius=16,
             padding=8
+       
         )
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setMinimumHeight(72)
