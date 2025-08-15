@@ -1714,12 +1714,19 @@ class StartupWizardDialog(QDialog):
 
         main_layout.addStretch(1)
 
-        self.accept_label = OutlinedLabel("CONTINUE")
-        self.accept_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+        self.accept_label = OutlinedLabel(
+            "CONTINUE",
+            font_size=48,
+            bold=True,
+            color="#fff",          # White infill
+            bg_color=None,         # Transparent background
+            border_radius=16,
+            padding=8
+        )
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setMinimumHeight(72)
-        self.accept_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.accept_label.setFixedWidth(360)
+        self.accept_label.set_highlight(False)  # Always use white infill
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Right-side: button labels
