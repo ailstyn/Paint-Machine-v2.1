@@ -131,59 +131,67 @@ class StationBoxWidget(QWidget):
         tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
 
         # Station name label
-        self.name_label = QLabel(name)
+        self.name_label = OutlinedLabel(
+            name,
+            font_size=26,
+            bold=True,
+            color="#fff",
+            bg_color=color,
+            border_radius=10,
+            padding=6
+        )
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.name_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.name_label.setMinimumHeight(36)
         self.name_label.setMaximumHeight(40)
-        # Set background color and rounded corners using palette and paintEvent
-        self.name_label.setAutoFillBackground(True)
-        name_palette = self.name_label.palette()
-        name_palette.setColor(QPalette.ColorRole.Window, QColor(color))
-        name_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-        self.name_label.setPalette(name_palette)
         layout.addWidget(self.name_label)
 
         # Connected label
         self.connected_label = None
         if connected is not None:
-            self.connected_label = QLabel(tr("CONNECTED") if connected else tr("DISCONNECTED"))
+            self.connected_label = OutlinedLabel(
+                tr("CONNECTED") if connected else tr("DISCONNECTED"),
+                font_size=16,
+                bold=True,
+                color="#fff",
+                bg_color=color if connected else "#333",
+                border_radius=8,
+                padding=4
+            )
             self.connected_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.connected_label.setFont(QFont("Arial", 16))
             self.connected_label.setMinimumHeight(28)
             self.connected_label.setMaximumHeight(32)
-            self.connected_label.setAutoFillBackground(True)
-            conn_palette = self.connected_label.palette()
-            conn_palette.setColor(QPalette.ColorRole.Window, QColor(color if connected else "#000"))
-            conn_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.connected_label.setPalette(conn_palette)
             layout.addWidget(self.connected_label)
 
         # Enabled label
         self.enabled_label = None
         if enabled is not None:
-            self.enabled_label = QLabel(tr("ENABLED") if enabled else tr("DISABLED"))
+            self.enabled_label = OutlinedLabel(
+                tr("ENABLED") if enabled else tr("DISABLED"),
+                font_size=16,
+                bold=True,
+                color="#fff",
+                bg_color=color if enabled else "#333",
+                border_radius=8,
+                padding=4
+            )
             self.enabled_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.enabled_label.setFont(QFont("Arial", 16))
             self.enabled_label.setMinimumHeight(28)
             self.enabled_label.setMaximumHeight(32)
-            self.enabled_label.setAutoFillBackground(True)
-            en_palette = self.enabled_label.palette()
-            en_palette.setColor(QPalette.ColorRole.Window, QColor(color if enabled else "#000"))
-            en_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.enabled_label.setPalette(en_palette)
             layout.addWidget(self.enabled_label)
 
         # Weight label
-        self.weight_label = QLabel(self.weight_text)
+        self.weight_label = OutlinedLabel(
+            weight_text if weight_text is not None else "--",
+            font_size=32,
+            bold=True,
+            color="#0f0",
+            bg_color=None,
+            border_radius=8,
+            padding=8
+        )
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.weight_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
         self.weight_label.setMinimumHeight(48)
         self.weight_label.setMaximumHeight(56)
-        # Only set text color, no background or border
-        weight_palette = self.weight_label.palette()
-        weight_palette.setColor(QPalette.ColorRole.WindowText, QColor("#0f0"))
-        self.weight_label.setPalette(weight_palette)
         layout.addWidget(self.weight_label)
 
         self.setMinimumWidth(216)
