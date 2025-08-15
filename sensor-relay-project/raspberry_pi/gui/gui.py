@@ -338,17 +338,16 @@ class StationWidget(QWidget):
         self._status_flash_text = ""
         self._status_flash_interval = 500  # ms
 
+        # Use BottleProgressBar instead of QProgressBar
+        self.progress_bar = BottleProgressBar(parent=self)
+        content_layout = QVBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
         if enabled:
             main_layout = QHBoxLayout(self)
             main_layout.setContentsMargins(0, 0, 0, 0)
             main_layout.setSpacing(0)
-
-            # Use BottleProgressBar instead of QProgressBar
-            self.progress_bar = BottleProgressBar(parent=self)
-
-            content_layout = QVBoxLayout()
-            content_layout.setContentsMargins(0, 0, 0, 0)
-            content_layout.setSpacing(0)
 
             # Large weight label
             self.weight_label = OutlinedLabel("0.0 / 0.0 g", font_size=64, bold=True, color="#0f0")
