@@ -1,5 +1,5 @@
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame, QGraphicsDropShadowEffect
+    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
@@ -1394,7 +1394,30 @@ class SetTimeLimitDialog(QDialog):
         painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
         super().paintEvent(event)
 
-class SelectionDialog(QDialog):
+class FadeDialog(QDialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.opacity_effect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity_effect)
+        self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.fade_anim.setDuration(350)
+
+    def showEvent(self, event):
+        self.opacity_effect.setOpacity(0)
+        self.fade_anim.stop()
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.start()
+        super().showEvent(event)
+
+    def accept(self):
+        self.fade_anim.stop()
+        self.fade_anim.setStartValue(1)
+        self.fade_anim.setEndValue(0)
+        self.fade_anim.finished.connect(super().accept)
+        self.fade_anim.start()
+
+class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
         try:
             super().__init__(parent)
