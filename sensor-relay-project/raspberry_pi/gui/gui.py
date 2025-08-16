@@ -34,12 +34,14 @@ def set_frame_highlight(frame, highlighted):
         frame.setGraphicsEffect(None)
 
 def set_label_highlight(label, highlighted):
+    # Only use drop shadow for station selection in StartupWizardDialog step 0
     label.setGraphicsEffect(None)
     if highlighted:
+        # For station selection highlight (step 0 only)
         shadow = QGraphicsDropShadowEffect(label)
         shadow.setOffset(0, 0)
-        shadow.setBlurRadius(48)  # Large shadow
-        shadow.setColor(QColor(246, 235, 97, 180))  # Light yellow, semi-transparent
+        shadow.setBlurRadius(48)
+        shadow.setColor(QColor(255, 240, 80, 180))
         label.setGraphicsEffect(shadow)
     else:
         label.setGraphicsEffect(None)
@@ -1442,92 +1444,42 @@ class SelectionDialog(FadeDialog):
                 title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(title_label)
 
-            # Option labels in frames
-            button_container = QWidget()
-            button_layout = QVBoxLayout(button_container)
-            button_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-            self.label_frames = []
+            # Option labels
             self.labels = []
             for _, display_text in self.options:
                 item_label = OutlinedLabel(display_text, font_size=28, bold=True, color="#fff") if outlined else QLabel(display_text)
                 item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 item_label.setFixedSize(320, 64)
-                if not outlined:
-                    item_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))
-                    palette = item_label.palette()
-                    palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-                    item_label.setPalette(palette)
-                frame = QFrame()
-                frame.setFrameShape(QFrame.Shape.StyledPanel)
-                frame.setLineWidth(0)
-                frame.setLayout(QVBoxLayout())
-                frame.layout().setContentsMargins(0, 0, 0, 0)
-                frame.layout().addWidget(item_label)
-                frame.setFixedSize(340, 72)
-                self.label_frames.append(frame)
                 self.labels.append(item_label)
-                button_layout.addWidget(frame)
-            layout.addWidget(button_container)
-            self.setLayout(layout)
-            self.setModal(True)
-            self.update_selection_box()
+                layout.addWidget(item_label)
+        self.setLayout(layout)
+        self.setModal(True)
+        self.update_selection_box()
         except Exception as e:
             logging.error(f"Error in SelectionDialog.__init__: {e}", exc_info=True)
 
     def update_selection_box(self):
-        try:
-            for i, frame in enumerate(self.label_frames):
-                frame.setGraphicsEffect(None)
-                if i == self.selected_index:
-                    shadow = QGraphicsDropShadowEffect(frame)
-                    shadow.setOffset(0, 0)
-                    shadow.setBlurRadius(48)
-                    shadow.setColor(QColor(255, 240, 80, 230))
-                    frame.setGraphicsEffect(shadow)
-                else:
-                    frame.setGraphicsEffect(None)
-            # Always keep label.set_highlight(False) for SelectionDialog
-            for label in self.labels:
-                if isinstance(label, OutlinedLabel):
-                    label.set_highlight(False)
-        except Exception as e:
-            logging.error(f"Error in SelectionDialog.update_selection_box: {e}", exc_info=True)
+        for i, label in enumerate(self.labels):
+            # Use yellow background for highlight, no drop shadow
+            if i == self.selected_index:
+                label.set_highlight(True)
+            else:
+                label.set_highlight(False)
 
     def select_next(self):
-        try:
-            self.selected_index = (self.selected_index + 1) % len(self.labels)
-            self.update_selection_box()
-        except Exception as e:
-            logging.error(f"Error in SelectionDialog.select_next: {e}", exc_info=True)
+        self.selected_index = (self.selected_index + 1) % len(self.labels)
+        self.update_selection_box()
 
     def select_prev(self):
-        try:
-            self.selected_index = (self.selected_index - 1) % len(self.labels)
-            self.update_selection_box()
-        except Exception as e:
-            logging.error(f"Error in SelectionDialog.select_prev: {e}", exc_info=True)
+        self.selected_index = (self.selected_index - 1) % len(self.labels)
+        self.update_selection_box()
 
     def activate_selected(self):
-        try:
-            index = self.selected_index
-            value = self.options[index][0]
-            print(f"[DEBUG] SelectionDialog.activate_selected called, value={value}, index={index}")
-            if self.on_select_callback:
-                self.on_select_callback(value, index)
-            print("[DEBUG] SelectionDialog calling accept()")
-            self.accept()
-        except Exception as e:
-            logging.error(f"Error in SelectionDialog.activate_selected: {e}", exc_info=True)
-
-    def paintEvent(self, event):
-        # Draw regular rectangle background and thin border
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect()
-        painter.setBrush(self._bg_color)
-        painter.setPen(QPen(self._border_color, self._border_width))
-        painter.drawRect(rect)
-        super().paintEvent(event)
+        index = self.selected_index
+        value = self.options[index][0]
+        if self.on_select_callback:
+            self.on_select_callback(value, index)
+        self.accept()
 
 class StationStatusDialog(QDialog):
     station_selected = pyqtSignal(int)
@@ -1990,14 +1942,14 @@ class StartupWizardDialog(QDialog):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
-            is_highlighted = self.selection_indices[self.selection_index] == i
-            set_frame_highlight(frame, is_highlighted)
+            is_highlighted = self.current_step == 0 and self.step_mode == "station_select" and self.selection_indices[self.selection_index] == i
+            # Only use drop shadow for station selection in step 0
+            set_label_highlight(self.station_boxes[i].name_label, is_highlighted)
             frame.update()
+        # Continue button highlight: yellow background only
         if self.selection_indices[self.selection_index] == "accept":
-            set_label_highlight(self.accept_label, True)
-            self.accept_label.set_highlight(False)  # Don't use yellow fill
+            self.accept_label.set_highlight(True)
         else:
-            set_label_highlight(self.accept_label, False)
             self.accept_label.set_highlight(False)
 
     def paintEvent(self, event):
