@@ -429,7 +429,7 @@ def log_final_weight(station_index, final_weight):
 
 # ========== STARTUP ==========
 
-def startup(app, timer):
+def startup(after_startup):
     global arduinos, scale_calibrations, station_enabled, station_serials
 
     print("[DEBUG] === Startup sequence initiated ===")
@@ -439,7 +439,7 @@ def startup(app, timer):
     load_scale_calibrations()
     station_serials = load_station_serials()
     station_enabled = load_station_enabled(config_file)
-    station_names = [app.tr("STATION") + f" {i+1}" for i in range(NUM_STATIONS)]
+    station_names = [f"STATION {i+1}" for i in range(NUM_STATIONS)]
     print(f"[DEBUG] station_serials: {station_serials}")
     print(f"[DEBUG] station_enabled: {station_enabled}")
 
@@ -505,8 +505,7 @@ def startup(app, timer):
 
     # --- Step 0: StartupWizardDialog, station verification ---
     print("[DEBUG] Creating StartupWizardDialog...")
-    wizard = StartupWizardDialog(parent=app, num_stations=NUM_STATIONS)
-    app.active_dialog = wizard
+    wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
     wizard.set_step(0)
     wizard.set_main_label("CALIBRATION STEP 1")
@@ -523,21 +522,19 @@ def startup(app, timer):
 
     def after_station_verified():
         print("[DEBUG] Station verification complete, opening filling mode dialog.")
-        filling_modes = [("AUTO", app.tr("AUTO")), ("MANUAL", app.tr("MANUAL")), ("SMART", app.tr("SMART"))]
+        filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
         def filling_mode_selected(mode, index):
             print(f"[DEBUG] Filling mode selected: {mode} (index={index})")
-            app.filling_mode = mode
-            global filling_mode
-            filling_mode = mode
+            wizard.filling_mode = mode
             filling_mode_dialog.accept()
             if mode == "MANUAL":
-                print("[DEBUG] MANUAL mode selected, closing wizard and opening RelayControlApp.")
+                print("[DEBUG] MANUAL mode selected, skipping calibration steps.")
+                # Create RelayControlApp and show it, then close wizard
+                if after_startup:
+                    after_startup()
                 wizard.accept()
-                app.active_dialog = None
-                app.show()
                 return
             print("[DEBUG] AUTO/SMART mode selected, returning to wizard for step 2.")
-            app.active_dialog = wizard
             wizard.set_step(2)
             wizard.set_main_label("CALIBRATION STEP 2")
             wizard.set_info_text(
@@ -553,10 +550,9 @@ def startup(app, timer):
         filling_mode_dialog = SelectionDialog(
             options=filling_modes,
             parent=wizard,
-            title=app.tr("SET FILLING MODE"),
+            title="SET FILLING MODE",
             on_select=filling_mode_selected
         )
-        app.active_dialog = filling_mode_dialog
         filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
         filling_mode_dialog.show()
         print("[DEBUG] Filling mode dialog shown.")
@@ -601,9 +597,10 @@ def startup(app, timer):
             )
         elif wizard.current_step == 4:
             print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
+            # Create RelayControlApp and show it, then close wizard
+            if after_startup:
+                after_startup()
             wizard.accept()
-            app.active_dialog = None
-            app.show()
 
     wizard._original_activate_selected = wizard.activate_selected
     def patched_activate_selected():
@@ -979,35 +976,40 @@ def main():
         setup_gpio()
 
         app_qt = QApplication(sys.argv)
-        app = RelayControlApp(
-            station_enabled=station_enabled,
-            filling_mode_callback=filling_mode_callback
-        )
-        app.set_calibrate = None  # Set if you have a calibrate_scale function
 
-        app.target_weight = target_weight
-
-        app.hide()  # <-- Add this line to hide the window during startup
-
-        if DEBUG:
-            print('app initialized, contacting arduinos')
-
-        for i, widget in enumerate(app.station_widgets):
-            if station_enabled[i]:
-                widget.set_weight(0, target_weight, "g")
+        # Do NOT create RelayControlApp yet!
+        # app = RelayControlApp(...)
 
         GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         timer = QTimer()
-        timer.timeout.connect(lambda: poll_hardware(app))
-        timer.start(35)
-
         button_timer = QTimer()
-        button_timer.timeout.connect(lambda: handle_button_presses(app))
-        button_timer.start(50)
 
-        QTimer.singleShot(1000, lambda: startup(app, timer))
+        # Define a function to run after startup is complete
+        def after_startup():
+            # Now create RelayControlApp and show it
+            app = RelayControlApp(
+                station_enabled=station_enabled,
+                filling_mode_callback=filling_mode_callback
+            )
+            app.set_calibrate = None  # Set if you have a calibrate_scale function
+            app.target_weight = target_weight
+
+            for i, widget in enumerate(app.station_widgets):
+                if station_enabled[i]:
+                    widget.set_weight(0, target_weight, "g")
+
+            timer.timeout.connect(lambda: poll_hardware(app))
+            timer.start(35)
+
+            button_timer.timeout.connect(lambda: handle_button_presses(app))
+            button_timer.start(50)
+
+            app.show()
+
+        # Run startup and pass after_startup as a callback
+        startup(after_startup)
 
         sys.exit(app_qt.exec())
     except KeyboardInterrupt:
