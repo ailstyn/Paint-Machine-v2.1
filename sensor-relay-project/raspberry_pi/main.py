@@ -537,8 +537,9 @@ def startup(after_startup):
                     after_startup()
                 wizard.accept()
                 return
-            print("[DEBUG] AUTO/SMART mode selected, returning to wizard for step 2.")
+            print("[DEBUG] AUTO/SMART mode selected, advancing wizard to step 2.")
             wizard.set_step(2)
+            wizard.step_mode = "accept_only"
             wizard.set_main_label("CALIBRATION STEP 2")
             wizard.set_info_text(
                 "Remove all weight from each active station.\nPress CONTINUE when ready."
@@ -548,6 +549,7 @@ def startup(after_startup):
                 connected=station_connected,
                 enabled=station_enabled
             )
+            QApplication.instance().active_dialog = wizard  # Ensure button presses go to wizard
             wizard.show()
 
         filling_mode_dialog = SelectionDialog(
