@@ -126,16 +126,16 @@ class StationBoxWidget(QWidget):
         self.connected = connected
         self.enabled = enabled
         self.weight_text = weight_text if weight_text is not None else "--"
+        self._highlighted = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(1)
 
         tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
-
         label_font_size = int(20 * 1.1)  # 22
 
-        # Station name label (always colored)
+        # Station name label (custom top-rounded shape)
         self.name_label = OutlinedLabel(
             name,
             font_size=label_font_size,
@@ -148,6 +148,7 @@ class StationBoxWidget(QWidget):
         self.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.name_label.setMinimumHeight(40)
         self.name_label.setMaximumHeight(44)
+        # Use custom paintEvent for top-rounded shape
         self.name_label.paintEvent = lambda event, lbl=self.name_label: self._draw_top_rounded_label(lbl, event)
         layout.addWidget(self.name_label)
 
@@ -155,7 +156,7 @@ class StationBoxWidget(QWidget):
         self.connected_label = None
         if connected is not None:
             connected_text = tr("CONNECTED") if connected else tr("DISCONNECTED")
-            connected_bg = color if connected else None  # None = transparent
+            connected_bg = color if connected else None
             self.connected_label = OutlinedLabel(
                 connected_text,
                 font_size=16,
@@ -175,7 +176,7 @@ class StationBoxWidget(QWidget):
         self.enabled_label = None
         if enabled is not None:
             enabled_text = tr("ENABLED") if enabled else tr("DISABLED")
-            enabled_bg = color if enabled else None  # None = transparent
+            enabled_bg = color if enabled else None
             self.enabled_label = OutlinedLabel(
                 enabled_text,
                 font_size=16,
@@ -191,7 +192,7 @@ class StationBoxWidget(QWidget):
             self.enabled_label.setMaximumHeight(40)
             layout.addWidget(self.enabled_label)
 
-        # Weight label (unchanged)
+        # Weight label
         self.weight_label = OutlinedLabel(
             weight_text if weight_text is not None else "--",
             font_size=24,
@@ -214,7 +215,6 @@ class StationBoxWidget(QWidget):
         self.connected = connected
         if self.connected_label:
             self.connected_label.setText("CONNECTED" if connected else "DISCONNECTED")
-            # Update background color based on state
             self.connected_label._default_bg = QColor(color) if connected else None
             self.connected_label.update()
 
@@ -222,7 +222,6 @@ class StationBoxWidget(QWidget):
         self.enabled = enabled
         if self.enabled_label:
             self.enabled_label.setText("ENABLED" if enabled else "DISABLED")
-            # Update background color based on state
             self.enabled_label._default_bg = QColor(color) if enabled else None
             self.enabled_label.update()
 
@@ -234,7 +233,7 @@ class StationBoxWidget(QWidget):
         except (TypeError, ValueError):
             current_weight = 0
             target_weight = 0 if target_weight is not None else None
-    
+
         if unit == "g":
             text = f"{int(round(current_weight))} / {int(round(target_weight))} g" if target_weight is not None else f"{int(round(current_weight))} g"
         else:
@@ -248,14 +247,21 @@ class StationBoxWidget(QWidget):
         if self.weight_label:
             self.weight_label.setText(text)
 
+    def set_highlight(self, highlighted):
+        self._highlighted = highlighted
+        self.update()
+
     def paintEvent(self, event):
-        # Draw rounded corners for the widget background
+        # Draw background and border for the widget, highlight if needed
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
-        painter.setBrush(QColor("#222"))  # Dark grey background
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(rect, 24, 24)
+        if self._highlighted:
+            painter.setBrush(QColor("#F6EB61"))  # Light yellow highlight
+        else:
+            painter.setBrush(QColor("#222"))     # Default dark grey
+        painter.setPen(QPen(QColor("#888"), 3))
+        painter.drawRoundedRect(rect, 14, 14)
         super().paintEvent(event)
 
     def _draw_top_rounded_label(self, label, event):
@@ -282,7 +288,7 @@ class StationBoxWidget(QWidget):
         if label._highlighted:
             painter.setBrush(label._highlight_color)
             painter.setPen(QPen(label._highlight_border_color, label._highlight_border_width))
-            text_color = label._default_color
+            text_color = label._highlight_text_color
         else:
             painter.setBrush(label._default_bg if label._default_bg else Qt.BrushStyle.NoBrush)
             painter.setPen(QPen(label._normal_border_color, label._normal_border_width))
@@ -1944,9 +1950,14 @@ class StartupWizardDialog(QDialog):
         if not self.selection_indices or self.selection_index >= len(self.selection_indices):
             return
         for i, frame in enumerate(self.station_frames):
-            is_highlighted = self.current_step == 0 and self.step_mode == "station_select" and self.selection_indices[self.selection_index] == i
-            # Only use drop shadow for station selection in step 0
-            set_label_highlight(self.station_boxes[i].name_label, is_highlighted)
+            is_highlighted = (
+                self.current_step == 0 and
+                self.step_mode == "station_select" and
+                self.selection_indices[self.selection_index] == i
+            )
+            frame.setProperty("highlighted", is_highlighted)
+            frame.style().unpolish(frame)
+            frame.style().polish(frame)
             frame.update()
         # Continue button highlight: yellow background only
         if self.selection_indices[self.selection_index] == "accept":
