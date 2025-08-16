@@ -1413,7 +1413,7 @@ class FadeDialog(QDialog):
         self.fade_anim.setEndValue(0)
         def on_finished():
             print("[DEBUG] FadeDialog.fade_anim finished, calling super().accept()")
-            super().accept()
+            super(FadeDialog, self).accept()  # <-- Fix here!
         self.fade_anim.finished.connect(on_finished)
         self.fade_anim.start()
 
