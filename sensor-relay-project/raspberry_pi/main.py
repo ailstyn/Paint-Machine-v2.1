@@ -977,23 +977,22 @@ def main():
 
         app_qt = QApplication(sys.argv)
 
-        # Do NOT create RelayControlApp yet!
-        # app = RelayControlApp(...)
-
         GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         timer = QTimer()
         button_timer = QTimer()
 
-        # Define a function to run after startup is complete
+        # Start button polling timer BEFORE startup
+        button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
+        button_timer.start(50)
+
         def after_startup():
-            # Now create RelayControlApp and show it
             app = RelayControlApp(
                 station_enabled=station_enabled,
                 filling_mode_callback=filling_mode_callback
             )
-            app.set_calibrate = None  # Set if you have a calibrate_scale function
+            app.set_calibrate = None
             app.target_weight = target_weight
 
             for i, widget in enumerate(app.station_widgets):
@@ -1002,9 +1001,6 @@ def main():
 
             timer.timeout.connect(lambda: poll_hardware(app))
             timer.start(35)
-
-            button_timer.timeout.connect(lambda: handle_button_presses(app))
-            button_timer.start(50)
 
             app.show()
 
