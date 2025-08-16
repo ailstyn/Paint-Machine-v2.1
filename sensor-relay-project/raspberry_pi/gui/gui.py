@@ -1361,21 +1361,17 @@ class SetTimeLimitDialog(QDialog):
 
     def activate_selected(self):
         try:
-            if self.current_digit < 3:  # 4 digits, so index 0-3
-                self.current_digit += 1
-                self.update_display()
-            else:
-                tenths = int("".join(str(d) for d in self.digits))
-                value_ms = tenths * 100  # Convert tenths of a second to ms
-                parent = self.parent()
-                if parent and hasattr(parent, "set_time_limit"):
-                    parent.set_time_limit(value_ms)
-                    if hasattr(parent, "show_timed_info"):
-                        seconds = tenths / 10.0
-                        parent.show_timed_info("TIME LIMIT SAVED:", f"{seconds:.1f} sec", timeout_ms=2000)
-                self.accept()
-                if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
-                    parent.menu_dialog.accept()
+            tenths = int("".join(str(d) for d in self.digits))
+            value_ms = tenths * 100  # Convert tenths of a second to ms
+            parent = self.parent()
+            if parent and hasattr(parent, "set_time_limit"):
+                parent.set_time_limit(value_ms)
+                if hasattr(parent, "show_timed_info"):
+                    seconds = tenths / 10.0
+                    parent.show_timed_info("TIME LIMIT SAVED:", f"{seconds:.1f} sec", timeout_ms=2000)
+            self.accept()
+            if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
+                parent.menu_dialog.accept()
         except Exception as e:
             logging.error(f"Error in SetTimeLimitDialog.activate_selected: {e}", exc_info=True)
 
@@ -1411,10 +1407,14 @@ class FadeDialog(QDialog):
         super().showEvent(event)
 
     def accept(self):
+        print("[DEBUG] FadeDialog.accept called, starting fade-out")
         self.fade_anim.stop()
         self.fade_anim.setStartValue(1)
         self.fade_anim.setEndValue(0)
-        self.fade_anim.finished.connect(super().accept)
+        def on_finished():
+            print("[DEBUG] FadeDialog.fade_anim finished, calling super().accept()")
+            super().accept()
+        self.fade_anim.finished.connect(on_finished)
         self.fade_anim.start()
 
 class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
@@ -1499,8 +1499,10 @@ class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
         try:
             index = self.selected_index
             value = self.options[index][0]
+            print(f"[DEBUG] SelectionDialog.activate_selected called, value={value}, index={index}")
             if self.on_select_callback:
                 self.on_select_callback(value, index)
+            print("[DEBUG] SelectionDialog calling accept()")
             self.accept()
         except Exception as e:
             logging.error(f"Error in SelectionDialog.activate_selected: {e}", exc_info=True)
@@ -1810,6 +1812,7 @@ class StartupWizardDialog(QDialog):
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
             frame.layout().setContentsMargins(1, 1, 1, 1)
+
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
