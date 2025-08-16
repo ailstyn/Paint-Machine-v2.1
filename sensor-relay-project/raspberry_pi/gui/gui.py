@@ -325,7 +325,6 @@ class StationWidget(QWidget):
         self.bg_color = QColor(bg_color)
         self.enabled = enabled
 
-        # Always define these attributes
         self.weight_label = None
         self.status_label = None
         self.progress_bar = None
@@ -338,41 +337,43 @@ class StationWidget(QWidget):
         self._status_flash_text = ""
         self._status_flash_interval = 500  # ms
 
-        # Use BottleProgressBar instead of QProgressBar
+        # Always add the BottleProgressBar, regardless of enabled state
+        main_layout = QHBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         self.progress_bar = BottleProgressBar(parent=self)
+
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
-        if enabled:
-            main_layout = QHBoxLayout(self)
-            main_layout.setContentsMargins(0, 0, 0, 0)
-            main_layout.setSpacing(0)
+        # Large weight label
+        self.weight_label = OutlinedLabel("0.0 / 0.0 g", font_size=64, bold=True, color="#0f0")
+        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.weight_label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
+        content_layout.addWidget(self.weight_label, stretch=2)
 
-            # Large weight label
-            self.weight_label = OutlinedLabel("0.0 / 0.0 g", font_size=64, bold=True, color="#0f0")
-            self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.weight_label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
-            content_layout.addWidget(self.weight_label, stretch=2)
+        # Status label
+        self.status_label = QLabel(self.tr("READY"))
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setFont(QFont("Arial", 20))
+        status_palette = self.status_label.palette()
+        status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        self.status_label.setPalette(status_palette)
+        content_layout.addWidget(self.status_label, stretch=1)
 
-            # Status label
-            self.status_label = QLabel(self.tr("READY"))
-            self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.status_label.setFont(QFont("Arial", 20))
-            status_palette = self.status_label.palette()
-            status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.status_label.setPalette(status_palette)
-            content_layout.addWidget(self.status_label, stretch=1)
-
-            # Add widgets to layout
-            if hasattr(self, "bar_on_left") and self.bar_on_left:
-                main_layout.addWidget(self.progress_bar)
-                main_layout.addLayout(content_layout)
-            else:
-                main_layout.addLayout(content_layout)
-                main_layout.addWidget(self.progress_bar)
-            self.setLayout(main_layout)
+        # Add widgets to layout
+        if hasattr(self, "bar_on_left") and self.bar_on_left:
+            main_layout.addWidget(self.progress_bar)
+            main_layout.addLayout(content_layout)
         else:
+            main_layout.addLayout(content_layout)
+            main_layout.addWidget(self.progress_bar)
+        self.setLayout(main_layout)
+
+        # If not enabled, show offline label (optional)
+        if not enabled:
             offline_layout = QVBoxLayout(self)
             offline_layout.setContentsMargins(0, 0, 0, 0)
             offline_layout.setSpacing(0)
@@ -1809,6 +1810,7 @@ class StartupWizardDialog(QDialog):
         )
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setMinimumHeight(72)
+       
         self.accept_label.setFixedWidth(360)
         self.accept_label.set_highlight(False)   # Always use white infill
         main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
