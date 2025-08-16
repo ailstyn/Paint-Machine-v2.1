@@ -539,7 +539,7 @@ def startup(after_startup):
 
             print("[DEBUG] AUTO/SMART mode selected, advancing wizard to step 2.")
 
-            def after_fade_out():
+            def continue_to_step2():
                 wizard.set_step(2)
                 wizard.step_mode = "accept_only"
                 wizard.set_main_label("CALIBRATION STEP 2")
@@ -554,8 +554,8 @@ def startup(after_startup):
                 QApplication.instance().active_dialog = wizard
                 wizard.show()
 
-            filling_mode_dialog.fade_anim.finished.connect(after_fade_out)
             filling_mode_dialog.accept()
+            QTimer.singleShot(400, continue_to_step2)  # 400ms matches fade duration
 
         filling_mode_dialog = SelectionDialog(
             options=filling_modes,
