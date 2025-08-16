@@ -520,6 +520,9 @@ def startup(after_startup):
         enabled=station_enabled
     )
 
+    # Set wizard as the active dialog so handle_button_presses works
+    QApplication.instance().active_dialog = wizard
+
     def after_station_verified():
         print("[DEBUG] Station verification complete, opening filling mode dialog.")
         filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
@@ -561,6 +564,7 @@ def startup(after_startup):
     wizard.show()
     print("[DEBUG] StartupWizardDialog shown.")
 
+    # --- Step 1: Wait for CONTINUE, then TARE_SCALE ---
     def wizard_continue_logic():
         print(f"[DEBUG] wizard_continue_logic called, current_step={wizard.current_step}")
         if wizard.current_step == 2:
