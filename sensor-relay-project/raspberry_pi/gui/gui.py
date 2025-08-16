@@ -1416,7 +1416,7 @@ class FadeDialog(QDialog):
         self.fade_anim.finished.connect(on_finished)
         self.fade_anim.start()
 
-class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
+class SelectionDialog(FadeDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
         try:
             super().__init__(parent)
@@ -1425,9 +1425,9 @@ class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
             self.setMinimumWidth(400)
             self.setMinimumHeight(320)
             self._bg_color = QColor("#222")
-            self._border_radius = 0  # No rounded corners
-            self._border_color = QColor("#888")  # Medium grey
-            self._border_width = 3   # Thin border
+            self._border_radius = 0
+            self._border_color = QColor("#888")
+            self._border_width = 3
 
             self.selected_index = 0
             self.options = options
@@ -1442,10 +1442,11 @@ class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
                 title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(title_label)
 
-            # Option labels
+            # Option labels in frames
             button_container = QWidget()
             button_layout = QVBoxLayout(button_container)
             button_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+            self.label_frames = []
             self.labels = []
             for _, display_text in self.options:
                 item_label = OutlinedLabel(display_text, font_size=28, bold=True, color="#fff") if outlined else QLabel(display_text)
@@ -1456,8 +1457,16 @@ class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
                     palette = item_label.palette()
                     palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
                     item_label.setPalette(palette)
+                frame = QFrame()
+                frame.setFrameShape(QFrame.Shape.StyledPanel)
+                frame.setLineWidth(0)
+                frame.setLayout(QVBoxLayout())
+                frame.layout().setContentsMargins(0, 0, 0, 0)
+                frame.layout().addWidget(item_label)
+                frame.setFixedSize(340, 72)
+                self.label_frames.append(frame)
                 self.labels.append(item_label)
-                button_layout.addWidget(item_label)
+                button_layout.addWidget(frame)
             layout.addWidget(button_container)
             self.setLayout(layout)
             self.setModal(True)
@@ -1467,13 +1476,18 @@ class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
 
     def update_selection_box(self):
         try:
-            for i, label in enumerate(self.labels):
-                # Only use drop shadow for highlight, do not set label.set_highlight(True)
+            for i, frame in enumerate(self.label_frames):
+                frame.setGraphicsEffect(None)
                 if i == self.selected_index:
-                    set_frame_highlight(label, True)
+                    shadow = QGraphicsDropShadowEffect(frame)
+                    shadow.setOffset(0, 0)
+                    shadow.setBlurRadius(48)
+                    shadow.setColor(QColor(255, 240, 80, 230))
+                    frame.setGraphicsEffect(shadow)
                 else:
-                    set_frame_highlight(label, False)
-                # Always keep label.set_highlight(False) for SelectionDialog
+                    frame.setGraphicsEffect(None)
+            # Always keep label.set_highlight(False) for SelectionDialog
+            for label in self.labels:
                 if isinstance(label, OutlinedLabel):
                     label.set_highlight(False)
         except Exception as e:
