@@ -529,28 +529,33 @@ def startup(after_startup):
         def filling_mode_selected(mode, index):
             print(f"[DEBUG] Filling mode selected: {mode} (index={index})")
             wizard.filling_mode = mode
-            filling_mode_dialog.accept()
             if mode == "MANUAL":
                 print("[DEBUG] MANUAL mode selected, skipping calibration steps.")
-                # Create RelayControlApp and show it, then close wizard
+                filling_mode_dialog.accept()
                 if after_startup:
                     after_startup()
                 wizard.accept()
                 return
+
             print("[DEBUG] AUTO/SMART mode selected, advancing wizard to step 2.")
-            wizard.set_step(2)
-            wizard.step_mode = "accept_only"
-            wizard.set_main_label("CALIBRATION STEP 2")
-            wizard.set_info_text(
-                "Remove all weight from each active station.\nPress CONTINUE when ready."
-            )
-            wizard.set_station_labels(
-                names=station_names,
-                connected=station_connected,
-                enabled=station_enabled
-            )
-            QApplication.instance().active_dialog = wizard  # Ensure button presses go to wizard
-            wizard.show()
+
+            def after_fade_out():
+                wizard.set_step(2)
+                wizard.step_mode = "accept_only"
+                wizard.set_main_label("CALIBRATION STEP 2")
+                wizard.set_info_text(
+                    "Remove all weight from each active station.\nPress CONTINUE when ready."
+                )
+                wizard.set_station_labels(
+                    names=station_names,
+                    connected=station_connected,
+                    enabled=station_enabled
+                )
+                QApplication.instance().active_dialog = wizard
+                wizard.show()
+
+            filling_mode_dialog.fade_anim.finished.connect(after_fade_out)
+            filling_mode_dialog.accept()
 
         filling_mode_dialog = SelectionDialog(
             options=filling_modes,
@@ -567,7 +572,6 @@ def startup(after_startup):
     wizard.show()
     print("[DEBUG] StartupWizardDialog shown.")
 
-    # --- Step 1: Wait for CONTINUE, then TARE_SCALE ---
     def wizard_continue_logic():
         print(f"[DEBUG] wizard_continue_logic called, current_step={wizard.current_step}")
         if wizard.current_step == 2:
@@ -606,7 +610,6 @@ def startup(after_startup):
             QApplication.instance().active_dialog = wizard
         elif wizard.current_step == 4:
             print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
-            # Create RelayControlApp and show it, then close wizard
             if after_startup:
                 after_startup()
             wizard.accept()
