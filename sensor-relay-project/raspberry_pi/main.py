@@ -508,6 +508,7 @@ def startup(after_startup):
     wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
     wizard.set_step(0)
+    wizard.step_mode = "station_select"
     wizard.set_main_label("CALIBRATION STEP 1")
     wizard.set_info_text(
         "Are these the filling stations you are using?\n"
@@ -519,13 +520,12 @@ def startup(after_startup):
         connected=station_connected,
         enabled=station_enabled
     )
-
-    # Set wizard as the active dialog so handle_button_presses works
     QApplication.instance().active_dialog = wizard
 
     def after_station_verified():
         print("[DEBUG] Station verification complete, opening filling mode dialog.")
         filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
+
         def filling_mode_selected(mode, index):
             print(f"[DEBUG] Filling mode selected: {mode} (index={index})")
             wizard.filling_mode = mode
@@ -585,6 +585,7 @@ def startup(after_startup):
                     except Exception as e:
                         print(f"[DEBUG] Failed to send TARE_SCALE to station {i+1}: {e}")
             wizard.set_step(3)
+            wizard.step_mode = "accept_only"
             wizard.set_main_label("CALIBRATION STEP 3")
             wizard.set_info_text(
                 "Place a full bottle in each active station.\nPress CONTINUE when ready."
@@ -598,6 +599,7 @@ def startup(after_startup):
         elif wizard.current_step == 3:
             print("[DEBUG] CONTINUE pressed on step 3, moving to step 4.")
             wizard.set_step(4)
+            wizard.step_mode = "accept_only"
             wizard.set_main_label("CALIBRATION STEP 4")
             wizard.set_info_text(
                 "Place an empty bottle in each active station\nPress CONTINUE when ready"
