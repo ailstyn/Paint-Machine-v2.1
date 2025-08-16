@@ -85,14 +85,9 @@ class OutlinedLabel(QLabel):
         inner_rect = rect.adjusted(pad, pad, -pad, -pad)
 
         # Draw background and border
-        if self._highlighted:
-            painter.setBrush(self._highlight_color)
-            painter.setPen(QPen(self._highlight_border_color, self._highlight_border_width))
-            text_color = self._default_color  # Always use white fill
-        else:
-            painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
-            painter.setPen(QPen(self._normal_border_color, self._normal_border_width))
-            text_color = self._default_color
+        painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(self._normal_border_color, self._normal_border_width))
+        text_color = self._default_color
 
         painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
 
@@ -109,12 +104,10 @@ class OutlinedLabel(QLabel):
         path = QPainterPath()
         path.addText(x, y, font, text)
 
-        # Use self._outline_width for the outline
         painter.setPen(QPen(QColor("black"), self._outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
 
-        # Draw fill
         painter.setPen(QPen(text_color, 1))
         painter.setBrush(text_color)
         painter.drawPath(path)
@@ -520,9 +513,13 @@ class MenuDialog(QDialog):
 
     def update_selection_box(self):
         for i, label in enumerate(self.labels):
+            # Only use drop shadow for highlight, do not set label.set_highlight(True)
             if i == self.selected_index:
-                label.set_highlight(True)
+                set_frame_highlight(label, True)
             else:
+                set_frame_highlight(label, False)
+            # Always keep label.set_highlight(False) for SelectionDialog
+            if isinstance(label, OutlinedLabel):
                 label.set_highlight(False)
 
     def select_next(self):
@@ -1412,8 +1409,10 @@ class FadeDialog(QDialog):
         self.fade_anim.setStartValue(1)
         self.fade_anim.setEndValue(0)
         def on_finished():
-            print("[DEBUG] FadeDialog.fade_anim finished, calling super().accept()")
-            super(FadeDialog, self).accept()  # <-- Fix here!
+            print("[DEBUG] FadeDialog.fade_anim finished, hiding dialog before accept")
+            self.opacity_effect.setOpacity(0)
+            self.hide()
+            QTimer.singleShot(100, lambda: super(FadeDialog, self).accept())
         self.fade_anim.finished.connect(on_finished)
         self.fade_anim.start()
 
@@ -1469,15 +1468,14 @@ class SelectionDialog(FadeDialog):  # <-- Use FadeDialog as base
     def update_selection_box(self):
         try:
             for i, label in enumerate(self.labels):
-                # Use drop shadow for highlight, no background color change
+                # Only use drop shadow for highlight, do not set label.set_highlight(True)
                 if i == self.selected_index:
                     set_frame_highlight(label, True)
-                    if isinstance(label, OutlinedLabel):
-                        label.set_highlight(False)
                 else:
                     set_frame_highlight(label, False)
-                    if isinstance(label, OutlinedLabel):
-                        label.set_highlight(False)
+                # Always keep label.set_highlight(False) for SelectionDialog
+                if isinstance(label, OutlinedLabel):
+                    label.set_highlight(False)
         except Exception as e:
             logging.error(f"Error in SelectionDialog.update_selection_box: {e}", exc_info=True)
 
