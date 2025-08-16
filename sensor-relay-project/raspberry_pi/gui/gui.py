@@ -1420,7 +1420,6 @@ class FadeDialog(QDialog):
 
 class SelectionDialog(FadeDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
-        try:
             super().__init__(parent)
             self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
             self.setModal(True)
@@ -1452,11 +1451,9 @@ class SelectionDialog(FadeDialog):
                 item_label.setFixedSize(320, 64)
                 self.labels.append(item_label)
                 layout.addWidget(item_label)
-        self.setLayout(layout)
-        self.setModal(True)
-        self.update_selection_box()
-        except Exception as e:
-            logging.error(f"Error in SelectionDialog.__init__: {e}", exc_info=True)
+            self.setLayout(layout)
+            self.setModal(True)
+            self.update_selection_box()
 
     def update_selection_box(self):
         for i, label in enumerate(self.labels):
