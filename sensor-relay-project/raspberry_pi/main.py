@@ -560,6 +560,7 @@ def startup(after_startup):
         )
         filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
         filling_mode_dialog.show()
+        QApplication.instance().active_dialog = filling_mode_dialog
         print("[DEBUG] Filling mode dialog shown.")
 
     wizard.on_station_verified = after_station_verified
@@ -589,6 +590,7 @@ def startup(after_startup):
                 connected=station_connected,
                 enabled=station_enabled
             )
+            QApplication.instance().active_dialog = wizard
         elif wizard.current_step == 3:
             print("[DEBUG] CONTINUE pressed on step 3, moving to step 4.")
             wizard.set_step(4)
@@ -601,6 +603,7 @@ def startup(after_startup):
                 connected=station_connected,
                 enabled=station_enabled
             )
+            QApplication.instance().active_dialog = wizard
         elif wizard.current_step == 4:
             print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
             # Create RelayControlApp and show it, then close wizard
