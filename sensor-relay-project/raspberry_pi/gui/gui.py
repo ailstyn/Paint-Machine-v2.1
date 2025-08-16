@@ -22,29 +22,31 @@ sys.excepthook = qt_exception_hook
 from PyQt6.QtWidgets import QGraphicsDropShadowEffect
 
 def set_frame_highlight(frame, highlighted):
+    # Remove all drop shadow effects and just set a property for paintEvent
     frame.setGraphicsEffect(None)
-    if highlighted:
-        shadow = QGraphicsDropShadowEffect(frame)
-        shadow.setOffset(0, 0)
-        shadow.setBlurRadius(48)  # Large shadow, instant
-        # More opaque and saturated yellow
-        shadow.setColor(QColor(255, 240, 80, 230))  # Higher alpha (was 180), brighter yellow
-        frame.setGraphicsEffect(shadow)
-    else:
-        frame.setGraphicsEffect(None)
+    frame.setProperty("highlighted", highlighted)
+    frame.update()
 
 def set_label_highlight(label, highlighted):
-    # Only use drop shadow for station selection in StartupWizardDialog step 0
+    # Remove all drop shadow effects and just set a property for paintEvent
     label.setGraphicsEffect(None)
+    label._highlighted = highlighted
+    label.update()
+
+# Update frame_paintEvent to use background color for highlight
+def frame_paintEvent(self, event):
+    painter = QPainter(self)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    rect = self.rect()
+    highlighted = self.property("highlighted") if self.property("highlighted") is not None else False
+    radius = 10  # Match the name label's border_radius
     if highlighted:
-        # For station selection highlight (step 0 only)
-        shadow = QGraphicsDropShadowEffect(label)
-        shadow.setOffset(0, 0)
-        shadow.setBlurRadius(48)
-        shadow.setColor(QColor(255, 240, 80, 180))
-        label.setGraphicsEffect(shadow)
+        painter.setBrush(QColor("#F6EB61"))  # Light yellow
+        painter.setPen(Qt.PenStyle.NoPen)
     else:
-        label.setGraphicsEffect(None)
+        painter.setBrush(Qt.BrushStyle.NoBrush)  # Transparent
+        painter.setPen(Qt.PenStyle.NoPen)
+    painter.drawRoundedRect(rect, radius, radius)
 
 class OutlinedLabel(QLabel):
     """
@@ -81,16 +83,18 @@ class OutlinedLabel(QLabel):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
-
-        # Padding
         pad = self._default_padding
         inner_rect = rect.adjusted(pad, pad, -pad, -pad)
 
-        # Draw background and border
-        painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
-        painter.setPen(QPen(self._normal_border_color, self._normal_border_width))
-        text_color = self._default_color
+        # Highlight: yellow background, dark text
+        if self._highlighted:
+            painter.setBrush(QColor("#F6EB61"))  # Light yellow
+            text_color = QColor("#222")          # Dark text
+        else:
+            painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
+            text_color = self._default_color
 
+        painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
 
         # Draw text with outline effect
@@ -1808,6 +1812,7 @@ class StartupWizardDialog(QDialog):
         h_layout = QHBoxLayout()
         h_layout.setContentsMargins(0, 0, 0, 0)
         h_layout.setSpacing(0)
+
         h_layout.addLayout(main_layout, stretch=10)
         h_layout.addWidget(self.button_column, stretch=0)
         self.setLayout(h_layout)
@@ -1957,18 +1962,3 @@ class StartupWizardDialog(QDialog):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(rect)
         super().paintEvent(event)
-
-# Add this to QFrame subclass or monkey-patch QFrame if you want to handle highlight in paintEvent:
-def frame_paintEvent(self, event):
-    painter = QPainter(self)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    rect = self.rect()
-    highlighted = self.property("highlighted") if self.property("highlighted") is not None else False
-    radius = 10  # Match the name label's border_radius
-    if highlighted:
-        painter.setBrush(QColor("#F6EB61"))
-        painter.setPen(QPen(QColor("#F6EB61"), 4))
-    else:
-        painter.setBrush(QColor("#222"))
-        painter.setPen(QPen(QColor("#ccc"), 2))
-    painter.drawRoundedRect(rect, radius, radius)
