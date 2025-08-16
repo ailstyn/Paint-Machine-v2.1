@@ -94,6 +94,7 @@ def handle_current_weight(station_index, arduino, **ctx):
         weight_bytes = arduino.read(4)
         if len(weight_bytes) == 4:
             weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+            print(f"[DEBUG] handle_current_weight: station={station_index}, weight={weight}")
             widgets = ctx.get('station_widgets')
             app = ctx.get('app')
             target_weight = ctx.get('target_weight', 500.0)
@@ -115,6 +116,7 @@ def handle_current_weight(station_index, arduino, **ctx):
                             widget.weight_label.setText(f"{oz:.1f} oz")
             # StartupWizardDialog support
             if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
+                print(f"[DEBUG] Calling set_weight on StartupWizardDialog for station {station_index} with weight {weight}")
                 ctx['active_dialog'].set_weight(station_index, weight)
         else:
             logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
