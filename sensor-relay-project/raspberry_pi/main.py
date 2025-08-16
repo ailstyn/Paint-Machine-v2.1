@@ -94,7 +94,7 @@ def handle_current_weight(station_index, arduino, **ctx):
         weight_bytes = arduino.read(4)
         if len(weight_bytes) == 4:
             weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            print(f"[DEBUG] handle_current_weight: station={station_index}, weight={weight}")
+            #print(f"[DEBUG] handle_current_weight: station={station_index}, weight={weight}")
             widgets = ctx.get('station_widgets')
             app = ctx.get('app')
             target_weight = ctx.get('target_weight', 500.0)
@@ -1003,6 +1003,10 @@ def main():
         button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
         button_timer.start(50)
 
+        # Start poll_hardware BEFORE startup
+        timer.timeout.connect(lambda: poll_hardware(app_qt))
+        timer.start(35)
+
         def after_startup():
             app = RelayControlApp(
                 station_enabled=station_enabled,
@@ -1015,9 +1019,10 @@ def main():
                 if station_enabled[i]:
                     widget.set_weight(0, target_weight, "g")
 
+            # Reconnect poll_hardware to RelayControlApp after startup
+            timer.timeout.disconnect()
             timer.timeout.connect(lambda: poll_hardware(app))
-            timer.start(35)
-
+            # timer already started, just reconnect
             app.show()
 
         # Run startup and pass after_startup as a callback
