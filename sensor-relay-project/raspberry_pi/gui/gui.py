@@ -1861,17 +1861,18 @@ class StartupWizardDialog(QDialog):
                 if box.enabled_label:
                     box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
                     box.set_enabled(self.station_enabled[i], STATION_COLORS[i % len(STATION_COLORS)])
-            # Weight
-            weight = "--"
-            if self.weight_texts and i < len(self.weight_texts) and self.weight_texts[i] is not None:
-                weight = self.weight_texts[i]
+            # Always update weight label with latest value
             if box.weight_label:
-                box.set_weight(weight)
+                box.weight_label.setText(self.weight_texts[i])
         self.update_highlight()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
-        # print(f"[DEBUG] set_weight called: current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
-        if 0 <= station_index < len(self.station_boxes):
+        # Always update if station is enabled and connected
+        if (
+            0 <= station_index < len(self.station_boxes)
+            and self.station_enabled[station_index]
+            and self.station_connected[station_index]
+        ):
             box = self.station_boxes[station_index]
             box.set_weight(current_weight, target_weight, unit)
             # Optionally update self.weight_texts for other uses
