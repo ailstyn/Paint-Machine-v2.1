@@ -1899,7 +1899,7 @@ class StartupWizardDialog(QDialog):
             )
             box.setMinimumWidth(216)
             box.setMinimumHeight(110)
-            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.PolicyExpanding)
+            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
             frame.setObjectName(f"stationFrame_{i}")
