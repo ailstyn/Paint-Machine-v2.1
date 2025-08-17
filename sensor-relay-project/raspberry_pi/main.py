@@ -41,6 +41,7 @@ console.setFormatter(formatter)
 logging.getLogger().addHandler(console)
 
 print(f"Logging to: {ERROR_LOG_FILE}")
+print(f"Logging to: {os.path.abspath(ERROR_LOG_FILE)}")
 print(f"Current working directory: {os.getcwd()}")
 
 logging.error("Test error log entry: If you see this, logging is working.")
