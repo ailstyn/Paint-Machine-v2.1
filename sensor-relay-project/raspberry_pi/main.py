@@ -20,12 +20,11 @@ import logging
 import sys
 from datetime import datetime
 
-# Ensure error log directory exists (only once)
-os.makedirs(config.ERROR_LOG_DIR, exist_ok=True)
+ERROR_LOG_DIR = "logs/errors"
+os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 
-# Create a dated error log filename using config.ERROR_LOG_DIR
 ERROR_LOG_FILE = os.path.join(
-    config.ERROR_LOG_DIR,
+    ERROR_LOG_DIR,
     f"error_log_{datetime.now().strftime('%Y-%m-%d')}.txt"
 )
 
@@ -42,8 +41,8 @@ console.setFormatter(formatter)
 logging.getLogger().addHandler(console)
 
 print(f"Logging to: {ERROR_LOG_FILE}")
+print(f"Current working directory: {os.getcwd()}")
 
-# Test log entry
 logging.error("Test error log entry: If you see this, logging is working.")
 
 def log_uncaught_exceptions(exctype, value, tb):
