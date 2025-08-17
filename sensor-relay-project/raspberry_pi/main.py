@@ -764,10 +764,16 @@ def startup(after_startup):
                     QApplication.processEvents()
                     # You could add live feedback here if needed
     
-                # After loop exits (CONTINUE pressed), validate (if needed)
-                # For empty bottle step, add validation if required
-                if DEBUG:
-                    print("[DEBUG] CONTINUE pressed
+            # After loop exits (CONTINUE pressed), validate (if needed)
+            # For empty bottle step, add validation if required
+            if DEBUG:
+                print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
+            if after_startup:
+                after_startup()
+            wizard.accept()
+        else:
+            break
+        
     # --- 8. Finish startup and launch main app ---
     if wizard.current_step == 4:
         if DEBUG:
