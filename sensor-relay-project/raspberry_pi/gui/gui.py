@@ -290,7 +290,7 @@ class StationBoxWidget(QWidget):
 
         self.setMinimumWidth(216)
         self.setMinimumHeight(110)
-        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
 
     def set_connected(self, connected, color):
         self.connected = connected
@@ -408,7 +408,7 @@ class StationWidget(QWidget):
         else:
             self.tr = lambda k: LANGUAGES["en"].get(k, k)
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.bg_color = QColor(bg_color)
         self.enabled = enabled
 
@@ -1074,7 +1074,7 @@ class BottleProgressBar(QWidget):
             self.max_value = max_value
             self.value = value
             self.bar_color = QColor(bar_color)
-            self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
             # No stylesheet needed
         except Exception as e:
             logging.error(f"Error in BottleProgressBar.__init__: {e}", exc_info=True)
@@ -1378,7 +1378,7 @@ class SetTimeLimitDialog(QDialog):
                 self.up_labels.append(up)
                 up_arrows_layout.addWidget(up)
                 if i == 2:  # After the third arrow, add a spacer for the decimal point
-                    spacer = QSpacerItem(24, 0, QSizePolicy.Fixed, QSizePolicy.Minimum)
+                    spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
                     up_arrows_layout.addItem(spacer)
             layout.addLayout(up_arrows_layout)
 
@@ -1420,7 +1420,7 @@ class SetTimeLimitDialog(QDialog):
                 self.down_labels.append(down)
                 down_arrows_layout.addWidget(down)
                 if i == 2:  # After the third arrow, add a spacer for the decimal point
-                    spacer = QSpacerItem(24, 0, QSizePolicy.Fixed, QSizePolicy.Minimum)
+                    spacer = QSpacerItem(24, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
                     down_arrows_layout.addItem(spacer)
             layout.addLayout(down_arrows_layout)
 
@@ -1661,7 +1661,7 @@ class StationStatusDialog(QDialog):
             frame.layout().setContentsMargins(1, 1, 1, 1)
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box_widget)
-            frame.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             # Use custom paintEvent for highlight and rounded corners
             frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
             self.station_frames.append(frame)
@@ -1899,7 +1899,7 @@ class StartupWizardDialog(QDialog):
             )
             box.setMinimumWidth(216)
             box.setMinimumHeight(110)
-            box.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
+            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
             self.station_boxes.append(box)
             frame = QFrame()
             frame.setObjectName(f"stationFrame_{i}")
@@ -1910,7 +1910,7 @@ class StartupWizardDialog(QDialog):
 
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
-            frame.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
             # Use custom paintEvent for highlight and rounded corners
             frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
             self.station_frames.append(frame)
