@@ -382,6 +382,24 @@ def load_station_serials():
         logging.error(f"Error reading serials from config: {e}")
     return serials
 
+def load_bottle_sizes(config_path):
+    bottle_sizes = {}
+    try:
+        with open(config_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("bottle_"):
+                    key, value = line.split("=")
+                    name = key.replace("bottle_", "")
+                    min_str, max_str = value.split(":")
+                    bottle_sizes[name] = (float(min_str), float(max_str))
+    except Exception as e:
+        if DEBUG:
+            print(f"Error loading bottle sizes: {e}")
+    if DEBUG:
+        print(f"[DEBUG] Loaded bottle sizes: {bottle_sizes}")
+    return bottle_sizes
+
 def clear_serial_buffer(arduino):
     """Read and discard all available bytes from the Arduino serial buffer."""
     while arduino.in_waiting > 0:
@@ -434,24 +452,30 @@ def log_final_weight(station_index, final_weight):
 def startup(after_startup):
     global arduinos, scale_calibrations, station_enabled, station_serials
 
-    print("[DEBUG] === Startup sequence initiated ===")
-
-    # --- Setup: Load calibration, serials, enabled states ---
-    print("[DEBUG] Loading calibration and serials...")
+    # --- 1. Load calibration, serials, enabled states ---
+    if DEBUG:
+        print("[DEBUG] === Startup sequence initiated ===")
+        print("[DEBUG] Loading calibration and serials...")
     load_scale_calibrations()
     station_serials = load_station_serials()
     station_enabled = load_station_enabled(config_file)
     station_names = [f"STATION {i+1}" for i in range(NUM_STATIONS)]
-    print(f"[DEBUG] station_serials: {station_serials}")
-    print(f"[DEBUG] station_enabled: {station_enabled}")
+    if DEBUG:
+        print(f"[DEBUG] station_serials: {station_serials}")
+        print(f"[DEBUG] station_enabled: {station_enabled}")
 
-    # --- Setup: Connect and initialize Arduinos ---
-    print("[DEBUG] Connecting and initializing Arduinos...")
+    # Load bottle sizes at startup
+    bottle_sizes = load_bottle_sizes(config_file)
+
+    # --- 2. Connect and initialize Arduinos ---
+    if DEBUG:
+        print("[DEBUG] Connecting and initializing Arduinos...")
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
     for port in config.arduino_ports:
         try:
-            print(f"[DEBUG] Trying port {port}...")
+            if DEBUG:
+                print(f"[DEBUG] Trying port {port}...")
             arduino = serial.Serial(port, 9600, timeout=0.5)
             arduino.reset_input_buffer()
             arduino.write(config.RESET_HANDSHAKE)
@@ -462,27 +486,32 @@ def startup(after_startup):
             for _ in range(60):
                 if arduino.in_waiting > 0:
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                    print(f"[DEBUG] Received from {port}: {repr(line)}")
+                    if DEBUG:
+                        print(f"[DEBUG] Received from {port}: {repr(line)}")
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
-                        print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
+                        if DEBUG:
+                            print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
-                print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
+                if DEBUG:
+                    print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
             station_index = station_serials.index(station_serial_number)
             arduino.write(config.CONFIRM_ID)
             arduino.flush()
-            print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
+            if DEBUG:
+                print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
                     req = arduino.read(1)
                     if req == config.REQUEST_CALIBRATION:
-                        print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        if DEBUG:
+                            print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                         arduino.write(config.REQUEST_CALIBRATION)
                         arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                         got_request = True
@@ -491,22 +520,29 @@ def startup(after_startup):
                         arduino.reset_input_buffer()
                 time.sleep(0.1)
             if not got_request:
-                print(f"[DEBUG] Station {station_index+1}: Did not receive calibration request, skipping.")
+                if DEBUG:
+                    print(f"[DEBUG] Station {station_index+1}: Did not receive calibration request, skipping.")
                 arduino.close()
                 continue
             arduinos[station_index] = arduino
             station_connected[station_index] = True
-            print(f"[DEBUG] Station {station_index+1} on {port} initialized and ready.")
+            if DEBUG:
+                print(f"[DEBUG] Station {station_index+1} on {port} initialized and ready.")
         except Exception as e:
-            print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
+            if DEBUG:
+                print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
 
-    print("[DEBUG] Checking E-STOP state...")
+    # --- 3. Wait for E-STOP release ---
+    if DEBUG:
+        print("[DEBUG] Checking E-STOP state...")
     while GPIO.input(config.E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
-    print("[DEBUG] E-STOP released, continuing startup.")
+    if DEBUG:
+        print("[DEBUG] E-STOP released, continuing startup.")
 
-    # --- Step 0: StartupWizardDialog, station verification ---
-    print("[DEBUG] Creating StartupWizardDialog...")
+    # --- 4. Station verification dialog ---
+    if DEBUG:
+        print("[DEBUG] Creating StartupWizardDialog...")
     wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
     wizard.setWindowState(Qt.WindowState.WindowFullScreen)
     wizard.set_step(0)
@@ -523,25 +559,47 @@ def startup(after_startup):
         enabled=station_enabled
     )
     QApplication.instance().active_dialog = wizard
+    wizard.show()
+    if DEBUG:
+        print("[DEBUG] StartupWizardDialog shown.")
 
-    def after_station_verified():
-        print("[DEBUG] Station verification complete, opening filling mode dialog.")
-        filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
+    # --- 5. Filling mode selection dialog ---
+    filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
+    filling_mode_dialog = SelectionDialog(
+        options=filling_modes,
+        parent=wizard,
+        title="SET FILLING MODE",
+        on_select=None  # We'll handle selection below
+    )
+    filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+    filling_mode_dialog.show()
+    QApplication.instance().active_dialog = filling_mode_dialog
+    if DEBUG:
+        print("[DEBUG] Filling mode dialog shown.")
 
-        def filling_mode_selected(mode, index):
-            print(f"[DEBUG] Filling mode selected: {mode} (index={index})")
+    # --- 6. Filling mode selection logic ---
+    mode_selected = False
+    while not mode_selected:
+        QApplication.processEvents()
+        if filling_mode_dialog.result() != 0:  # Dialog closed
+            mode_selected = True
+            selected_index = filling_mode_dialog.selected_index
+            mode = filling_modes[selected_index][1]
             wizard.filling_mode = mode
+            if DEBUG:
+                print(f"[DEBUG] Filling mode selected: {mode} (index={selected_index})")
             if mode == "MANUAL":
-                print("[DEBUG] MANUAL mode selected, skipping calibration steps.")
+                if DEBUG:
+                    print("[DEBUG] MANUAL mode selected, skipping calibration steps.")
                 filling_mode_dialog.accept()
                 if after_startup:
                     after_startup()
                 wizard.accept()
                 return
-
-            print("[DEBUG] AUTO/SMART mode selected, advancing wizard to step 2.")
-
-            def continue_to_step2():
+            else:
+                if DEBUG:
+                    print("[DEBUG] AUTO/SMART mode selected, advancing wizard to step 2.")
+                filling_mode_dialog.accept()
                 wizard.set_step(2)
                 wizard.step_mode = "accept_only"
                 wizard.set_main_label("CALIBRATION STEP 2")
@@ -556,79 +614,157 @@ def startup(after_startup):
                 QApplication.instance().active_dialog = wizard
                 wizard.show()
 
-            filling_mode_dialog.accept()
-            QTimer.singleShot(400, continue_to_step2)  # 400ms matches fade duration
+    # --- 7. Calibration steps ---
 
-        filling_mode_dialog = SelectionDialog(
-            options=filling_modes,
-            parent=wizard,
-            title="SET FILLING MODE",
-            on_select=filling_mode_selected
+    # Step 1: Ask user to clear all scales and press CONTINUE
+    if wizard.current_step == 2:
+        if DEBUG:
+            print("[DEBUG] Calibration Step 2: Ask user to clear all scales.")
+        wizard.set_main_label("CALIBRATION STEP 2")
+        wizard.set_info_text(
+            "Remove all weight from each active station.\nPress CONTINUE when ready."
         )
-        filling_mode_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-        filling_mode_dialog.show()
-        QApplication.instance().active_dialog = filling_mode_dialog
-        print("[DEBUG] Filling mode dialog shown.")
+        wizard.set_station_labels(
+            names=station_names,
+            connected=station_connected,
+            enabled=station_enabled
+        )
+        QApplication.instance().active_dialog = wizard
+        wizard.show()
 
-    wizard.on_station_verified = after_station_verified
-    wizard.show()
-    print("[DEBUG] StartupWizardDialog shown.")
+        # Wait for user to press CONTINUE
+        while wizard.current_step == 2:
+            QApplication.processEvents()
+            # CONTINUE pressed
+            if wizard.step_mode == "accept_only" and wizard.current_step == 2:
+                if DEBUG:
+                    print("[DEBUG] CONTINUE pressed on step 2, sending TARE_SCALE to enabled stations.")
+                for i, arduino in enumerate(arduinos):
+                    if arduino and station_enabled[i]:
+                        try:
+                            arduino.write(config.TARE_SCALE)
+                            arduino.flush()
+                            if DEBUG:
+                                print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
+                        except Exception as e:
+                            if DEBUG:
+                                print(f"[DEBUG] Failed to send TARE_SCALE to station {i+1}: {e}")
+                wizard.set_step(3)
+                wizard.step_mode = "accept_only"
+                break
 
-    def wizard_continue_logic():
-        print(f"[DEBUG] wizard_continue_logic called, current_step={wizard.current_step}")
-        if wizard.current_step == 2:
-            print("[DEBUG] CONTINUE pressed on step 2, sending TARE_SCALE to enabled stations.")
-            for i, arduino in enumerate(arduinos):
-                if arduino and station_enabled[i]:
-                    try:
-                        arduino.write(config.TARE_SCALE)
-                        arduino.flush()
-                        print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
-                    except Exception as e:
-                        print(f"[DEBUG] Failed to send TARE_SCALE to station {i+1}: {e}")
-            wizard.set_step(3)
-            wizard.step_mode = "accept_only"
-            wizard.set_main_label("CALIBRATION STEP 3")
-            wizard.set_info_text(
-                "Place a full bottle in each active station.\nPress CONTINUE when ready."
-            )
-            wizard.set_station_labels(
-                names=station_names,
-                connected=station_connected,
-                enabled=station_enabled
-            )
-            QApplication.instance().active_dialog = wizard
-        elif wizard.current_step == 3:
-            print("[DEBUG] CONTINUE pressed on step 3, moving to step 4.")
-            wizard.set_step(4)
-            wizard.step_mode = "accept_only"
-            wizard.set_main_label("CALIBRATION STEP 4")
-            wizard.set_info_text(
-                "Place an empty bottle in each active station\nPress CONTINUE when ready"
-            )
-            wizard.set_station_labels(
-                names=station_names,
-                connected=station_connected,
-                enabled=station_enabled
-            )
-            QApplication.instance().active_dialog = wizard
-        elif wizard.current_step == 4:
+    # Step 2: Ask user to place full bottles and press CONTINUE
+    if wizard.current_step == 3:
+        if DEBUG:
+            print("[DEBUG] Calibration Step 3: Ask user to place full bottles.")
+        wizard.set_main_label("CALIBRATION STEP 3")
+        wizard.set_info_text(
+            "Place a full bottle in each active station.\nPress CONTINUE when ready."
+        )
+        wizard.set_station_labels(
+            names=station_names,
+            connected=station_connected,
+            enabled=station_enabled
+        )
+        QApplication.instance().active_dialog = wizard
+        wizard.show()
+
+        # Wait for user to press CONTINUE
+        while wizard.current_step == 3:
+            QApplication.processEvents()
+            station_bottle_types = []
+            all_valid = True
+
+            # Check weights for each enabled station
+            for i in range(NUM_STATIONS):
+                if station_enabled[i]:
+                    weight = wizard.get_weight(i)
+                    matched_type = None
+                    for name, (min_w, max_w) in bottle_sizes.items():
+                        if min_w <= weight <= max_w:
+                            matched_type = name
+                            break
+                    box = wizard.station_boxes[i]
+                    if matched_type:
+                        box.weight_label.setStyleSheet("color: #11BD33;")  # Green
+                        station_bottle_types.append(matched_type)
+                    else:
+                        box.weight_label.setStyleSheet("color: #CD0A0A;")  # Red
+                        all_valid = False
+
+            # CONTINUE pressed
+            if wizard.step_mode == "accept_only" and wizard.current_step == 3:
+                # Check if all stations are valid and all bottle types match
+                if not all_valid:
+                    ping_buzzer_invalid()
+                    ping_buzzer_invalid()
+                    # Show info dialog for invalid weights
+                    wizard.show_info_dialog(
+                        "Calibration Error",
+                        "Please place a full bottle on each station to continue",
+                        timeout_ms=1800
+                    )
+                    if DEBUG:
+                        print("[DEBUG] Invalid bottle weights, not continuing.")
+                    continue  # Do not advance
+                elif len(set(station_bottle_types)) != 1:
+                    ping_buzzer_invalid()
+                    ping_buzzer_invalid()
+                    # Show info dialog for mismatched bottles
+                    wizard.show_info_dialog(
+                        "Calibration Error",
+                        "All bottles must be the same size",
+                        timeout_ms=1800
+                    )
+                    if DEBUG:
+                        print("[DEBUG] Bottle types do not match, not continuing.")
+                    continue  # Do not advance
+                else:
+                    if DEBUG:
+                        print(f"[DEBUG] All stations have valid and matching bottle type: {station_bottle_types[0]}")
+                    wizard.station_bottle_type = station_bottle_types[0]  # Save the matched type for next step
+                    wizard.set_step(4)
+                    wizard.step_mode = "accept_only"
+                    break
+
+    # Step 3: Ask user to place empty bottles and press CONTINUE
+    if wizard.current_step == 4:
+        if DEBUG:
+            print("[DEBUG] Calibration Step 4: Ask user to place empty bottles.")
+        wizard.set_main_label("CALIBRATION STEP 4")
+        wizard.set_info_text(
+            "Place an empty bottle in each active station\nPress CONTINUE when ready"
+        )
+        wizard.set_station_labels(
+            names=station_names,
+            connected=station_connected,
+            enabled=station_enabled
+        )
+        QApplication.instance().active_dialog = wizard
+        wizard.show()
+
+        # Wait for user to press CONTINUE
+        while wizard.current_step == 4:
+            QApplication.processEvents()
+            # CONTINUE pressed
+            if wizard.step_mode == "accept_only" and wizard.current_step == 4:
+                if DEBUG:
+                    print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
+                if after_startup:
+                    after_startup()
+                wizard.accept()
+                break
+
+    # --- 8. Finish startup and launch main app ---
+    if wizard.current_step == 4:
+        if DEBUG:
             print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
-            if after_startup:
-                after_startup()
-            wizard.accept()
+        if after_startup:
+            after_startup()
+        wizard.accept()
+    if DEBUG:
+        print("[DEBUG] StartupWizardDialog exec() finished.")
 
-    wizard._original_activate_selected = wizard.activate_selected
-    def patched_activate_selected():
-        print(f"[DEBUG] patched_activate_selected called, step_mode={wizard.step_mode}, current_step={wizard.current_step}")
-        if wizard.step_mode == "accept_only":
-            wizard_continue_logic()
-        else:
-            wizard._original_activate_selected()
-    wizard.activate_selected = patched_activate_selected
-
-    wizard.exec()
-    print("[DEBUG] StartupWizardDialog exec() finished.")
 def filling_mode_callback(mode):
     global filling_mode
     filling_mode = mode

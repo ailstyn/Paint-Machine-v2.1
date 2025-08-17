@@ -48,6 +48,35 @@ def frame_paintEvent(self, event):
         painter.setPen(Qt.PenStyle.NoPen)
     painter.drawRoundedRect(rect, radius, radius)
 
+class FadeDialog(QDialog):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.opacity_effect = QGraphicsOpacityEffect(self)
+        self.setGraphicsEffect(self.opacity_effect)
+        self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
+        self.fade_anim.setDuration(350)
+
+    def showEvent(self, event):
+        self.opacity_effect.setOpacity(0)
+        self.fade_anim.stop()
+        self.fade_anim.setStartValue(0)
+        self.fade_anim.setEndValue(1)
+        self.fade_anim.start()
+        super().showEvent(event)
+
+    def accept(self):
+        print("[DEBUG] FadeDialog.accept called, starting fade-out")
+        self.fade_anim.stop()
+        self.fade_anim.setStartValue(1)
+        self.fade_anim.setEndValue(0)
+        def on_finished():
+            print("[DEBUG] FadeDialog.fade_anim finished, hiding dialog before accept")
+            self.opacity_effect.setOpacity(0)
+            self.hide()
+            QTimer.singleShot(100, lambda: super(FadeDialog, self).accept())
+        self.fade_anim.finished.connect(on_finished)
+        self.fade_anim.start()
+
 class OutlinedLabel(QLabel):
     """
     QLabel with optional outline effect for station names and other prominent labels.
@@ -735,12 +764,11 @@ class RelayControlApp(QWidget):
         except Exception as e:
             logging.error(f"Error in RelayControlApp.set_language: {e}", exc_info=True)
 
-    def show_info_dialog(self, title, message):
-        try:
-            dialog = InfoDialog(title, message, self)
-            dialog.exec()
-        except Exception as e:
-            logging.error(f"Error in RelayControlApp.show_info_dialog: {e}", exc_info=True)
+    def show_info_dialog(self, title, message, timeout_ms=1800):
+        dlg = InfoDialog(title, message, self)
+        dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
+        dlg.show()
+        QTimer.singleShot(timeout_ms, dlg.accept)
 
     def update_station_weight(self, station_index, weight):
         """
@@ -893,47 +921,44 @@ class RelayControlApp(QWidget):
             else:
                 logging.error(f"Error connecting to station {station_index+1}: {e}")
 
-class InfoDialog(QDialog):
+class InfoDialog(FadeDialog):
     def __init__(self, title, message, parent=None):
-        try:
-            super().__init__(parent)
-            self.setWindowTitle(title)
-            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-            self.setModal(True)
-            self.setMinimumWidth(400)
-            self.setMinimumHeight(220)
-            self.setMaximumHeight(320)
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(220)
+        self.setMaximumHeight(320)
 
-            # Set background color and rounded corners using paintEvent
-            self._bg_color = QColor("#222")
-            self._border_radius = 24
+        # Set background color and rounded corners using paintEvent
+        self._bg_color = QColor("#222")
+        self._border_radius = 24
 
-            layout = QVBoxLayout(self)
-            layout.setContentsMargins(24, 24, 24, 24)
-            layout.setSpacing(12)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(12)
 
-            self.title_label = QLabel(title)
-            self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.title_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
-            title_palette = self.title_label.palette()
-            title_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.title_label.setPalette(title_palette)
-            self.title_label.setMinimumHeight(48)
-            layout.addWidget(self.title_label)
+        self.title_label = QLabel(title)
+        self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.title_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        title_palette = self.title_label.palette()
+        title_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        self.title_label.setPalette(title_palette)
+        self.title_label.setMinimumHeight(48)
+        layout.addWidget(self.title_label)
 
-            self.value_label = QLabel(message)
-            self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.value_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
-            value_palette = self.value_label.palette()
-            value_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-            self.value_label.setPalette(value_palette)
-            self.value_label.setMinimumHeight(72)
-            self.value_label.setMaximumHeight(150)
-            layout.addWidget(self.value_label)
+        self.value_label = QLabel(message)
+        self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.value_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+        value_palette = self.value_label.palette()
+        value_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        self.value_label.setPalette(value_palette)
+        self.value_label.setMinimumHeight(72)
+        self.value_label.setMaximumHeight(150)
+        layout.addWidget(self.value_label)
 
-            self.setLayout(layout)
-        except Exception as e:
-            logging.error(f"Error in InfoDialog.__init__: {e}", exc_info=True)
+        self.setLayout(layout)
 
     def set_message(self, message):
         try:
@@ -1399,35 +1424,6 @@ class SetTimeLimitDialog(QDialog):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
         super().paintEvent(event)
-
-class FadeDialog(QDialog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.opacity_effect = QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity_effect)
-        self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.fade_anim.setDuration(350)
-
-    def showEvent(self, event):
-        self.opacity_effect.setOpacity(0)
-        self.fade_anim.stop()
-        self.fade_anim.setStartValue(0)
-        self.fade_anim.setEndValue(1)
-        self.fade_anim.start()
-        super().showEvent(event)
-
-    def accept(self):
-        print("[DEBUG] FadeDialog.accept called, starting fade-out")
-        self.fade_anim.stop()
-        self.fade_anim.setStartValue(1)
-        self.fade_anim.setEndValue(0)
-        def on_finished():
-            print("[DEBUG] FadeDialog.fade_anim finished, hiding dialog before accept")
-            self.opacity_effect.setOpacity(0)
-            self.hide()
-            QTimer.singleShot(100, lambda: super(FadeDialog, self).accept())
-        self.fade_anim.finished.connect(on_finished)
-        self.fade_anim.start()
 
 class SelectionDialog(FadeDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
