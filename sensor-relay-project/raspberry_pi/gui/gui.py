@@ -5,7 +5,7 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVa
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
 from config import STATION_COLORS, NUM_STATIONS, STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
 import sys
-from languages import LANGUAGES
+from gui.languages import LANGUAGES
 import logging
 import os
 import weakref
