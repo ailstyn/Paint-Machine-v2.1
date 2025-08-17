@@ -14,12 +14,7 @@ from gui.languages import LANGUAGES
 import re
 from config import STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_DIR
 
-# === ERROR LOGGING ===
-import os
-import logging
-import sys
-from datetime import datetime
-
+# === ERROR LOGGING (MINIMAL) ===
 ERROR_LOG_DIR = "logs/errors"
 os.makedirs(ERROR_LOG_DIR, exist_ok=True)
 
@@ -34,23 +29,9 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-console = logging.StreamHandler()
-console.setLevel(logging.ERROR)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-console.setFormatter(formatter)
-logging.getLogger().addHandler(console)
-
-print(f"Logging to: {ERROR_LOG_FILE}")
 print(f"Logging to: {os.path.abspath(ERROR_LOG_FILE)}")
-print(f"Current working directory: {os.getcwd()}")
 
 logging.error("Test error log entry: If you see this, logging is working.")
-
-def log_uncaught_exceptions(exctype, value, tb):
-    logging.error("Uncaught exception", exc_info=(exctype, value, tb))
-    print("Uncaught exception:", value)
-
-sys.excepthook = log_uncaught_exceptions
 
 # ========== CONFIG & CONSTANTS ==========
 NUM_STATIONS = 4
