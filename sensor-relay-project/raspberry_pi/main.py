@@ -562,6 +562,11 @@ def startup(after_startup):
     wizard.show()
     if DEBUG:
         print("[DEBUG] StartupWizardDialog shown.")
+    
+    # Consistent wait for CONTINUE
+    while wizard.current_step == 0:
+        QApplication.processEvents()
+        time.sleep(0.01)
 
     # --- 5. Filling mode selection dialog ---
     filling_modes = [("AUTO", "AUTO"), ("MANUAL", "MANUAL"), ("SMART", "SMART")]
