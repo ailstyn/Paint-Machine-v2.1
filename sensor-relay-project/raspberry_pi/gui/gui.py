@@ -1849,6 +1849,9 @@ class StartupWizardDialog(QDialog):
         self.selection_indices = []
         self.on_station_verified = on_station_verified
 
+        # Add this line to store numeric weights
+        self.station_weights = [0.0] * num_stations
+
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(24, 16, 24, 16)
         main_layout.setSpacing(8)
@@ -1983,20 +1986,23 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
-        # print(f"[DEBUG] StartupWizardDialog.set_weight: station={station_index}, current_weight={current_weight}, enabled={self.station_enabled[station_index]}, connected={self.station_connected[station_index]}")
         if (
             0 <= station_index < len(self.station_boxes)
             and self.station_enabled[station_index]
             and self.station_connected[station_index]
         ):
             box = self.station_boxes[station_index]
-            # print(f"[DEBUG] Updating StationBoxWidget {station_index} with weight {current_weight}")
             box.set_weight(current_weight, target_weight, unit)
-            # Optionally update self.weight_texts for other uses
+            # Store numeric value for calibration checks
+            try:
+                self.station_weights[station_index] = float(current_weight)
+            except (TypeError, ValueError):
+                self.station_weights[station_index] = 0.0
+            # Optionally update self.weight_texts for display
             if unit == "g":
-                self.weight_texts[station_index] = f"{int(round(current_weight))} g"
+                self.weight_texts[station_index] = f"{int(round(float(current_weight)))} g"
             else:
-                oz = current_weight / 28.3495
+                oz = float(current_weight) / 28.3495
                 self.weight_texts[station_index] = f"{oz:.1f} oz"
 
     def set_step(self, step):
@@ -2094,7 +2100,10 @@ class StartupWizardDialog(QDialog):
         super().paintEvent(event)
 
     def get_weight(self, station_index):
-        pass
+        # Return the latest numeric weight for calibration steps
+        if 0 <= station_index < len(self.station_weights):
+            return self.station_weights[station_index]
+        return 0.0
 
 if __name__ == "__main__":
     import sys
