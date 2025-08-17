@@ -3,19 +3,12 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
-#from config import STATION_COLORS, NUM_STATIONS, STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
+from config import STATION_COLORS, NUM_STATIONS, STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
 import sys
 from languages import LANGUAGES
 import logging
 import os
 import weakref
-
-STATION_COLORS = [
-    "#b00f0f",  # Station 1 - red
-    "#2314c9",  # Station 2 - blue
-    "#0f9229",  # Station 3 - green
-    "#c1b615",  # Station 4 - yellow
-]
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 DEBUG = True
