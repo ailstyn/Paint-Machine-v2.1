@@ -2048,13 +2048,14 @@ class StartupWizardDialog(QDialog):
             sel = self.selection_indices[self.selection_index]
             parent = self.parent()
             if sel == "accept":
-                print("[DEBUG] Station verification accepted, moving to next step (do not close wizard)")
+                print("[DEBUG] Station verification accepted, advancing to next step")
+                self.set_step(self.current_step + 1)  # Always advance step by 1
                 if self.on_station_verified:
                     self.on_station_verified()
                 return
             # Toggle enabled state for the selected station
             self.station_enabled[sel] = not self.station_enabled[sel]
-
+    
             if hasattr(parent, "station_enabled"):
                 parent.station_enabled[sel] = self.station_enabled[sel]
             if self.station_boxes[sel].enabled_label:
