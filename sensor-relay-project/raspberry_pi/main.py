@@ -15,11 +15,22 @@ import re
 from config import STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
 
 # === ERROR LOGGING ===
-LOG_DIR = "logs/errors"
-os.makedirs(LOG_DIR, exist_ok=True)
+import os
+import logging
+import sys
+from datetime import datetime
+
+# Ensure error log directory exists (only once)
 os.makedirs(config.ERROR_LOG_DIR, exist_ok=True)
+
+# Create a dated error log filename using config.ERROR_LOG_DIR
+ERROR_LOG_FILE = os.path.join(
+    config.ERROR_LOG_DIR,
+    f"error_log_{datetime.now().strftime('%Y-%m-%d')}.txt"
+)
+
 logging.basicConfig(
-    filename=config.ERROR_LOG_FILE,
+    filename=ERROR_LOG_FILE,
     level=logging.ERROR,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -30,14 +41,13 @@ formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 console.setFormatter(formatter)
 logging.getLogger().addHandler(console)
 
-print(f"Logging to: {config.ERROR_LOG_FILE}")
+print(f"Logging to: {ERROR_LOG_FILE}")
 
 # Test log entry
 logging.error("Test error log entry: If you see this, logging is working.")
 
 def log_uncaught_exceptions(exctype, value, tb):
     logging.error("Uncaught exception", exc_info=(exctype, value, tb))
-    # Optionally print to console for debugging
     print("Uncaught exception:", value)
 
 sys.excepthook = log_uncaught_exceptions

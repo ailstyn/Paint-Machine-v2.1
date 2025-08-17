@@ -74,7 +74,6 @@ STATION_COLORS = [
 NUM_STATIONS = 4
 STATS_LOG_FILE = "stats.log"
 STATS_LOG_DIR = "logs/stats"
-ERROR_LOG_FILE = "logs/errors/error.log"
 ERROR_LOG_DIR = "logs/errors"
 
 # Add any other shared constants here
