@@ -12,7 +12,7 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
-from config import STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_DIR
+from config import STATS_LOG_FILE, STATS_LOG_DIR
 
 # === ERROR LOGGING (MINIMAL) ===
 ERROR_LOG_DIR = "logs/errors"

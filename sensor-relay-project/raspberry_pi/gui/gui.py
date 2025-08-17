@@ -10,15 +10,7 @@ import logging
 import os
 import weakref
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 DEBUG = True
-logging.basicConfig(level=logging.INFO)
-
-def qt_exception_hook(exctype, value, traceback):
-    logging.error("Uncaught Qt exception", exc_info=(exctype, value, traceback))
-    print("Uncaught Qt exception:", value)
-
-sys.excepthook = qt_exception_hook
 
 def set_frame_highlight(frame, highlighted):
     frame.setGraphicsEffect(None)
