@@ -1,15 +1,23 @@
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+    QApplication, QWidget, QLabel, QGridLayout, QVBoxLayout, QSizePolicy, QDialog, QPushButton, QHBoxLayout, QStyle, QSpacerItem, QFrame, QGraphicsOpacityEffect
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
+#from config import STATION_COLORS, NUM_STATIONS, STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
 import sys
+from languages import LANGUAGES
 import logging
 import os
 import weakref
-from gui.languages import LANGUAGES
+
+STATION_COLORS = [
+    "#b00f0f",  # Station 1 - red
+    "#2314c9",  # Station 2 - blue
+    "#0f9229",  # Station 3 - green
+    "#c1b615",  # Station 4 - yellow
+]
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from config import STATION_COLORS, NUM_STATIONS, STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
 DEBUG = True
 logging.basicConfig(level=logging.INFO)
 
@@ -19,16 +27,12 @@ def qt_exception_hook(exctype, value, traceback):
 
 sys.excepthook = qt_exception_hook
 
-from PyQt6.QtWidgets import QGraphicsDropShadowEffect
-
 def set_frame_highlight(frame, highlighted):
-    # Remove all drop shadow effects and just set a property for paintEvent
     frame.setGraphicsEffect(None)
     frame.setProperty("highlighted", highlighted)
     frame.update()
 
 def set_label_highlight(label, highlighted):
-    # Remove all drop shadow effects and just set a property for paintEvent
     label.setGraphicsEffect(None)
     label._highlighted = highlighted
     label.update()
@@ -48,34 +52,90 @@ def frame_paintEvent(self, event):
         painter.setPen(Qt.PenStyle.NoPen)
     painter.drawRoundedRect(rect, radius, radius)
 
-class FadeDialog(QDialog):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class FadeMixin:
+    FADE_DURATION = 350  # ms
+
+    def _init_fade(self):
+        self._fade_out_in_progress = False
         self.opacity_effect = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity_effect)
         self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.fade_anim.setDuration(350)
+        self.fade_anim.setDuration(self.FADE_DURATION)
 
     def showEvent(self, event):
+        if not hasattr(self, 'fade_anim'):
+            self._init_fade()
         self.opacity_effect.setOpacity(0)
         self.fade_anim.stop()
         self.fade_anim.setStartValue(0)
         self.fade_anim.setEndValue(1)
+        try:
+            self.fade_anim.finished.disconnect(self._on_fade_in_finished)
+        except Exception:
+            pass
+        self.fade_anim.finished.connect(self._on_fade_in_finished)
         self.fade_anim.start()
         super().showEvent(event)
 
-    def accept(self):
-        print("[DEBUG] FadeDialog.accept called, starting fade-out")
+    def _on_fade_in_finished(self):
+        self.opacity_effect.setOpacity(1)
+        try:
+            self.fade_anim.finished.disconnect(self._on_fade_in_finished)
+        except Exception:
+            pass
+
+    def fade_accept(self):
+        if self._fade_out_in_progress:
+            return
+        self._fade_out_in_progress = True
+        self.opacity_effect.setOpacity(1)
         self.fade_anim.stop()
         self.fade_anim.setStartValue(1)
         self.fade_anim.setEndValue(0)
-        def on_finished():
-            print("[DEBUG] FadeDialog.fade_anim finished, hiding dialog before accept")
-            self.opacity_effect.setOpacity(0)
-            self.hide()
-            QTimer.singleShot(100, lambda: super(FadeDialog, self).accept())
-        self.fade_anim.finished.connect(on_finished)
+        try:
+            self.fade_anim.finished.disconnect(self._on_fade_out_finished_accept)
+        except Exception:
+            pass
+        self.fade_anim.finished.connect(self._on_fade_out_finished_accept)
         self.fade_anim.start()
+
+    def fade_reject(self):
+        if self._fade_out_in_progress:
+            return
+        self._fade_out_in_progress = True
+        self.opacity_effect.setOpacity(1)
+        self.fade_anim.stop()
+        self.fade_anim.setStartValue(1)
+        self.fade_anim.setEndValue(0)
+        try:
+            self.fade_anim.finished.disconnect(self._on_fade_out_finished_reject)
+        except Exception:
+            pass
+        self.fade_anim.finished.connect(self._on_fade_out_finished_reject)
+        self.fade_anim.start()
+
+    def _on_fade_out_finished_accept(self):
+        self.opacity_effect.setOpacity(0)
+        try:
+            self.fade_anim.finished.disconnect(self._on_fade_out_finished_accept)
+        except Exception:
+            pass
+        # Delay closing to ensure animation is visible
+        QTimer.singleShot(50, self._final_accept)
+
+    def _final_accept(self):
+        super().accept()
+
+    def _on_fade_out_finished_reject(self):
+        self.opacity_effect.setOpacity(0)
+        try:
+            self.fade_anim.finished.disconnect(self._on_fade_out_finished_reject)
+        except Exception:
+            pass
+        QTimer.singleShot(50, self._final_reject)
+
+    def _final_reject(self):
+        super().reject()
 
 class OutlinedLabel(QLabel):
     """
@@ -115,10 +175,9 @@ class OutlinedLabel(QLabel):
         pad = self._default_padding
         inner_rect = rect.adjusted(pad, pad, -pad, -pad)
 
-        # Highlight: yellow background, dark text
         if self._highlighted:
             painter.setBrush(QColor("#F6EB61"))  # Light yellow
-            text_color = QColor("#222")          # Dark text
+            text_color = QColor("#fff")           # White infill when highlighted
         else:
             painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
             text_color = self._default_color
@@ -291,7 +350,7 @@ class StationBoxWidget(QWidget):
         else:
             painter.setBrush(QColor("#222"))     # Default dark grey
         painter.setPen(QPen(QColor("#888"), 3))
-        painter.drawRoundedRect(rect, 14, 14)
+        painter.drawRoundedRect(rect, 6, 6)  # Smaller rounded edges
         super().paintEvent(event)
 
     def _draw_top_rounded_label(self, label, event):
@@ -346,7 +405,7 @@ class StationBoxWidget(QWidget):
         painter.drawPath(text_path)
 
 class StationWidget(QWidget):
-    def __init__(self, station_number, bg_color, enabled=True, *args, **kwargs):
+    def __init__(self, station_number, bg_color, enabled=True, bar_on_left=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.station_number = station_number
 
@@ -372,12 +431,12 @@ class StationWidget(QWidget):
         self._status_flash_text = ""
         self._status_flash_interval = 500  # ms
 
-        # Always add the BottleProgressBar, regardless of enabled state
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
         self.progress_bar = BottleProgressBar(parent=self)
+        self.progress_bar.setFixedWidth(60)
 
         content_layout = QVBoxLayout()
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -398,8 +457,8 @@ class StationWidget(QWidget):
         self.status_label.setPalette(status_palette)
         content_layout.addWidget(self.status_label, stretch=1)
 
-        # Add widgets to layout
-        if hasattr(self, "bar_on_left") and self.bar_on_left:
+        # Add widgets to layout based on bar_on_left
+        if bar_on_left:
             main_layout.addWidget(self.progress_bar)
             main_layout.addLayout(content_layout)
         else:
@@ -526,7 +585,7 @@ class StationWidget(QWidget):
         rect = self.rect()
         painter.setBrush(self.bg_color)
         painter.setPen(QPen(QColor("#222"), 2))
-        painter.drawRoundedRect(rect, 14, 14)
+        painter.drawRoundedRect(rect, 6, 6)  # Smaller rounded edges
         super().paintEvent(event)
 
 class MenuDialog(QDialog):
@@ -555,12 +614,10 @@ class MenuDialog(QDialog):
 
     def update_selection_box(self):
         for i, label in enumerate(self.labels):
-            # Only use drop shadow for highlight, do not set label.set_highlight(True)
             if i == self.selected_index:
                 set_frame_highlight(label, True)
             else:
                 set_frame_highlight(label, False)
-            # Always keep label.set_highlight(False) for SelectionDialog
             if isinstance(label, OutlinedLabel):
                 label.set_highlight(False)
 
@@ -660,8 +717,36 @@ class RelayControlApp(QWidget):
             grid.setSpacing(8)
             self.station_widgets = [None] * 4
             for i in range(4):
-                widget = StationWidget(i + 1, self.bg_colors[i], enabled=self.station_enabled[i])
-                widget.setFixedSize(475, 280)
+                # bar_on_left for stations 1 and 2 (left side), right side for 3 and 4
+                bar_on_left = (i in [0, 1])
+                if self.station_enabled[i]:
+                    widget = StationWidget(i + 1, self.bg_colors[i], enabled=True, bar_on_left=bar_on_left)
+                    widget.setFixedSize(475, 280)
+                else:
+                    class OfflineStationWidget(QWidget):
+                        def __init__(self, color, *args, **kwargs):
+                            super().__init__(*args, **kwargs)
+                            self.bg_color = QColor(color)
+                            self.setFixedSize(475, 280)
+                            layout = QVBoxLayout(self)
+                            layout.setContentsMargins(0, 0, 0, 0)
+                            layout.setSpacing(0)
+                            offline_label = OutlinedLabel("OFFLINE", font_size=48, bold=True, color="#FF2222")
+                            offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                            offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+                            layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
+                            self.setLayout(layout)
+                        def paintEvent(self, event):
+                            painter = QPainter(self)
+                            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+                            rect = self.rect()
+                            color = QColor(self.bg_color)
+                            color.setAlphaF(0.5)  # 50% transparency
+                            painter.setBrush(color)
+                            painter.setPen(QPen(QColor("#222"), 2))
+                            painter.drawRoundedRect(rect, 6, 6)  # Smaller rounded edges
+                            super().paintEvent(event)
+                    widget = OfflineStationWidget(self.bg_colors[i])
                 self.station_widgets[i] = widget
             grid.addWidget(self.station_widgets[0], 0, 0)
             grid.addWidget(self.station_widgets[1], 1, 0)
@@ -921,7 +1006,7 @@ class RelayControlApp(QWidget):
             else:
                 logging.error(f"Error connecting to station {station_index+1}: {e}")
 
-class InfoDialog(FadeDialog):
+class InfoDialog(FadeMixin, QDialog):
     def __init__(self, title, message, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -982,6 +1067,12 @@ class InfoDialog(FadeDialog):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
         super().paintEvent(event)
+
+    def accept(self):
+        self.fade_accept()
+
+    def reject(self):
+        self.fade_reject()
 
 class BottleProgressBar(QWidget):
     def __init__(self, max_value=100, value=0, bar_color="#4FC3F7", parent=None):
@@ -1159,7 +1250,6 @@ class SetTargetWeightDialog(QDialog):
             layout.addLayout(down_arrows_layout)
 
             self.setLayout(layout)
-            self.setModal(True)
             self.update_display()
         except Exception as e:
             logging.error(f"Error in SetTargetWeightDialog.__init__: {e}", exc_info=True)
@@ -1425,42 +1515,53 @@ class SetTimeLimitDialog(QDialog):
         painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
         super().paintEvent(event)
 
-class SelectionDialog(FadeDialog):
+class SelectionDialog(FadeMixin, QDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
-            super().__init__(parent)
-            self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-            self.setModal(True)
-            self.setMinimumWidth(400)
-            self.setMinimumHeight(320)
-            self._bg_color = QColor("#222")
-            self._border_radius = 0
-            self._border_color = QColor("#888")
-            self._border_width = 3
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(320)
+        self._bg_color = QColor("#222")
+        self._border_radius = 0  # <-- Straight corners
+        self._border_color = QColor("#eee")  # <-- Light grey border
+        self._border_width = 2  # <-- Thin border
 
-            self.selected_index = 0
-            self.options = options
-            self.on_select_callback = on_select
-            layout = QVBoxLayout(self)
-            layout.setContentsMargins(24, 24, 24, 24)
-            layout.setSpacing(12)
+        self.selected_index = 0
+        self.options = options
+        self.on_select_callback = on_select
 
-            # Title label (optional)
-            if title:
-                title_label = OutlinedLabel(title, font_size=32, bold=True, color="#fff")
-                title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                layout.addWidget(title_label)
+        # Outer layout for the dialog
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(24, 24, 24, 24)
+        outer_layout.setSpacing(12)
 
-            # Option labels
-            self.labels = []
-            for _, display_text in self.options:
-                item_label = OutlinedLabel(display_text, font_size=28, bold=True, color="#fff") if outlined else QLabel(display_text)
-                item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                item_label.setFixedSize(320, 64)
-                self.labels.append(item_label)
-                layout.addWidget(item_label)
-            self.setLayout(layout)
-            self.setModal(True)
-            self.update_selection_box()
+        # Title label (optional)
+        if title:
+            title_label = OutlinedLabel(title, font_size=32, bold=True, color="#fff")
+            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            outer_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        # Centered options layout
+        options_layout = QVBoxLayout()
+        options_layout.setSpacing(12)
+        self.labels = []
+        for _, display_text in self.options:
+            item_label = OutlinedLabel(display_text, font_size=28, bold=True, color="#fff") if outlined else QLabel(display_text)
+            item_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            item_label.setFixedSize(320, 64)
+            self.labels.append(item_label)
+            options_layout.addWidget(item_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        # Wrap options_layout in a horizontal layout for centering
+        h_center_layout = QHBoxLayout()
+        h_center_layout.addStretch(1)
+        h_center_layout.addLayout(options_layout)
+        h_center_layout.addStretch(1)
+
+        outer_layout.addLayout(h_center_layout)
+        self.setLayout(outer_layout)
+        self.update_selection_box()
 
     def update_selection_box(self):
         for i, label in enumerate(self.labels):
@@ -1483,7 +1584,36 @@ class SelectionDialog(FadeDialog):
         value = self.options[index][0]
         if self.on_select_callback:
             self.on_select_callback(value, index)
-        self.accept()
+        self.flash_selected_and_close()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.update_selection_box()
+        for label in self.labels:
+            label.repaint()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.setBrush(QColor("#222"))  # Dark grey background
+        painter.setPen(QPen(QColor("#eee"), self._border_width))  # Light grey thin border
+        painter.drawRect(rect)
+        super().paintEvent(event)
+
+    def flash_selected_and_close(self):
+        flashes = [True, False, True, False]  # Sequence: highlight, normal, highlight, normal
+        interval = 125  # ms per flash (total 500ms for 4 steps)
+        label = self.labels[self.selected_index]
+
+        def do_flash(step=0):
+            if step < len(flashes):
+                label.set_highlight(flashes[step])
+                QTimer.singleShot(interval, lambda: do_flash(step + 1))
+            else:
+                self.accept()  # Only close after flash sequence
+
+        do_flash(0)
 
 class StationStatusDialog(QDialog):
     station_selected = pyqtSignal(int)
@@ -1553,7 +1683,6 @@ class StationStatusDialog(QDialog):
         layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.setLayout(layout)
-        self.setModal(True)
         self.update_selection_box()
 
     def update_selection_box(self):
@@ -1684,6 +1813,8 @@ class ButtonColumnWidget(QWidget):
             self.animations[index].deleteLater()
             self.animations[index] = None
 
+
+
         # Flash to color instantly
         palette = label.palette()
         palette.setColor(QPalette.ColorRole.WindowText, start_color)
@@ -1696,6 +1827,7 @@ class ButtonColumnWidget(QWidget):
         animation.setEndValue(end_color)
 
         def on_value_changed(value):
+
             palette = label.palette()
             palette.setColor(QPalette.ColorRole.WindowText, value)
             label.setPalette(palette)
@@ -1716,6 +1848,7 @@ class StartupWizardDialog(QDialog):
     def __init__(self, parent=None, num_stations=4, on_station_verified=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+
         self.setModal(True)
         self.setFixedSize(1024, 600)
         self.num_stations = num_stations
@@ -1739,6 +1872,7 @@ class StartupWizardDialog(QDialog):
         self.main_label = QLabel("Welcome to Paint Machine")
         self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+       
         main_palette = self.main_label.palette()
         main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))  # Light grey
         self.main_label.setPalette(main_palette)
@@ -1772,7 +1906,7 @@ class StartupWizardDialog(QDialog):
             )
             box.setMinimumWidth(216)
             box.setMinimumHeight(110)
-            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
+            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.PolicyExpanding)
             self.station_boxes.append(box)
             frame = QFrame()
             frame.setObjectName(f"stationFrame_{i}")
@@ -1972,3 +2106,17 @@ class StartupWizardDialog(QDialog):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(rect)
         super().paintEvent(event)
+        
+if __name__ == "__main__":
+    import sys
+    from PyQt6.QtWidgets import QApplication
+
+    app = QApplication(sys.argv)
+
+    # Example: Show RelayControlApp with default station enabled states
+    station_enabled = [False, True, True, False]  # Or adjust as needed for testing
+
+    window = RelayControlApp(station_enabled=station_enabled)
+    window.show()
+
+    sys.exit(app.exec())
