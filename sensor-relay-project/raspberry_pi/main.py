@@ -12,7 +12,7 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
-from config import STATS_LOG_FILE, STATS_LOG_DIR
+from config import STATS_LOG_FILE, STATS_LOG_DIR, ERROR_LOG_FILE, ERROR_LOG_DIR
 
 # === ERROR LOGGING ===
 LOG_DIR = "logs/errors"
@@ -41,8 +41,6 @@ def log_uncaught_exceptions(exctype, value, tb):
     print("Uncaught exception:", value)
 
 sys.excepthook = log_uncaught_exceptions
-
-# === END ERROR LOGGING ===
 
 # ========== CONFIG & CONSTANTS ==========
 NUM_STATIONS = 4
