@@ -14,19 +14,7 @@ from gui.languages import LANGUAGES
 import re
 from config import STATS_LOG_FILE, STATS_LOG_DIR
 
-os.makedirs(config.ERROR_LOG_DIR, exist_ok=True)
-logging.basicConfig(
-    filename=config.ERROR_LOG_FILE,
-    level=logging.ERROR,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-print(f"Logging to: {config.ERROR_LOG_FILE}")
-
-# Test log entry
-logging.error("Test error log entry: If you see this, logging is working.")
-
-# ========== CONFIG & CONSTANTS ==========
+# === ERROR LOGGING ===
 LOG_DIR = "logs/errors"
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(config.ERROR_LOG_DIR, exist_ok=True)
@@ -36,6 +24,27 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+console = logging.StreamHandler()
+console.setLevel(logging.ERROR)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+console.setFormatter(formatter)
+logging.getLogger().addHandler(console)
+
+print(f"Logging to: {config.ERROR_LOG_FILE}")
+
+# Test log entry
+logging.error("Test error log entry: If you see this, logging is working.")
+
+def log_uncaught_exceptions(exctype, value, tb):
+    logging.error("Uncaught exception", exc_info=(exctype, value, tb))
+    # Optionally print to console for debugging
+    print("Uncaught exception:", value)
+
+sys.excepthook = log_uncaught_exceptions
+
+# === END ERROR LOGGING ===
+
+# ========== CONFIG & CONSTANTS ==========
 NUM_STATIONS = 4
 config_file = "config.txt"
 target_weight = 500.0
@@ -299,14 +308,6 @@ MESSAGE_HANDLERS = {
 }
 
 # ========== UTILITY FUNCTIONS ==========
-
-def log_uncaught_exceptions(exctype, value, tb):
-    logging.error("Uncaught exception", exc_info=(exctype, value, tb))
-    if DEBUG:
-        print("Uncaught exception:", value)
-
-sys.excepthook = log_uncaught_exceptions
-
 def load_scale_calibrations():
     """Load scale calibration values from config.txt into the global scale_calibrations list."""
     global scale_calibrations
