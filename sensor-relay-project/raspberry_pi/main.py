@@ -627,11 +627,11 @@ def startup(after_startup):
         QApplication.instance().active_dialog = wizard
         wizard.show()
 
-        # Wait for user to press CONTINUE
         while wizard.current_step == 2:
             QApplication.processEvents()
-            # CONTINUE pressed
+            # Only validate when CONTINUE is pressed
             if wizard.step_mode == "accept_only" and wizard.current_step == 2:
+                # (Optional: Add validation here if needed)
                 if DEBUG:
                     print("[DEBUG] CONTINUE pressed on step 2, sending TARE_SCALE to enabled stations.")
                 for i, arduino in enumerate(arduinos):
@@ -664,13 +664,12 @@ def startup(after_startup):
         QApplication.instance().active_dialog = wizard
         wizard.show()
 
-        # Wait for user to press CONTINUE
         while wizard.current_step == 3:
             QApplication.processEvents()
             station_bottle_types = []
             all_valid = True
 
-            # Check weights for each enabled station
+            # Update label colors live, but do NOT beep or show dialog yet
             for i in range(NUM_STATIONS):
                 if station_enabled[i]:
                     weight = wizard.get_weight(i)
@@ -687,13 +686,11 @@ def startup(after_startup):
                         box.weight_label.setStyleSheet("color: #CD0A0A;")  # Red
                         all_valid = False
 
-            # CONTINUE pressed
+            # Only validate and show errors when CONTINUE is pressed
             if wizard.step_mode == "accept_only" and wizard.current_step == 3:
-                # Check if all stations are valid and all bottle types match
                 if not all_valid:
                     ping_buzzer_invalid()
                     ping_buzzer_invalid()
-                    # Show info dialog for invalid weights
                     wizard.show_info_dialog(
                         "Calibration Error",
                         "Please place a full bottle on each station to continue",
@@ -705,7 +702,6 @@ def startup(after_startup):
                 elif len(set(station_bottle_types)) != 1:
                     ping_buzzer_invalid()
                     ping_buzzer_invalid()
-                    # Show info dialog for mismatched bottles
                     wizard.show_info_dialog(
                         "Calibration Error",
                         "All bottles must be the same size",
@@ -717,7 +713,7 @@ def startup(after_startup):
                 else:
                     if DEBUG:
                         print(f"[DEBUG] All stations have valid and matching bottle type: {station_bottle_types[0]}")
-                    wizard.station_bottle_type = station_bottle_types[0]  # Save the matched type for next step
+                    wizard.station_bottle_type = station_bottle_types[0]
                     wizard.set_step(4)
                     wizard.step_mode = "accept_only"
                     break
@@ -738,11 +734,11 @@ def startup(after_startup):
         QApplication.instance().active_dialog = wizard
         wizard.show()
 
-        # Wait for user to press CONTINUE
         while wizard.current_step == 4:
             QApplication.processEvents()
-            # CONTINUE pressed
+            # Only validate when CONTINUE is pressed
             if wizard.step_mode == "accept_only" and wizard.current_step == 4:
+                # (Optional: Add validation here if needed)
                 if DEBUG:
                     print("[DEBUG] CONTINUE pressed on step 4, closing wizard and opening RelayControlApp.")
                 if after_startup:
