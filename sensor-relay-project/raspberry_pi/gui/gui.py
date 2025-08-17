@@ -1003,7 +1003,9 @@ class InfoDialog(FadeMixin, QDialog):
 
         # Set background color and rounded corners using paintEvent
         self._bg_color = QColor("#222")
-        self._border_radius = 24
+        self._border_radius = 0  # Straight corners to match SelectionDialog
+        self._border_color = QColor("#eee")  # Light grey border
+        self._border_width = 2  # Thin border
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
@@ -1049,8 +1051,8 @@ class InfoDialog(FadeMixin, QDialog):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
         painter.setBrush(self._bg_color)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
+        painter.setPen(QPen(self._border_color, self._border_width))
+        painter.drawRect(rect)
         super().paintEvent(event)
 
     def accept(self):
@@ -2104,6 +2106,12 @@ class StartupWizardDialog(QDialog):
         if 0 <= station_index < len(self.station_weights):
             return self.station_weights[station_index]
         return 0.0
+
+    def show_info_dialog(self, title, message, timeout_ms=1800):
+        dlg = InfoDialog(title, message, self)
+        dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
+        dlg.show()
+        QTimer.singleShot(timeout_ms, dlg.accept)
 
 if __name__ == "__main__":
     import sys
