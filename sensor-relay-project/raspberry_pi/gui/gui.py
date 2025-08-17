@@ -2100,7 +2100,10 @@ class StartupWizardDialog(QDialog):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(rect)
         super().paintEvent(event)
-        
+
+    def get_weight(self, station_index):
+        pass
+
 if __name__ == "__main__":
     import sys
     from PyQt6.QtWidgets import QApplication
