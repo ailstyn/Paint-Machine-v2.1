@@ -307,7 +307,7 @@ class StationBoxWidget(QWidget):
             self.enabled_label.update()
 
     def set_weight(self, current_weight, target_weight=None, unit="g"):
-        print(f"[DEBUG] StationBoxWidget.set_weight: station={self.station_index}, current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
+        # print(f"[DEBUG] StationBoxWidget.set_weight: station={self.station_index}, current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
         try:
             current_weight = float(current_weight)
             if target_weight is not None:
@@ -1991,14 +1991,14 @@ class StartupWizardDialog(QDialog):
         self.update_highlight()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
-        print(f"[DEBUG] StartupWizardDialog.set_weight: station={station_index}, current_weight={current_weight}, enabled={self.station_enabled[station_index]}, connected={self.station_connected[station_index]}")
+        # print(f"[DEBUG] StartupWizardDialog.set_weight: station={station_index}, current_weight={current_weight}, enabled={self.station_enabled[station_index]}, connected={self.station_connected[station_index]}")
         if (
             0 <= station_index < len(self.station_boxes)
             and self.station_enabled[station_index]
             and self.station_connected[station_index]
         ):
             box = self.station_boxes[station_index]
-            print(f"[DEBUG] Updating StationBoxWidget {station_index} with weight {current_weight}")
+            # print(f"[DEBUG] Updating StationBoxWidget {station_index} with weight {current_weight}")
             box.set_weight(current_weight, target_weight, unit)
             # Optionally update self.weight_texts for other uses
             if unit == "g":
