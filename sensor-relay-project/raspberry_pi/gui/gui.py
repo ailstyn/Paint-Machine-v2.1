@@ -392,6 +392,8 @@ class StationBoxWidget(QWidget):
 class StationWidget(QWidget):
     def __init__(self, station_number, bg_color, enabled=True, bar_on_left=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        print(f"[DEBUG] StationWidget {station_number} bg_color={bg_color} enabled={enabled}")
+        self.bg_color = QColor(bg_color)
         self.station_number = station_number
 
         # Use parent's tr if available, else fallback to English
@@ -401,7 +403,6 @@ class StationWidget(QWidget):
             self.tr = lambda k: LANGUAGES["en"].get(k, k)
 
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.bg_color = QColor(bg_color)
         self.enabled = enabled
 
         self.weight_label = None
@@ -709,28 +710,6 @@ class RelayControlApp(QWidget):
                     widget = StationWidget(i + 1, self.bg_colors[i], enabled=True, bar_on_left=bar_on_left)
                     widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
                 else:
-                    class OfflineStationWidget(QWidget):
-                        def __init__(self, color, *args, **kwargs):
-                            super().__init__(*args, **kwargs)
-                            self.bg_color = QColor(color)
-                            layout = QVBoxLayout(self)
-                            layout.setContentsMargins(0, 0, 0, 0)
-                            layout.setSpacing(0)
-                            offline_label = OutlinedLabel("OFFLINE", font_size=48, bold=True, color="#FF2222")
-                            offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                            offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
-                            layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
-                            self.setLayout(layout)
-                        def paintEvent(self, event):
-                            painter = QPainter(self)
-                            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                            rect = self.rect()
-                            color = QColor(self.bg_color)
-                            color.setAlphaF(0.5)
-                            painter.setBrush(color)
-                            painter.setPen(Qt.PenStyle.NoPen)
-                            painter.drawRect(rect)
-                            super().paintEvent(event)
                     widget = OfflineStationWidget(self.bg_colors[i])
                     widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
                 self.station_widgets[i] = widget
@@ -1850,7 +1829,6 @@ class StartupWizardDialog(QDialog):
         # State
         self.station_enabled = [True] * num_stations
         self.station_connected = [True] * num_stations
-        self.station_names = [f"Station {i+1}" for i in range(num_stations)]
         self.weight_texts = ["--"] * num_stations
         self.station_weights = [0.0] * num_stations
         self.selection_indices = []
@@ -2157,3 +2135,37 @@ class StartupWizardDialog(QDialog):
                     box.set_enabled(self.station_enabled[i], STATION_COLORS[i % len(STATION_COLORS)])
             if box.weight_label:
                 box.weight_label.setText(self.weight_texts[i] if self.weight_texts and i < len(self.weight_texts) else "--")
+
+class OfflineStationWidget(QWidget):
+    def __init__(self, color, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bg_color = QColor(color)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        # OutlinedLabel: white text, black outline, transparent background
+        offline_label = OutlinedLabel(
+            "OFFLINE",
+            font_size=48,
+            bold=True,
+            color="#fff",           # White infill
+            bg_color=None,          # Transparent background
+            border_radius=0,
+            padding=8,
+            outline_width=6         # Thick black outline
+        )
+        offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+        layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.setLayout(layout)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        color = QColor(self.bg_color)
+        color.setAlphaF(0.5)
+        painter.setBrush(color)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(rect)
+        super().paintEvent(event)
