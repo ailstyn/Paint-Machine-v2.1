@@ -164,7 +164,10 @@ class OutlinedLabel(QLabel):
             painter.setBrush(QColor("#F6EB61"))  # Light yellow
             text_color = QColor("#fff")           # White infill when highlighted
         else:
-            painter.setBrush(self._default_bg if self._default_bg else Qt.BrushStyle.NoBrush)
+            if self._default_bg is not None:
+                painter.setBrush(self._default_bg)
+            else:
+                painter.setBrush(QColor(0, 0, 0, 0))
             text_color = self._default_color
 
         painter.setPen(Qt.PenStyle.NoPen)
@@ -566,7 +569,7 @@ class StationWidget(QWidget):
 
     def paintEvent(self, event):
         # Draw background and border for the widget
-        print(f"[DEBUG] StationWidget.paintEvent {self.station_number} bg_color={self.bg_color.name()}")
+        # print(f"[DEBUG] StationWidget.paintEvent {self.station_number} bg_color={self.bg_color.name()}")
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
