@@ -620,6 +620,9 @@ def startup(after_startup):
                     byte = arduino.read(1)
                     if byte == config.TARE_CONFIRMED:
                         tare_confirmed[i] = True
+                        # Discard any extra text sent after the confirmation byte
+                        while arduino.in_waiting > 0:
+                            arduino.read(arduino.in_waiting)
         if time.time() > timeout:
             wizard.show_info_dialog("Error", "Not all stations confirmed tare.", timeout_ms=2000)
             break

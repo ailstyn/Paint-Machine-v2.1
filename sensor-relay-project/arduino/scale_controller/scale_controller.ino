@@ -255,11 +255,8 @@ void loop() {
     if (Serial.available() > 0) {
         byte messageType = Serial.read();
         if (messageType == TARE_SCALE) {
-            Serial.write(TARE_CONFIRMED); // Send confirmation byte
-            Serial.println("Taring scale...");
             tare_and_update_offset();
-            Serial.write(TARE_CONFIRMED); // Send confirmation again after taring
-            Serial.println("Scale tared.");
+            Serial.write(TARE_CONFIRMED); // Send confirmation byte ONLY after taring
         } else if (messageType == RESET_CALIBRATION) {
             recalibrate();
         } else if (messageType == MANUAL_FILL_START) {
