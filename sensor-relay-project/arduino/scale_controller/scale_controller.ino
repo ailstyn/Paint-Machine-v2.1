@@ -37,9 +37,10 @@
 #define RESET_HANDSHAKE 0xB0
 #define BUTTON_ERROR 0xE0
 #define MAX_WEIGHT_WARNING 0xE1
-#define MAX_WEIGHT_END     0xE2  // <-- Add this new protocol byte
+#define MAX_WEIGHT_END
 #define SERIAL_MAX_LEN 16
 #define SCALE_MAX_GRAMS 1000
+#define TARE_CONFIRMED 0x0A
 
 // ================= GLOBAL VARIABLES ================
 HX711 scale;
