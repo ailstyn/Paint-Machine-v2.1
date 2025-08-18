@@ -50,7 +50,6 @@ last_final_weight = [None] * NUM_STATIONS
 fill_time_limit_reached = False
 SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 arduinos = [None] * NUM_STATIONS
-DEBUG = False  # Set to False to disable debug prints
 station_connected = [arduino is not None for arduino in arduinos]
 serial_numbers = [arduino.serial_number if arduino else None for arduino in arduinos]
 filling_mode = "AUTO"  # Default mode
