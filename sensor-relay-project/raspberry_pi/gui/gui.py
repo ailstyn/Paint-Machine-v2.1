@@ -566,6 +566,7 @@ class StationWidget(QWidget):
 
     def paintEvent(self, event):
         # Draw background and border for the widget
+        print(f"[DEBUG] StationWidget.paintEvent {self.station_number} bg_color={self.bg_color.name()}")
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
