@@ -2111,3 +2111,48 @@ class StartupWizardDialog(QDialog):
         if self.selection_indices:
             self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
             self.update_highlight()
+
+    def toggle_station(self, index):
+        """
+        Toggle the enabled/disabled state of a station.
+        """
+        if 0 <= index < len(self.station_boxes):
+            box = self.station_boxes[index]
+            new_enabled_state = not self.station_enabled[index]
+            self.station_enabled[index] = new_enabled_state
+            box.set_enabled(new_enabled_state, STATION_COLORS[index % len(STATION_COLORS)])
+            # Update connected state based on new enabled state
+            new_connected_state = new_enabled_state
+            self.station_connected[index] = new_connected_state
+            box.set_connected(new_connected_state, STATION_COLORS[index % len(STATION_COLORS)])
+            if DEBUG:
+                print(f"[DEBUG] Station {index+1} toggled to {'ENABLED' if new_enabled_state else 'DISABLED'}")
+            else:
+                logging.info(f"Station {index+1} toggled to {'ENABLED' if new_enabled_state else 'DISABLED'}")
+
+    def set_station_labels(self, names=None, connected=None, enabled=None, weight_texts=None):
+        print("[DEBUG] set_station_labels called")
+        if names:
+            self.station_names = names
+        if connected:
+            self.station_connected = connected
+        if enabled:
+            self.station_enabled = enabled
+        if weight_texts:
+            self.weight_texts = weight_texts
+        self.update_station_widgets()
+
+    def update_station_widgets(self):
+        print("[DEBUG] update_station_widgets called")
+        for i, box in enumerate(self.station_boxes):
+            if self.station_names and i < len(self.station_names):
+                box.name_label.setText(self.station_names[i])
+            if box.connected_label:
+                box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
+                box.set_connected(self.station_connected[i], STATION_COLORS[i % len(STATION_COLORS)])
+            if self.station_enabled and i < len(self.station_enabled):
+                if box.enabled_label:
+                    box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
+                    box.set_enabled(self.station_enabled[i], STATION_COLORS[i % len(STATION_COLORS)])
+            if box.weight_label:
+                box.weight_label.setText(self.weight_texts[i] if self.weight_texts and i < len(self.weight_texts) else "--")
