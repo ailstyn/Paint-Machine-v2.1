@@ -647,8 +647,8 @@ def startup(after_startup):
         all_large = all(in_range(w, large_full_range) for w in active_weights)
 
         if not (all_small or all_large):
-            ping_buzzer_invalid()
             dlg = InfoDialog("Error", "All bottles must be within the same size range (small or large).", wizard)
+            ping_buzzer_invalid()
             dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
             dlg.show()
             QTimer.singleShot(2000, dlg.accept)
@@ -691,8 +691,8 @@ def startup(after_startup):
             return rng[0] <= w <= rng[1]
     
         if not all(in_range(w, empty_range) for w in active_weights):
-            ping_buzzer_invalid()
             dlg = InfoDialog("Error", "All bottles must be within the empty bottle weight range.", wizard)
+            ping_buzzer_invalid()
             dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
             dlg.show()
             QTimer.singleShot(2000, dlg.accept)
