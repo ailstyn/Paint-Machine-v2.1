@@ -1028,6 +1028,7 @@ class InfoDialog(FadeMixin, QDialog):
         self.value_label.setPalette(value_palette)
         self.value_label.setMinimumHeight(72)
         self.value_label.setMaximumHeight(150)
+        self.value_label.setWordWrap(True)
         layout.addWidget(self.value_label)
 
         self.setLayout(layout)
