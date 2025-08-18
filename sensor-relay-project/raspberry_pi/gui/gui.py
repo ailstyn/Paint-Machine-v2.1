@@ -568,9 +568,9 @@ class StationWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
-        painter.setBrush(self.bg_color)
-        painter.setPen(QPen(QColor("#222"), 2))
-        painter.drawRoundedRect(rect, 6, 6)  # Smaller rounded edges
+        painter.setBrush(self.bg_color)  # Use station color
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRect(rect)
         super().paintEvent(event)
 
 class MenuDialog(QDialog):
@@ -699,21 +699,20 @@ class RelayControlApp(QWidget):
 
             # --- Main grid layout (2x2 for four stations) ---
             grid = QGridLayout()
-            grid.setContentsMargins(8, 8, 8, 8)
-            grid.setSpacing(8)
+            grid.setContentsMargins(8, 8, 8, 8)  # Thin margin for outer border
+            grid.setSpacing(8)  # Thin spacing for grid lines
+
             self.station_widgets = [None] * 4
             for i in range(4):
-                # bar_on_left for stations 1 and 2 (left side), right side for 3 and 4
                 bar_on_left = (i in [0, 1])
                 if self.station_enabled[i]:
                     widget = StationWidget(i + 1, self.bg_colors[i], enabled=True, bar_on_left=bar_on_left)
-                    widget.setFixedSize(475, 280)
+                    widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
                 else:
                     class OfflineStationWidget(QWidget):
                         def __init__(self, color, *args, **kwargs):
                             super().__init__(*args, **kwargs)
                             self.bg_color = QColor(color)
-                            self.setFixedSize(475, 280)
                             layout = QVBoxLayout(self)
                             layout.setContentsMargins(0, 0, 0, 0)
                             layout.setSpacing(0)
@@ -727,13 +726,15 @@ class RelayControlApp(QWidget):
                             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
                             rect = self.rect()
                             color = QColor(self.bg_color)
-                            color.setAlphaF(0.5)  # 50% transparency
+                            color.setAlphaF(0.5)
                             painter.setBrush(color)
-                            painter.setPen(QPen(QColor("#222"), 2))
-                            painter.drawRoundedRect(rect, 6, 6)  # Smaller rounded edges
+                            painter.setPen(Qt.PenStyle.NoPen)
+                            painter.drawRect(rect)
                             super().paintEvent(event)
                     widget = OfflineStationWidget(self.bg_colors[i])
+                    widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
                 self.station_widgets[i] = widget
+
             grid.addWidget(self.station_widgets[0], 0, 0)
             grid.addWidget(self.station_widgets[1], 1, 0)
             grid.addWidget(self.station_widgets[2], 0, 1)

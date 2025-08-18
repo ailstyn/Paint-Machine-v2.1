@@ -545,8 +545,17 @@ def startup(after_startup):
 
     # --- 3.5. Create StartupWizardDialog ---
     app = QApplication.instance() or QApplication(sys.argv)
+
     wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
     app.active_dialog = wizard
+    
+    # Set correct labels for station verification
+    wizard.set_station_labels(
+        names=[f"Station {i+1}" for i in range(NUM_STATIONS)],
+        connected=station_connected,
+        enabled=station_enabled
+    )
+    
     wizard.show_station_verification()
     wizard.show()
 
