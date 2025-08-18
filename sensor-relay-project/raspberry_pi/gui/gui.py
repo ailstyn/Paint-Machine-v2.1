@@ -1823,7 +1823,6 @@ class ButtonColumnWidget(QWidget):
 
         def on_finished():
            
-
             palette = label.palette()
             palette.setColor(QPalette.ColorRole.WindowText, end_color)
             label.setPalette(palette)
@@ -1838,6 +1837,7 @@ class StartupWizardDialog(QDialog):
 
     def __init__(self, parent=None, num_stations=4):
         super().__init__(parent)
+        print("[DEBUG] StartupWizardDialog.__init__ called")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setFixedSize(1024, 600)
@@ -1937,10 +1937,11 @@ class StartupWizardDialog(QDialog):
         h_layout.addWidget(self.button_column, stretch=0)
         self.setLayout(h_layout)
 
-        # Start wizard
+        print("[DEBUG] StartupWizardDialog initialized, calling show_station_verification()")
         self.show_station_verification()
 
     def show_station_verification(self):
+        print("[DEBUG] show_station_verification called")
         self.active_prompt = "station_verification"
         self.main_label.setText("Verify Stations")
         self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
@@ -1953,25 +1954,29 @@ class StartupWizardDialog(QDialog):
             box.mousePressEvent = lambda e, idx=i: self.toggle_station(idx)
 
     def activate_selected(self):
-        # Called by handle_button_presses when SELECT is pressed
-        # If CONTINUE is highlighted, complete the step
+        print(f"[DEBUG] activate_selected called, active_prompt={self.active_prompt}, selection={self.selection_indices[self.selection_index]}")
         if self.selection_indices[self.selection_index] == "accept":
+            print(f"[DEBUG] CONTINUE selected in prompt: {self.active_prompt}")
             if self.active_prompt == "station_verification":
+                print("[DEBUG] Completing station_verification step")
                 self.complete_step("station_verification", {"enabled": self.station_enabled.copy()})
             elif self.active_prompt == "empty_scale":
+                print("[DEBUG] Completing empty_scale step")
                 self.complete_step("empty_scale")
             elif self.active_prompt == "full_bottle":
+                print("[DEBUG] Completing full_bottle step")
                 self.complete_step("full_bottle")
             elif self.active_prompt == "empty_bottle":
+                print("[DEBUG] Completing empty_bottle step")
                 self.complete_step("empty_bottle")
-            # Add more elifs for other prompts as needed
         else:
-            # If a station is highlighted (only relevant for station verification)
             idx = self.selection_indices[self.selection_index]
+            print(f"[DEBUG] Station index selected: {idx}")
             if isinstance(idx, int):
                 self.toggle_station(idx)
 
     def show_empty_scale_prompt(self):
+        print("[DEBUG] show_empty_scale_prompt called")
         self.active_prompt = "empty_scale"
         self.main_label.setText("Place Empty Scale")
         self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE when ready.")
@@ -1986,6 +1991,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_scale")
 
     def show_full_bottle_prompt(self, small_range=(225, 275), large_range=(675, 725)):
+        print(f"[DEBUG] show_full_bottle_prompt called, small_range={small_range}, large_range={large_range}")
         self.active_prompt = "full_bottle"
         self.full_bottle_small_range = small_range
         self.full_bottle_large_range = large_range
@@ -1997,6 +2003,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.mousePressEvent = lambda e: self.complete_step("full_bottle")
 
     def show_empty_bottle_prompt(self, empty_range=(0, 0)):
+        print(f"[DEBUG] show_empty_bottle_prompt called, empty_range={empty_range}")
         self.active_prompt = "empty_bottle"
         self.empty_bottle_range = empty_range
         self.main_label.setText("Place Empty Bottle")
@@ -2008,9 +2015,11 @@ class StartupWizardDialog(QDialog):
         self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_bottle")
 
     def finish_wizard(self):
+        print("[DEBUG] finish_wizard called")
         self.accept()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
+        print(f"[DEBUG] set_weight called for station {station_index}, current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
         if (
             0 <= station_index < len(self.station_boxes)
             and self.station_enabled[station_index]
@@ -2043,7 +2052,7 @@ class StartupWizardDialog(QDialog):
                     box.weight_label.setStyleSheet(f"color: {color};")
 
     def update_highlight(self):
-        # Highlight only connected stations and accept button
+        print(f"[DEBUG] update_highlight called, selection_index={self.selection_index}, selection_indices={self.selection_indices}")
         for i, frame in enumerate(self.station_frames):
             is_highlighted = (
                 self.selection_indices[self.selection_index] == i
@@ -2053,7 +2062,6 @@ class StartupWizardDialog(QDialog):
             frame.style().unpolish(frame)
             frame.style().polish(frame)
             frame.update()
-        # Continue button highlight
         self.accept_label.set_highlight(self.selection_indices[self.selection_index] == "accept")
 
     def paintEvent(self, event):
@@ -2066,20 +2074,24 @@ class StartupWizardDialog(QDialog):
         super().paintEvent(event)
 
     def get_station_enabled(self):
+        print("[DEBUG] get_station_enabled called")
         return self.station_enabled
 
     def get_weight(self, station_index):
+        print(f"[DEBUG] get_weight called for station {station_index}")
         if 0 <= station_index < len(self.station_weights):
             return self.station_weights[station_index]
         return 0.0
 
     def show_info_dialog(self, title, message, timeout_ms=1800):
+        print(f"[DEBUG] show_info_dialog called: {title} - {message}")
         dlg = InfoDialog(title, message, self)
         dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
         dlg.show()
         QTimer.singleShot(timeout_ms, dlg.accept)
 
     def complete_step(self, step_name, extra_data=None):
+        print(f"[DEBUG] complete_step called for step: {step_name}, extra_data={extra_data}")
         info = {"step": step_name}
         if extra_data:
             info.update(extra_data)
