@@ -647,6 +647,7 @@ def startup(after_startup):
         all_large = all(in_range(w, large_full_range) for w in active_weights)
 
         if not (all_small or all_large):
+            ping_buzzer_invalid()
             dlg = InfoDialog("Error", "All bottles must be within the same size range (small or large).", wizard)
             dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
             dlg.show()
@@ -672,38 +673,37 @@ def startup(after_startup):
 
     wizard.show_empty_bottle_prompt(empty_range=empty_range)
     wizard.show()
-    step_result.clear()
-    while not step_result or step_result.get("step") != "empty_bottle":
-        app.processEvents()
-        time.sleep(0.01)
-
-    # After CONTINUE is pressed, check all active stations
-    active_weights = [
-        wizard.get_weight(i)
-        for i in range(NUM_STATIONS)
-        if station_enabled[i] and station_connected[i]
-    ]
-
-    def in_range(w, rng):
-        return rng[0] <= w <= rng[1]
-
-    if not all(in_range(w, empty_range) for w in active_weights):
-        dlg = InfoDialog("Error", "All bottles must be within the empty bottle weight range.", wizard)
-        dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
-        dlg.show()
-        QTimer.singleShot(2000, dlg.accept)
-        # Optionally, re-show the prompt and repeat the loop
-        wizard.show_empty_bottle_prompt(empty_range=empty_range)
-        wizard.show()
+    
+    while True:
         step_result.clear()
         while not step_result or step_result.get("step") != "empty_bottle":
             app.processEvents()
             time.sleep(0.01)
-    else:
-        # Proceed to next step (finish wizard, launch main app, etc.)
-        wizard.finish_wizard()
-        station_enabled[:] = wizard.get_station_enabled()
-        after_startup()
+    
+        # After CONTINUE is pressed, check all active stations
+        active_weights = [
+            wizard.get_weight(i)
+            for i in range(NUM_STATIONS)
+            if station_enabled[i] and station_connected[i]
+        ]
+    
+        def in_range(w, rng):
+            return rng[0] <= w <= rng[1]
+    
+        if not all(in_range(w, empty_range) for w in active_weights):
+            ping_buzzer_invalid()
+            dlg = InfoDialog("Error", "All bottles must be within the empty bottle weight range.", wizard)
+            dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
+            dlg.show()
+            QTimer.singleShot(2000, dlg.accept)
+            # Loop again, so InfoDialog will show every time
+            continue
+        else:
+            # Proceed to next step (finish wizard, launch main app, etc.)
+            wizard.finish_wizard()
+            station_enabled[:] = wizard.get_station_enabled()
+            after_startup()
+            break
 
 
 def filling_mode_callback(mode):
