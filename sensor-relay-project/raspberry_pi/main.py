@@ -699,10 +699,12 @@ def startup(after_startup):
             # Loop again, so InfoDialog will show every time
             continue
         else:
-            # Proceed to next step (finish wizard, launch main app, etc.)
-            wizard.finish_wizard()
+            # Create RelayControlApp first for seamless transition
             station_enabled[:] = wizard.get_station_enabled()
-            after_startup()
+            after_startup()  # This creates and shows RelayControlApp
+            
+            # Now close the wizard (fade out)
+            wizard.finish_wizard()
             break
 
 
