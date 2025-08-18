@@ -1823,6 +1823,7 @@ class ButtonColumnWidget(QWidget):
 
         def on_finished():
            
+
             palette = label.palette()
             palette.setColor(QPalette.ColorRole.WindowText, end_color)
             label.setPalette(palette)
@@ -1850,6 +1851,7 @@ class StartupWizardDialog(QDialog):
         self.station_weights = [0.0] * num_stations
         self.selection_indices = []
         self.selection_index = 0
+        self.active_prompt = None  # Track which prompt is active
 
         # Layouts
         self.main_layout = QVBoxLayout()
@@ -1939,6 +1941,7 @@ class StartupWizardDialog(QDialog):
         self.show_station_verification()
 
     def show_station_verification(self):
+        self.active_prompt = "station_verification"
         self.main_label.setText("Verify Stations")
         self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
         self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
@@ -1953,17 +1956,23 @@ class StartupWizardDialog(QDialog):
         # Called by handle_button_presses when SELECT is pressed
         # If CONTINUE is highlighted, complete the step
         if self.selection_indices[self.selection_index] == "accept":
-            self.complete_step(
-                "station_verification",
-                {"enabled": self.station_enabled.copy()}
-            )
+            if self.active_prompt == "station_verification":
+                self.complete_step("station_verification", {"enabled": self.station_enabled.copy()})
+            elif self.active_prompt == "empty_scale":
+                self.complete_step("empty_scale")
+            elif self.active_prompt == "full_bottle":
+                self.complete_step("full_bottle")
+            elif self.active_prompt == "empty_bottle":
+                self.complete_step("empty_bottle")
+            # Add more elifs for other prompts as needed
         else:
-            # If a station is highlighted, toggle its enabled state
+            # If a station is highlighted (only relevant for station verification)
             idx = self.selection_indices[self.selection_index]
             if isinstance(idx, int):
                 self.toggle_station(idx)
 
     def show_empty_scale_prompt(self):
+        self.active_prompt = "empty_scale"
         self.main_label.setText("Place Empty Scale")
         self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE when ready.")
         self.selection_indices = ["accept"]
@@ -1977,6 +1986,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_scale")
 
     def show_full_bottle_prompt(self, small_range=(225, 275), large_range=(675, 725)):
+        self.active_prompt = "full_bottle"
         self.full_bottle_small_range = small_range
         self.full_bottle_large_range = large_range
         self.main_label.setText("Place Full Bottle")
@@ -1987,6 +1997,7 @@ class StartupWizardDialog(QDialog):
         self.accept_label.mousePressEvent = lambda e: self.complete_step("full_bottle")
 
     def show_empty_bottle_prompt(self, empty_range=(0, 0)):
+        self.active_prompt = "empty_bottle"
         self.empty_bottle_range = empty_range
         self.main_label.setText("Place Empty Bottle")
         self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Press CONTINUE when ready.")
