@@ -601,7 +601,6 @@ def startup(after_startup):
         time.sleep(0.01)
 
     # Send TARE_SCALE to each enabled and connected Arduino
-    tare_confirmed = [False] * NUM_STATIONS
     for i, arduino in enumerate(arduinos):
         if arduino and station_enabled[i] and station_connected[i]:
             try:
@@ -609,23 +608,8 @@ def startup(after_startup):
                 arduino.flush()
             except Exception as e:
                 logging.error(f"Error sending TARE_SCALE to station {i+1}: {e}")
-    # Wait for confirmation from all active stations
-    timeout = time.time() + 5.0
-    while not all(tare_confirmed[i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]):
-        QApplication.processEvents()
-        time.sleep(0.05)
-        for i, arduino in enumerate(arduinos):
-            if arduino and station_enabled[i] and station_connected[i] and not tare_confirmed[i]:
-                if arduino.in_waiting > 0:
-                    byte = arduino.read(1)
-                    if byte == config.TARE_CONFIRMED:
-                        tare_confirmed[i] = True
-                        # Discard any extra text sent after the confirmation byte
-                        while arduino.in_waiting > 0:
-                            arduino.read(arduino.in_waiting)
-        if time.time() > timeout:
-            wizard.show_info_dialog("Error", "Not all stations confirmed tare.", timeout_ms=2000)
-            break
+
+    # SKIP WAITING FOR TARE CONFIRMATION, just move on to next step
 
     # --- 7. Calibration Step: Place full bottles ---
     small_full_range = (375, 425)
@@ -676,11 +660,11 @@ def startup(after_startup):
     elif all_large:
         empty_range = (30, 40)
     else:
-        # This case should not happen due to previous validation
         empty_range = (0, 0)
 
     wizard.show_empty_bottle_prompt(empty_range=empty_range)
     wizard.show()
+    step_result.clear()
     while not step_result or step_result.get("step") != "empty_bottle":
         app.processEvents()
         time.sleep(0.01)
@@ -704,7 +688,8 @@ def startup(after_startup):
         # Optionally, re-show the prompt and repeat the loop
         wizard.show_empty_bottle_prompt(empty_range=empty_range)
         wizard.show()
-        while not step_result or step_result.get("step") != "your_step_name":
+        step_result.clear()
+        while not step_result or step_result.get("step") != "empty_bottle":
             app.processEvents()
             time.sleep(0.01)
     else:
