@@ -16,6 +16,6 @@ station2_enabled=false
 station3_enabled=true
 station4_enabled=false
 
-# Bottle sizes (format: name:min:max)
-bottle_small=225:275
-bottle_large=675:725
+# Bottle sizes (format: name:full:empty)
+bottle_small=250:30
+bottle_large=700:30

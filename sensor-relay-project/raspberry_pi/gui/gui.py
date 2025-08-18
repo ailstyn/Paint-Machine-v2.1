@@ -1822,6 +1822,8 @@ class ButtonColumnWidget(QWidget):
         animation.valueChanged.connect(on_value_changed)
 
         def on_finished():
+           
+
             palette = label.palette()
             palette.setColor(QPalette.ColorRole.WindowText, end_color)
             label.setPalette(palette)
@@ -1832,56 +1834,52 @@ class ButtonColumnWidget(QWidget):
         animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
 
 class StartupWizardDialog(QDialog):
-    def __init__(self, parent=None, num_stations=4, on_station_verified=None):
+    step_completed = pyqtSignal(dict)
+
+    def __init__(self, parent=None, num_stations=4):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-
         self.setModal(True)
         self.setFixedSize(1024, 600)
         self.num_stations = num_stations
-        self.last_step = 5
 
-        # Step tracking
-        self.current_step = 0
-        self.selection_index = 0
+        # State
         self.station_enabled = [True] * num_stations
         self.station_connected = [True] * num_stations
         self.station_names = [f"Station {i+1}" for i in range(num_stations)]
         self.weight_texts = ["--"] * num_stations
-        self.selection_indices = []
-        self.on_station_verified = on_station_verified
-
-        # Add this line to store numeric weights
         self.station_weights = [0.0] * num_stations
+        self.selection_indices = []
+        self.selection_index = 0
 
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(24, 16, 24, 16)
-        main_layout.setSpacing(8)
+        # Layouts
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(24, 16, 24, 16)
+        self.main_layout.setSpacing(8)
 
         # Main label
-        self.main_label = QLabel("Welcome to Paint Machine")
+        self.main_label = QLabel()
         self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
         self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-       
         main_palette = self.main_label.palette()
-        main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))  # Light grey
+        main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
         self.main_label.setPalette(main_palette)
-        main_layout.addWidget(self.main_label)
+        self.main_layout.addWidget(self.main_label)
 
-        # Info/Prompt area
-        self.info_label = QLabel("Startup Info ....")
+        # Info label
+        self.info_label = QLabel()
         self.info_label.setFont(QFont("Arial", 22))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setMinimumHeight(150)
+        self.info_label.setMinimumHeight(100)
         self.info_label.setMaximumHeight(150)
         info_palette = self.info_label.palette()
-        info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))  # Light grey
+        info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
         self.info_label.setPalette(info_palette)
-        main_layout.addWidget(self.info_label)
+        self.main_layout.addWidget(self.info_label)
 
         # Station boxes row
-        stations_layout = QHBoxLayout()
-        stations_layout.setSpacing(10)
+        self.stations_layout = QHBoxLayout()
+        self.stations_layout.setSpacing(10)
         self.station_boxes = []
         self.station_frames = []
         for i in range(self.num_stations):
@@ -1904,88 +1902,101 @@ class StartupWizardDialog(QDialog):
             frame.setLineWidth(0)
             frame.setLayout(QVBoxLayout())
             frame.layout().setContentsMargins(1, 1, 1, 1)
-
             frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
             frame.layout().addWidget(box)
             frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            # Use custom paintEvent for highlight and rounded corners
             frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
             self.station_frames.append(frame)
-            stations_layout.addWidget(frame)
-        main_layout.addLayout(stations_layout, stretch=2)
+            self.stations_layout.addWidget(frame)
+        self.main_layout.addLayout(self.stations_layout, stretch=2)
+        self.main_layout.addStretch(1)
 
-        main_layout.addStretch(1)
-
+        # Continue button
         self.accept_label = OutlinedLabel(
             "CONTINUE",
             font_size=36,
             bold=True,
-            color="#fff",          # White infill
-            bg_color=None,         # Transparent background
+            color="#fff",
+            bg_color=None,
             border_radius=16,
             padding=8
-       
         )
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.accept_label.setMinimumHeight(72)
-       
         self.accept_label.setFixedWidth(360)
-        self.accept_label.set_highlight(False)   # Always use white infill
-        main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.accept_label.set_highlight(False)
+        self.main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-        # Right-side: button labels
+        # Button column
         self.button_column = ButtonColumnWidget(parent=self)
-
         h_layout = QHBoxLayout()
         h_layout.setContentsMargins(0, 0, 0, 0)
         h_layout.setSpacing(0)
-
-        h_layout.addLayout(main_layout, stretch=10)
+        h_layout.addLayout(self.main_layout, stretch=10)
         h_layout.addWidget(self.button_column, stretch=0)
         self.setLayout(h_layout)
 
-        self.step_mode = "station_select"
-        self.update_selection_indices()
-        self.selection_index = self.selection_indices.index("accept")  # Always start on "accept"
+        # Start wizard
+        self.show_station_verification()
+
+    def show_station_verification(self):
+        self.main_label.setText("Verify Stations")
+        self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
+        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
+        self.selection_index = len(self.selection_indices) - 1  # Default to CONTINUE
         self.update_highlight()
-        self.update_station_widgets()
 
-    @property
-    def station_widgets(self):
-        return self.station_boxes
-
-    def set_main_label(self, text):
-        self.main_label.setText(text)
-
-    def set_info_text(self, text):
-        self.info_label.setText(text)
-
-    def set_station_labels(self, names=None, connected=None, enabled=None, weight_texts=None):
-        if names:
-            self.station_names = names
-        if connected:
-            self.station_connected = connected
-        if enabled:
-            self.station_enabled = enabled
-        if weight_texts:
-            self.weight_texts = weight_texts
-        self.update_station_widgets()
-
-    def update_station_widgets(self):
+        # Connect station box click events for toggling
         for i, box in enumerate(self.station_boxes):
-            if self.station_names and i < len(self.station_names):
-                box.name_label.setText(self.station_names[i])
-            if box.connected_label:
-                box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
-                box.set_connected(self.station_connected[i], STATION_COLORS[i % len(STATION_COLORS)])
-            if self.station_enabled and i < len(self.station_enabled):
-                if box.enabled_label:
-                    box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
-                    box.set_enabled(self.station_enabled[i], STATION_COLORS[i % len(STATION_COLORS)])
-            # Always update weight label with latest value
-            if box.weight_label:
-                box.weight_label.setText(self.weight_texts[i])
+            box.mousePressEvent = lambda e, idx=i: self.toggle_station(idx)
+
+        # Connect continue button
+        self.accept_label.mousePressEvent = lambda e: self.complete_step(
+            "station_verification",
+            {"enabled": self.station_enabled.copy()}
+        )
+
+    def toggle_station(self, idx):
+        if self.station_connected[idx]:
+            self.station_enabled[idx] = not self.station_enabled[idx]
+            self.station_boxes[idx].set_enabled(self.station_enabled[idx], STATION_COLORS[idx])
+            self.update_highlight()
+
+    def show_empty_scale_prompt(self):
+        self.main_label.setText("Place Empty Scale")
+        self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE when ready.")
+        self.selection_indices = ["accept"]
+        self.selection_index = 0
         self.update_highlight()
+
+        # Disconnect station box click events
+        for box in self.station_boxes:
+            box.mousePressEvent = lambda e: None
+
+        self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_scale")
+
+    def show_full_bottle_prompt(self, small_range=(225, 275), large_range=(675, 725)):
+        self.full_bottle_small_range = small_range
+        self.full_bottle_large_range = large_range
+        self.main_label.setText("Place Full Bottle")
+        self.info_label.setText("Place a full bottle on each enabled station. Press CONTINUE when ready.")
+        self.selection_indices = ["accept"]
+        self.selection_index = 0
+        self.update_highlight()
+        self.accept_label.mousePressEvent = lambda e: self.complete_step("full_bottle")
+
+    def show_empty_bottle_prompt(self, empty_range=(0, 0)):
+        self.empty_bottle_range = empty_range
+        self.main_label.setText("Place Empty Bottle")
+        self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Press CONTINUE when ready.")
+        self.selection_indices = ["accept"]
+        self.selection_index = 0
+        self.update_highlight()
+
+        self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_bottle")
+
+    def finish_wizard(self):
+        self.accept()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
         if (
@@ -1995,114 +2006,57 @@ class StartupWizardDialog(QDialog):
         ):
             box = self.station_boxes[station_index]
             box.set_weight(current_weight, target_weight, unit)
-            # Store numeric value for calibration checks
             try:
                 self.station_weights[station_index] = float(current_weight)
             except (TypeError, ValueError):
                 self.station_weights[station_index] = 0.0
-            # Optionally update self.weight_texts for display
             if unit == "g":
                 self.weight_texts[station_index] = f"{int(round(float(current_weight)))} g"
             else:
                 oz = float(current_weight) / 28.3495
                 self.weight_texts[station_index] = f"{oz:.1f} oz"
 
-    def set_step(self, step):
-        self.current_step = step
-        self.update_selection_indices()
-        self.selection_index = self.selection_indices.index("accept")  # Always start on "accept"
-        if step == 0:
-            self.step_mode = "station_select"
-        elif step in (1, 2, 3):
-            self.step_mode = "accept_only"  # Change to accept_only for other steps
-
-    def update_selection_indices(self):
-        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c]
-        self.selection_indices.append("accept")
-        if self.selection_index >= len(self.selection_indices):
-            self.selection_index = len(self.selection_indices) - 1
-
-    def select_next(self):
-        # Only allow up/down navigation on step 0
-        if self.current_step == 0 and self.step_mode == "station_select":
-            self.update_selection_indices()
-            self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
-            self.update_highlight()
-        else:
-            # Ignore up/down for steps > 0
-            pass
-
-    def select_prev(self):
-        # Only allow up/down navigation on step 0
-        if self.current_step == 0 and self.step_mode == "station_select":
-            self.update_selection_indices()
-            self.selection_index = (self.selection_index - 1) % len(self.selection_indices)
-            self.update_highlight()
-        else:
-            # Ignore up/down for steps > 0
-            pass
-
-    def activate_selected(self):
-        if self.current_step == 0 and self.step_mode == "station_select":
-            self.update_selection_indices()
-            sel = self.selection_indices[self.selection_index]
-            parent = self.parent()
-            if sel == "accept":
-                print("[DEBUG] Station verification accepted, advancing to next step")
-                self.set_step(self.current_step + 1)  # Always advance step by 1
-                if self.on_station_verified:
-                    self.on_station_verified()
-                return
-            # Toggle enabled state for the selected station
-            self.station_enabled[sel] = not self.station_enabled[sel]
-    
-            if hasattr(parent, "station_enabled"):
-                parent.station_enabled[sel] = self.station_enabled[sel]
-            if self.station_boxes[sel].enabled_label:
-                self.station_boxes[sel].enabled_label.setText("ENABLED" if self.station_enabled[sel] else "DISABLED")
-                self.station_boxes[sel].set_enabled(self.station_enabled[sel], STATION_COLORS[sel % len(STATION_COLORS)])
-            self.update_highlight()
-        elif self.step_mode == "accept_only":
-            print(f"[DEBUG] Step {self.current_step} accepted, advancing to step {self.current_step + 1}")
-            if self.current_step >= self.last_step:  # Define self.last_step appropriately
-                print("[DEBUG] Last step reached, closing wizard.")
-                self.accept()
-            else:
-                self.set_step(self.current_step + 1)
-
-    def get_station_enabled(self):
-        return self.station_enabled
+            # Color the weight label based on full bottle ranges if in full bottle prompt
+            if hasattr(self, "full_bottle_small_range") and hasattr(self, "full_bottle_large_range"):
+                in_small = self.full_bottle_small_range[0] <= current_weight <= self.full_bottle_small_range[1]
+                in_large = self.full_bottle_large_range[0] <= current_weight <= self.full_bottle_large_range[1]
+                color = "#11BD33" if in_small or in_large else "#FF2222"
+                if box.weight_label:
+                    box.weight_label.setStyleSheet(f"color: {color};")
+            # Color the weight label based on empty bottle range if in empty bottle prompt
+            if hasattr(self, "empty_bottle_range"):
+                in_empty = self.empty_bottle_range[0] <= current_weight <= self.empty_bottle_range[1]
+                color = "#11BD33" if in_empty else "#FF2222"
+                if box.weight_label:
+                    box.weight_label.setStyleSheet(f"color: {color};")
 
     def update_highlight(self):
-        if not self.selection_indices or self.selection_index >= len(self.selection_indices):
-            return
+        # Highlight only connected stations and accept button
         for i, frame in enumerate(self.station_frames):
             is_highlighted = (
-                self.current_step == 0 and
-                self.step_mode == "station_select" and
                 self.selection_indices[self.selection_index] == i
+                if i in self.selection_indices[:-1] else False
             )
             frame.setProperty("highlighted", is_highlighted)
             frame.style().unpolish(frame)
             frame.style().polish(frame)
             frame.update()
-        # Continue button highlight: yellow background only
-        if self.selection_indices[self.selection_index] == "accept":
-            self.accept_label.set_highlight(True)
-        else:
-            self.accept_label.set_highlight(False)
+        # Continue button highlight
+        self.accept_label.set_highlight(self.selection_indices[self.selection_index] == "accept")
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
-        painter.setBrush(QColor("#222"))  # Dark grey background
+        painter.setBrush(QColor("#222"))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(rect)
         super().paintEvent(event)
 
+    def get_station_enabled(self):
+        return self.station_enabled
+
     def get_weight(self, station_index):
-        # Return the latest numeric weight for calibration steps
         if 0 <= station_index < len(self.station_weights):
             return self.station_weights[station_index]
         return 0.0
@@ -2113,16 +2067,8 @@ class StartupWizardDialog(QDialog):
         dlg.show()
         QTimer.singleShot(timeout_ms, dlg.accept)
 
-if __name__ == "__main__":
-    import sys
-    from PyQt6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-
-    # Example: Show RelayControlApp with default station enabled states
-    station_enabled = [False, True, True, False]  # Or adjust as needed for testing
-
-    window = RelayControlApp(station_enabled=station_enabled)
-    window.show()
-
-    sys.exit(app.exec())
+    def complete_step(self, step_name, extra_data=None):
+        info = {"step": step_name}
+        if extra_data:
+            info.update(extra_data)
+        self.step_completed.emit(info)

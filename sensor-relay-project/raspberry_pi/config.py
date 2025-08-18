@@ -43,6 +43,7 @@ MAX_WEIGHT_WARNING = b'\xE1'
 MAX_WEIGHT_END = b'\xE2'
 EXIT_MANUAL_END = b'\x22'
 MANUAL_FILL_START = b'\x20'
+TARE_CONFIRMED = b'\x0A'  # Confirmation byte for scale tared
 
 # GPIO pins
 UP_BUTTON_PIN = 5
