@@ -628,46 +628,43 @@ def startup(after_startup):
             break
 
     # --- 7. Calibration Step: Place full bottles ---
-    bottle_weight_ranges = load_bottle_weight_ranges(config_file)
-
-    small_full_range = bottle_weight_ranges.get("small", {}).get("full", (0, 0))
-    large_full_range = bottle_weight_ranges.get("large", {}).get("full", (0, 0))
-    
     wizard.show_full_bottle_prompt(small_range=small_full_range, large_range=large_full_range)
     wizard.show()
-    while not step_result or step_result.get("step") != "full_bottle":
-        app.processEvents()
-        time.sleep(0.01)
+    step_result.clear()
 
-    # After CONTINUE is pressed, check all active stations
-    active_weights = [
-        wizard.get_weight(i)
-        for i in range(NUM_STATIONS)
-        if station_enabled[i] and station_connected[i]
-    ]
-
-    def in_range(w, rng):
-        return rng[0] <= w <= rng[1]
-
-    all_small = all(in_range(w, small_full_range) for w in active_weights)
-    all_large = all(in_range(w, large_full_range) for w in active_weights)
-
-    if not (all_small or all_large):
-        wizard.show_info_dialog(
-            "Error",
-            "All bottles must be within the same size range (small or large).",
-            timeout_ms=2000
-        )
-        # Optionally, re-show the prompt and repeat the loop
-        wizard.show_full_bottle_prompt(small_range=small_full_range, large_range=large_full_range)
-        wizard.show()
-        while not step_result or step_result.get("step") != "your_step_name":
+    while True:
+        # Wait for user to press CONTINUE
+        while not step_result or step_result.get("step") != "full_bottle":
             app.processEvents()
             time.sleep(0.01)
-    else:
-        # Proceed to next step
-        wizard.show_empty_bottle_prompt()
-        wizard.show()
+
+        # After CONTINUE is pressed, check all active stations
+        active_weights = [
+            wizard.get_weight(i)
+            for i in range(NUM_STATIONS)
+            if station_enabled[i] and station_connected[i]
+        ]
+
+        def in_range(w, rng):
+            return rng[0] <= w <= rng[1]
+
+        all_small = all(in_range(w, small_full_range) for w in active_weights)
+        all_large = all(in_range(w, large_full_range) for w in active_weights)
+
+        if not (all_small or all_large):
+            wizard.show_info_dialog(
+                "Error",
+                "All bottles must be within the same size range (small or large).",
+                timeout_ms=2000
+            )
+            step_result.clear()  # Wait for user to try again
+            continue
+        else:
+            break  # Proceed to next step
+
+    # Now show empty bottle prompt
+    wizard.show_empty_bottle_prompt()
+    wizard.show()
 
     # --- 8. Calibration Step: Place empty bottles ---
 
