@@ -2096,3 +2096,15 @@ class StartupWizardDialog(QDialog):
         if extra_data:
             info.update(extra_data)
         self.step_completed.emit(info)
+
+    def select_prev(self):
+        print("[DEBUG] select_prev called")
+        if self.selection_indices:
+            self.selection_index = (self.selection_index - 1) % len(self.selection_indices)
+            self.update_highlight()
+
+    def select_next(self):
+        print("[DEBUG] select_next called")
+        if self.selection_indices:
+            self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
+            self.update_highlight()
