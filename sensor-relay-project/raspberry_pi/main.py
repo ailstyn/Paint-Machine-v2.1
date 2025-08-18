@@ -681,7 +681,7 @@ def startup(after_startup):
 
     wizard.show_empty_bottle_prompt(empty_range=empty_range)
     wizard.show()
-    while not step_result or step_result.get("step") != "your_step_name":
+    while not step_result or step_result.get("step") != "empty_bottle":
         app.processEvents()
         time.sleep(0.01)
 
