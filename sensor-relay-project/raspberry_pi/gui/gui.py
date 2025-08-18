@@ -685,8 +685,9 @@ class RelayControlApp(QWidget):
             else:
                 logging.info(f"RelayControlApp.__init__ called with station_enabled={station_enabled}")
             self.setWindowTitle("Four Station Control")
-            self.setFixedSize(1024, 600)  # Ensure window fits screen exactly
-
+            self.setFixedSize(1024, 600)
+            self.setStyleSheet("background-color: #222;")
+            
             # Define station colors
             self.bg_colors = STATION_COLORS
 
