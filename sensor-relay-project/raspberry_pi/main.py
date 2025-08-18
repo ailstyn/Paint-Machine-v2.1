@@ -628,6 +628,8 @@ def startup(after_startup):
             break
 
     # --- 7. Calibration Step: Place full bottles ---
+    small_full_range = (375, 425)
+    large_full_range = (715, 765)
     wizard.show_full_bottle_prompt(small_range=small_full_range, large_range=large_full_range)
     wizard.show()
     step_result.clear()
