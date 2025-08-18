@@ -463,7 +463,7 @@ def log_final_weight(station_index, final_weight):
 # ========== STARTUP ==========
 
 def startup(after_startup):
-    global arduinos, scale_calibrations, station_enabled, station_serials
+    global arduinos, scale_calibrations, station_enabled, station_serials, DEBUG
 
     # --- 1. Load calibration, serials, enabled states ---
     load_scale_calibrations()
