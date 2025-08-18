@@ -1823,7 +1823,6 @@ class ButtonColumnWidget(QWidget):
 
         def on_finished():
            
-
             palette = label.palette()
             palette.setColor(QPalette.ColorRole.WindowText, end_color)
             label.setPalette(palette)
@@ -1950,17 +1949,19 @@ class StartupWizardDialog(QDialog):
         for i, box in enumerate(self.station_boxes):
             box.mousePressEvent = lambda e, idx=i: self.toggle_station(idx)
 
-        # Connect continue button
-        self.accept_label.mousePressEvent = lambda e: self.complete_step(
-            "station_verification",
-            {"enabled": self.station_enabled.copy()}
-        )
-
-    def toggle_station(self, idx):
-        if self.station_connected[idx]:
-            self.station_enabled[idx] = not self.station_enabled[idx]
-            self.station_boxes[idx].set_enabled(self.station_enabled[idx], STATION_COLORS[idx])
-            self.update_highlight()
+    def activate_selected(self):
+        # Called by handle_button_presses when SELECT is pressed
+        # If CONTINUE is highlighted, complete the step
+        if self.selection_indices[self.selection_index] == "accept":
+            self.complete_step(
+                "station_verification",
+                {"enabled": self.station_enabled.copy()}
+            )
+        else:
+            # If a station is highlighted, toggle its enabled state
+            idx = self.selection_indices[self.selection_index]
+            if isinstance(idx, int):
+                self.toggle_station(idx)
 
     def show_empty_scale_prompt(self):
         self.main_label.setText("Place Empty Scale")

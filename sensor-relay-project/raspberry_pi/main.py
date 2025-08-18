@@ -560,16 +560,15 @@ def startup(after_startup):
     wizard.step_completed.connect(on_step_completed)
 
     # --- 4. Station verification dialog ---
-    # Wait for user to finish station verification
-    step_result.clear()
     wizard.show_station_verification()
     wizard.show()
+
+    # Wait for user to finish station verification
     while not step_result or step_result.get("step") != "station_verification":
         app.processEvents()
         time.sleep(0.01)
-    station_enabled[:] = step_result.get("enabled", station_enabled)
 
-    # --- 5. Filling mode selection dialog ---
+    # Now open the filling mode selection dialog
     options = [
         ("AUTO", "Auto Mode"),
         ("MANUAL", "Manual Mode"),
@@ -588,7 +587,6 @@ def startup(after_startup):
         selection_dialog.accept()
     selection_dialog.on_select_callback = on_select
 
-    # Wait for filling mode selection
     while selection_dialog.isVisible():
         app.processEvents()
         time.sleep(0.01)
