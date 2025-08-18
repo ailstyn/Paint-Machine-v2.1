@@ -688,7 +688,7 @@ def startup(after_startup):
         return rng[0] <= w <= rng[1]
 
     if not all(in_range(w, empty_range) for w in active_weights):
-        dlg = InfoDialog("Error", "All bottles must be within\n the empty bottle weight range.", wizard)
+        dlg = InfoDialog("Error", "All bottles must be within the empty bottle weight range.", wizard)
         dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
         dlg.show()
         QTimer.singleShot(2000, dlg.accept)

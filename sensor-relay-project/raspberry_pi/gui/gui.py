@@ -1003,11 +1003,10 @@ class InfoDialog(FadeMixin, QDialog):
         self.setMinimumHeight(220)
         self.setMaximumHeight(320)
 
-        # Set background color and rounded corners using paintEvent
         self._bg_color = QColor("#222")
-        self._border_radius = 0  # Straight corners to match SelectionDialog
-        self._border_color = QColor("#eee")  # Light grey border
-        self._border_width = 2  # Thin border
+        self._border_radius = 0
+        self._border_color = QColor("#eee")
+        self._border_width = 2
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 24)
@@ -1022,16 +1021,19 @@ class InfoDialog(FadeMixin, QDialog):
         self.title_label.setMinimumHeight(48)
         layout.addWidget(self.title_label)
 
+        # --- Use a smaller font for the value label ---
         self.value_label = QLabel(message)
         self.value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.value_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+        self.value_label.setFont(QFont("Arial", 28, QFont.Weight.Bold))  # Smaller font
         value_palette = self.value_label.palette()
         value_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
         self.value_label.setPalette(value_palette)
-        self.value_label.setMinimumHeight(72)
-        self.value_label.setMaximumHeight(150)
+        self.value_label.setMinimumHeight(48)
+        self.value_label.setMaximumHeight(180)
         self.value_label.setWordWrap(True)
-        layout.addWidget(self.value_label)
+        layout.addWidget(self.value_label, stretch=1)  # Add vertical stretch
+
+        layout.addStretch(1)  # Extra stretch at the bottom
 
         self.setLayout(layout)
 
@@ -1825,7 +1827,6 @@ class ButtonColumnWidget(QWidget):
         animation.valueChanged.connect(on_value_changed)
 
         def on_finished():
-           
             palette = label.palette()
             palette.setColor(QPalette.ColorRole.WindowText, end_color)
             label.setPalette(palette)
