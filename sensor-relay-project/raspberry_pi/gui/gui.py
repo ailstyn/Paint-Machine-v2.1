@@ -2019,7 +2019,7 @@ class StartupWizardDialog(QDialog):
         self.accept()
 
     def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
-        print(f"[DEBUG] set_weight called for station {station_index}, current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
+        # print(f"[DEBUG] set_weight called for station {station_index}, current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
         if (
             0 <= station_index < len(self.station_boxes)
             and self.station_enabled[station_index]
