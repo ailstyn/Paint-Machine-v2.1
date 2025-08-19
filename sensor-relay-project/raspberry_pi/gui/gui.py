@@ -3,9 +3,11 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
-from config import STATION_COLORS, NUM_STATIONS
+# from config import STATION_COLORS, NUM_STATIONS
+STATION_COLORS = ["#B22222", "#1E90FF", "#FFD700", "#228B22"]
+NUM_STATIONS = 4
 import sys
-from gui.languages import LANGUAGES
+from languages import LANGUAGES
 import logging
 import os
 import weakref
@@ -133,7 +135,7 @@ class OutlinedLabel(QLabel):
         weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
         self.setFont(QFont("Arial", font_size, weight))
         self._default_color = QColor(color)
-        self._default_bg = QColor(bg_color) if bg_color else None
+        self._default_bg = QColor(bg_color) if bg_color is not None else None  # Always transparent by default
         self._default_border_radius = border_radius
         self._default_padding = padding
         self._highlighted = False
@@ -144,7 +146,9 @@ class OutlinedLabel(QLabel):
         self._normal_border_color = QColor("transparent")
         self._normal_border_width = 4
         self._normal_bg = None
-        self._outline_width = outline_width  # <-- Add this line
+        self._outline_width = outline_width
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setStyleSheet("background: transparent;")
 
     def set_highlight(self, highlighted: bool):
         """
@@ -160,19 +164,23 @@ class OutlinedLabel(QLabel):
         pad = self._default_padding
         inner_rect = rect.adjusted(pad, pad, -pad, -pad)
 
+        # Only draw background if highlighted or bg_color is set
         if self._highlighted:
+            print("[DEBUG] OutlinedLabel.paintEvent: Drawing HIGHLIGHTED background")
             painter.setBrush(QColor("#F6EB61"))  # Light yellow
-            text_color = QColor("#fff")           # White infill when highlighted
-        else:
-            if self._default_bg is not None:
-                painter.setBrush(self._default_bg)
-            else:
-                painter.setBrush(QColor(0, 0, 0, 0))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
+            text_color = QColor("#fff")
+        elif self._default_bg is not None:
+            print(f"[DEBUG] OutlinedLabel.paintEvent: Drawing background color {self._default_bg.name()}")
+            painter.setBrush(self._default_bg)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
             text_color = self._default_color
-
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
-
+        else:
+            print("[DEBUG] OutlinedLabel.paintEvent: NOT drawing background")
+            text_color = self._default_color
+    
         # Draw text with outline effect
         font = self.font()
         painter.setFont(font)
@@ -182,14 +190,14 @@ class OutlinedLabel(QLabel):
         text_height = metrics.height()
         x = inner_rect.x() + (inner_rect.width() - text_width) / 2
         y = inner_rect.y() + (inner_rect.height() + text_height) / 2 - metrics.descent()
-
+    
         path = QPainterPath()
         path.addText(x, y, font, text)
-
+    
         painter.setPen(QPen(QColor("black"), self._outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawPath(path)
-
+    
         painter.setPen(QPen(text_color, 1))
         painter.setBrush(text_color)
         painter.drawPath(path)
@@ -445,6 +453,8 @@ class StationWidget(QWidget):
         status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
         self.status_label.setPalette(status_palette)
         content_layout.addWidget(self.status_label, stretch=1)
+        self.status_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.status_label.setStyleSheet("background: transparent;")
 
         # Add widgets to layout based on bar_on_left
         if bar_on_left:
@@ -1082,11 +1092,12 @@ class BottleProgressBar(QWidget):
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
             # Bottle geometry
-            margin = 8
+            top_margin = 8
+            bottom_margin = 8
             neck_width = rect.width() * 0.3
             body_width = rect.width() * 0.7
             neck_height = rect.height() * 0.05
-            body_height = rect.height() - neck_height - margin
+            body_height = rect.height() - neck_height - top_margin - bottom_margin
             corner_radius = body_width * 0.18
 
             neck_left = rect.center().x() - neck_width / 2
@@ -1094,29 +1105,28 @@ class BottleProgressBar(QWidget):
             body_left = rect.center().x() - body_width / 2
             body_right = rect.center().x() + body_width / 2
 
+            # Calculate bottom y position
+            bottom_y = neck_height + top_margin + body_height
+
             bottle_path = QPainterPath()
-            bottle_path.moveTo(neck_left, margin)
-            bottle_path.lineTo(neck_right, margin)
-            bottle_path.lineTo(neck_right, neck_height + margin)
+            bottle_path.moveTo(neck_left, top_margin)
+            bottle_path.lineTo(neck_right, top_margin)
+            bottle_path.lineTo(neck_right, neck_height + top_margin)
             bottle_path.arcTo(
-                body_right - 2 * corner_radius, neck_height + margin,
+                body_right - 2 * corner_radius, neck_height + top_margin,
                 2 * corner_radius, 2 * corner_radius,
                 90, -90
             )
-            bottle_path.lineTo(body_right, neck_height + margin + corner_radius)
-            bottle_path.lineTo(body_right, neck_height + body_height)
+            bottle_path.lineTo(body_right, neck_height + top_margin + corner_radius)
+            bottle_path.lineTo(body_right, bottom_y)
+            bottle_path.lineTo(body_left, bottom_y)
+            bottle_path.lineTo(body_left, neck_height + top_margin + corner_radius)
             bottle_path.arcTo(
-                body_left, neck_height + body_height - body_width / 2,
-                body_width, body_width,
-                0, -180
-            )
-            bottle_path.lineTo(body_left, neck_height + margin + corner_radius)
-            bottle_path.arcTo(
-                body_left, neck_height + margin,
+                body_left, neck_height + top_margin,
                 2 * corner_radius, 2 * corner_radius,
                 180, -90
             )
-            bottle_path.lineTo(neck_left, neck_height + margin)
+            bottle_path.lineTo(neck_left, neck_height + top_margin)
             bottle_path.closeSubpath()
 
             # Draw outline
@@ -1132,7 +1142,7 @@ class BottleProgressBar(QWidget):
             fill_height = (body_height + neck_height) * fill_ratio
             fill_rect = QRectF(
                 body_left + 3,
-                neck_height + margin + body_height + neck_height - fill_height,
+                bottom_y + neck_height - fill_height,
                 body_width - 6,
                 fill_height
             )
@@ -1141,7 +1151,6 @@ class BottleProgressBar(QWidget):
             painter.setClipPath(bottle_path)
             painter.drawRect(fill_rect)
             painter.setClipping(False)
-            # No percentage text overlay
         except Exception as e:
             logging.error(f"Error in BottleProgressBar.paintEvent: {e}", exc_info=True)
 
@@ -2143,6 +2152,7 @@ class StartupWizardDialog(QDialog):
 class OfflineStationWidget(QWidget):
     def __init__(self, color, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        print(f"[DEBUG] OfflineStationWidget.__init__: color={color}")
         self.bg_color = QColor(color)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -2156,14 +2166,16 @@ class OfflineStationWidget(QWidget):
             bg_color=None,          # Transparent background
             border_radius=0,
             padding=8,
-            outline_width=6         # Thick black outline
+            outline_width=6
         )
+        print(f"[DEBUG] OfflineStationWidget: OutlinedLabel bg_color={offline_label._default_bg}")
         offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
         layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
     def paintEvent(self, event):
+        print(f"[DEBUG] OfflineStationWidget.paintEvent: bg_color={self.bg_color.name()}, rect={self.rect()}")
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect()
@@ -2173,3 +2185,14 @@ class OfflineStationWidget(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRect(rect)
         super().paintEvent(event)
+
+if __name__ == "__main__":
+    import sys
+    from PyQt6.QtWidgets import QApplication
+
+    app = QApplication(sys.argv)
+    # Example: all stations offline except station 1
+    station_enabled = [True, False, False, False]
+    window = RelayControlApp(station_enabled=station_enabled)
+    window.show()
+    sys.exit(app.exec())

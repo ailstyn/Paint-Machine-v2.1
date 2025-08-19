@@ -705,6 +705,7 @@ def startup(after_startup):
             
             # Now close the wizard (fade out)
             wizard.finish_wizard()
+            app.active_dialog = None  # Ensure main window is now active
             break
 
 
