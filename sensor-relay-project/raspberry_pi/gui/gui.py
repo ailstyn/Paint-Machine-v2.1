@@ -164,19 +164,19 @@ class OutlinedLabel(QLabel):
 
         # Only draw background if highlighted or bg_color is set
         if self._highlighted:
-            print("[DEBUG] OutlinedLabel.paintEvent: Drawing HIGHLIGHTED background")
+            # print("[DEBUG] OutlinedLabel.paintEvent: Drawing HIGHLIGHTED background")
             painter.setBrush(QColor("#F6EB61"))  # Light yellow
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
             text_color = QColor("#fff")
         elif self._default_bg is not None:
-            print(f"[DEBUG] OutlinedLabel.paintEvent: Drawing background color {self._default_bg.name()}")
+            # print(f"[DEBUG] OutlinedLabel.paintEvent: Drawing background color {self._default_bg.name()}")
             painter.setBrush(self._default_bg)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRoundedRect(inner_rect, self._default_border_radius, self._default_border_radius)
             text_color = self._default_color
         else:
-            print("[DEBUG] OutlinedLabel.paintEvent: NOT drawing background")
+            # print("[DEBUG] OutlinedLabel.paintEvent: NOT drawing background")
             text_color = self._default_color
     
         # Draw text with outline effect
@@ -772,6 +772,7 @@ class RelayControlApp(QWidget):
             logging.error(f"Error in RelayControlApp.__init__: {e}", exc_info=True)
 
     def show_menu(self):
+        print("[DEBUG] RelayControlApp.show_menu called")
         try:
             self.active_menu = "main_menu"
             if DEBUG:
