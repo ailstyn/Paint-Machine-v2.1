@@ -1027,8 +1027,8 @@ def handle_button_presses(app):
             else:
                 if DEBUG:
                     print('select button pressed on main screen, opening menu')
-                if not dialog.menu_dialog or not dialog.menu_dialog.isVisible():
-                    dialog.show_menu()
+                # if not dialog.menu_dialog or not dialog.menu_dialog.isVisible():
+                dialog.show_menu()
             return
 
     except Exception as e:
