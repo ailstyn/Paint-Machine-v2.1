@@ -3,11 +3,9 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QRectF, QPropertyAnimation, QVariantAnimation
 from PyQt6.QtGui import QPainter, QPen, QColor, QFont, QPainterPath, QPixmap, QCursor, QFontMetrics, QPalette
-# from config import STATION_COLORS, NUM_STATIONS
-STATION_COLORS = ["#B22222", "#1E90FF", "#FFD700", "#228B22"]
-NUM_STATIONS = 4
+from config import STATION_COLORS, NUM_STATIONS
 import sys
-from languages import LANGUAGES
+from gui.languages import LANGUAGES
 import logging
 import os
 import weakref
@@ -440,7 +438,7 @@ class StationWidget(QWidget):
         content_layout.setSpacing(0)
 
         # Large weight label
-        self.weight_label = OutlinedLabel("0.0 / 0.0 g", font_size=64, bold=True, color="#0f0")
+        self.weight_label = OutlinedLabel("0 / 0 g", font_size=64, bold=True, color="#fff")  # <-- white infill
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setFont(QFont("Arial", 64, QFont.Weight.Bold))
         content_layout.addWidget(self.weight_label, stretch=2)

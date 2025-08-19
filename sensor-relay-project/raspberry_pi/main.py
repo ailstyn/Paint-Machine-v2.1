@@ -55,10 +55,17 @@ serial_numbers = [arduino.serial_number if arduino else None for arduino in ardu
 filling_mode = "AUTO"  # Default mode
 station_max_weight_error = [False] * NUM_STATIONS
 BOTTLE_WEIGHT_TOLERANCE = 25
+RELAY_POWER_ENABLED = False  # Add this global flag
 
 # ========== MESSAGE HANDLERS ==========
 def handle_request_target_weight(station_index, arduino, **ctx):
     try:
+        # Reject fill requests until relay power is enabled
+        if not RELAY_POWER_ENABLED:
+            if DEBUG:
+                print(f"Station {station_index+1}: Fill request rejected, relay power not enabled yet. Sending STOP.")
+            arduino.write(config.STOP)  # Send STOP to Arduino to abort fill
+            return
         if ctx['FILL_LOCKED']:
             if ctx['DEBUG']:
                 print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
@@ -1073,7 +1080,6 @@ def main():
 
         app_qt = QApplication(sys.argv)
 
-        GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         timer = QTimer()
@@ -1088,6 +1094,7 @@ def main():
         timer.start(35)
 
         def after_startup():
+            global RELAY_POWER_ENABLED
             app = RelayControlApp(
                 station_enabled=station_enabled,
                 filling_mode_callback=filling_mode_callback
@@ -1099,11 +1106,11 @@ def main():
                 if station_enabled[i]:
                     widget.set_weight(0, target_weight, "g")
 
-            # Reconnect poll_hardware to RelayControlApp after startup
             timer.timeout.disconnect()
             timer.timeout.connect(lambda: poll_hardware(app))
-            # timer already started, just reconnect
             app.show()
+            GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
+            RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
         # Run startup and pass after_startup as a callback
         startup(after_startup)
