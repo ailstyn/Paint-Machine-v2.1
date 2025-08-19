@@ -632,18 +632,20 @@ class MenuDialog(QDialog):
         parent = self.parent()
         if selected_key == "EXIT":
             self.accept()
+            if parent is not None:
+                parent.active_dialog = parent
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
             parent.active_dialog = parent.target_weight_dialog
-            parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
             parent.target_weight_dialog.finished.connect(self.show_again)
             parent.target_weight_dialog.show()
         elif selected_key == "SET TIME LIMIT":
             self.hide()
             parent.time_limit_dialog = SetTimeLimitDialog(parent)
             parent.active_dialog = parent.time_limit_dialog
-            parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
             parent.time_limit_dialog.show()
         elif selected_key == "SET LANGUAGE":
             self.hide()
@@ -654,7 +656,7 @@ class MenuDialog(QDialog):
                 on_select=parent.set_language
             )
             parent.active_dialog = parent.language_dialog
-            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
             parent.language_dialog.show()
         elif selected_key == "CHANGE UNITS":
             self.hide()
@@ -759,7 +761,7 @@ class RelayControlApp(QWidget):
 
             self.setCursor(QCursor(Qt.CursorShape.BlankCursor))
             self.active_menu = None
-            self.active_dialog = None
+            self.active_dialog = self
 
             # Overlay widget for messages
             self.overlay_widget = OverlayWidget(self)
@@ -770,6 +772,10 @@ class RelayControlApp(QWidget):
             self.arduino_ports = []
         except Exception as e:
             logging.error(f"Error in RelayControlApp.__init__: {e}", exc_info=True)
+
+    def activate_selected(self):
+        """Open the menu dialog when SELECT is pressed and RelayControlApp is active."""
+        self.show_menu()
 
     def show_menu(self):
         print("[DEBUG] RelayControlApp.show_menu called")

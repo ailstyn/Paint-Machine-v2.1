@@ -712,7 +712,7 @@ def startup(after_startup):
             
             # Now close the wizard (fade out)
             wizard.finish_wizard()
-            app.active_dialog = None  # Ensure main window is now active
+            app.active_dialog = app  # Ensure main window is now active
             break
 
 
@@ -968,12 +968,17 @@ def handle_button_presses(app):
     try:
         dialog = getattr(app, "active_dialog", None)
 
+        # If dialog is None, this is an error state
+        if dialog is None:
+            error_msg = "ERROR: No active dialog! Button press ignored."
+            print(error_msg)
+            logging.error(error_msg)
+            return
+
         # Helper: flash icon if button_column exists
         def flash_dialog_icon(index):
-            # Try to flash on the active dialog first
             if dialog is not None and hasattr(dialog, "button_column"):
                 dialog.button_column.flash_icon(index)
-            # If not, flash on the main app window
             elif hasattr(app, "button_column"):
                 app.button_column.flash_icon(index)
 
@@ -981,54 +986,46 @@ def handle_button_presses(app):
         if GPIO.input(config.UP_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             print(f"UP button pressed, dialog: {dialog}")
-            flash_dialog_icon(0)  # Flash UP icon
-            if dialog is not None and hasattr(dialog, "set_arrow_active"):
+            flash_dialog_icon(0)
+            if hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("up")
             while GPIO.input(config.UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
-            if dialog is not None:
-                dialog.select_prev()
-                if hasattr(dialog, "set_arrow_inactive"):
-                    dialog.set_arrow_inactive("up")
+            dialog.select_prev()
+            if hasattr(dialog, "set_arrow_inactive"):
+                dialog.set_arrow_inactive("up")
             return
 
         # DOWN BUTTON
         if GPIO.input(config.DOWN_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             print(f"DOWN button pressed, dialog: {dialog}")
-            flash_dialog_icon(2)  # Flash DOWN icon
-            if dialog is not None and hasattr(dialog, "set_arrow_active"):
+            flash_dialog_icon(2)
+            if hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("down")
             while GPIO.input(config.DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
-            if dialog is not None:
-                dialog.select_next()
-                if hasattr(dialog, "set_arrow_inactive"):
-                    dialog.set_arrow_inactive("down")
+            dialog.select_next()
+            if hasattr(dialog, "set_arrow_inactive"):
+                dialog.set_arrow_inactive("down")
             return
 
         # SELECT BUTTON
         if GPIO.input(config.SELECT_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             print(f"SELECT button pressed, dialog: {dialog}")
-            flash_dialog_icon(1)  # Flash SELECT icon
+            flash_dialog_icon(1)
             while GPIO.input(config.SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
-            if dialog is not None:
-                try:
-                    dialog.activate_selected()
-                except Exception as e:
-                    logging.error("Error in dialog.activate_selected()", exc_info=True)
-                    if DEBUG:
-                        print(f"Error in dialog.activate_selected(): {e}")
-            else:
+            try:
+                dialog.activate_selected()
+            except Exception as e:
+                logging.error("Error in dialog.activate_selected()", exc_info=True)
                 if DEBUG:
-                    print('select button pressed on main screen, opening menu')
-                # if not dialog.menu_dialog or not dialog.menu_dialog.isVisible():
-                dialog.show_menu()
+                    print(f"Error in dialog.activate_selected(): {e}")
             return
 
     except Exception as e:
@@ -1111,6 +1108,9 @@ def main():
             app.show()
             GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
+
+            # Declare RelayControlApp as the active dialog, just like other dialogs
+            app.active_dialog = app
 
         # Run startup and pass after_startup as a callback
         startup(after_startup)
