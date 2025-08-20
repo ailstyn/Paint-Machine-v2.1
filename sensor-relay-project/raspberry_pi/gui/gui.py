@@ -960,7 +960,7 @@ class RelayControlApp(QWidget):
                 on_select=set_filling_mode
             )
             self.active_dialog = dlg
-            dlg.finished.connect(lambda: setattr(self, "active_dialog", None))
+            dlg.finished.connect(lambda: setattr(self, "active_dialog", self))
             dlg.show()
         except Exception as e:
             logging.error("Error in open_filling_mode_dialog", exc_info=True)
