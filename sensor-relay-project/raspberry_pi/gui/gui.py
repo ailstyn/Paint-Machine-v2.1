@@ -948,7 +948,7 @@ class RelayControlApp(QWidget):
                 print("[RelayControlApp] open_filling_mode_dialog called")
             else:
                 logging.info("open_filling_mode_dialog called")
-            def set_filling_mode(mode):
+            def set_filling_mode(mode, index=None):
                 if self.filling_mode_callback:
                     self.filling_mode_callback(mode)
                 self.filling_mode = mode
