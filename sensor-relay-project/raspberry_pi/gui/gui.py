@@ -436,7 +436,7 @@ class StationWidget(QWidget):
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.weight_label.setFont(QFont("Arial", 54, QFont.Weight.Bold))  # Large font for weight display
         self.weight_label.setStyleSheet("font-size: 54pt; color: #fff;")
-        content_layout.addWidget(self.weight_label, stretch=1)  # Take 50% of vertical space
+        content_layout.addWidget(self.weight_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
 
         # Status label
         self.status_label = QLabel(self.tr("READY"))
@@ -445,7 +445,7 @@ class StationWidget(QWidget):
         status_palette = self.status_label.palette()
         status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
         self.status_label.setPalette(status_palette)
-        content_layout.addWidget(self.status_label, stretch=1)  # Take 50% of vertical space
+        content_layout.addWidget(self.status_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
         self.status_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.status_label.setStyleSheet("background: transparent;")
 
