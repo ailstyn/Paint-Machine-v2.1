@@ -774,35 +774,6 @@ def startup(after_startup):
             QTimer.singleShot(2000, dlg.accept)
             continue
         else:
-            # Set target_weight and time_limit using the selected bottle ID from full bottle step
-            bottle_config_line = None
-            with open(config_file, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if line.startswith(f"bottle_{selected_bottle_id}"):
-                        bottle_config_line = line
-                        break
-            if bottle_config_line:
-                parts = bottle_config_line.split("=")[1].split(":")
-                try:
-                    globals()['target_weight'] = float(parts[0])
-                    print(f"target weight {target_weight} set to {globals()['target_weight']}")
-                    # Robustly parse time_limit, fallback to 3000 if missing or invalid
-                    if len(parts) >= 3 and parts[2].strip():
-                        try:
-                            globals()['time_limit'] = int(parts[2])
-                            print(f"time limit {time_limit} set to {globals()['time_limit']}")
-                        except Exception:
-                            globals()['time_limit'] = 3000
-                            print(f"time limit set to default {globals()['time_limit']}")
-                    else:
-                        globals()['time_limit'] = 3000
-                        print(f"time limit set to default {globals()['time_limit']}")
-                    if DEBUG:
-                        print(f"[DEBUG] Set target_weight to {globals()['target_weight']} and time_limit to {globals()['time_limit']} for bottle {selected_bottle_id}")
-                except Exception as e:
-                    print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
-            station_enabled[:] = wizard.get_station_enabled()
             after_startup()
             wizard.finish_wizard()
             app.active_dialog = app
@@ -1191,11 +1162,12 @@ def main():
             )
             app.set_calibrate = None
             app.target_weight = target_weight
-        
+            app.time_limit = time_limit
+
             for i, widget in enumerate(app.station_widgets):
                 if station_enabled[i]:
                     widget.set_weight(0, target_weight, "g")
-        
+
             timer.timeout.disconnect()
             timer.timeout.connect(lambda: poll_hardware(app))
             button_timer.timeout.disconnect()
@@ -1203,7 +1175,7 @@ def main():
             app.show()
             GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
-        
+
             app.active_dialog = app
 
         # Run startup and pass after_startup as a callback
