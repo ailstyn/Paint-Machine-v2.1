@@ -436,6 +436,7 @@ class StationWidget(QWidget):
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setFont(QFont("Arial", 76, QFont.Weight.Bold))  # Large font for weight display
         self.weight_label.setStyleSheet("font-size: 76pt; color: #fff;")
+        self.weight_label.setFixedHeight(110)  # Fixed height for consistent font rendering
         content_layout.addWidget(self.weight_label, stretch=0)
 
         # Status label
@@ -480,7 +481,7 @@ class StationWidget(QWidget):
                     new_text = f"{current_oz:.1f} / {target_oz:.1f} oz"
                 if self.weight_label.text() != new_text:
                     self.weight_label.setText(new_text)
-                    self.adjust_weight_label_font()
+                    pass  # No dynamic font resizing
             if self.progress_bar is not None:
                 self.progress_bar.set_max(target_weight)
                 self.progress_bar.set_value(current_weight)
@@ -490,36 +491,11 @@ class StationWidget(QWidget):
     def resizeEvent(self, event):
         try:
             super().resizeEvent(event)
-            self.adjust_weight_label_font()
+            pass  # No dynamic font resizing
         except Exception as e:
             logging.error(f"Error in StationWidget.resizeEvent (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
 
-    def adjust_weight_label_font(self):
-        try:
-            if not self.weight_label:
-                return
-            label = self.weight_label
-            rect = label.contentsRect()
-            text = label.text()
-            if not text:
-                return
-            font = label.font()
-            min_size = 10
-            max_size = 100
-            step = 2
-            for size in range(max_size, min_size, -step):
-                font.setPointSize(size)
-                metrics = QFontMetrics(font)
-                text_width = metrics.horizontalAdvance(text)
-                text_height = metrics.height()
-                if text_width <= rect.width() - 8 and text_height <= rect.height() - 8:
-                    label.setFont(font)
-                    break
-            else:
-                font.setPointSize(min_size)
-                label.setFont(font)
-        except Exception as e:
-            logging.error(f"Error in StationWidget.adjust_weight_label_font (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
+    # Removed adjust_weight_label_font: no longer needed
 
     def set_status(self, text, color="#fff"):
         print(f"[DEBUG][StationWidget.set_status] station={getattr(self, 'station_number', '?')}, text={text!r}, color={color}")
