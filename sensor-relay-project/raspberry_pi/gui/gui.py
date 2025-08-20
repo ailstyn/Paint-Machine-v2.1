@@ -438,15 +438,10 @@ class StationWidget(QWidget):
         content_layout.addWidget(self.weight_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
 
         # Status label
-        self.status_label = QLabel(self.tr("READY"))
+        self.status_label = OutlinedLabel(self.tr("READY"), font_size=20, bold=True, color="#fff", border_radius=8, outline_width=3)
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.status_label.setFont(QFont("Arial", 20))
-        status_palette = self.status_label.palette()
-        status_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-        self.status_label.setPalette(status_palette)
-        content_layout.addWidget(self.status_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
-        self.status_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.status_label.setStyleSheet("background: transparent;")
+        content_layout.addWidget(self.status_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
 
         # Add widgets to layout based on bar_on_left
         if bar_on_left:
