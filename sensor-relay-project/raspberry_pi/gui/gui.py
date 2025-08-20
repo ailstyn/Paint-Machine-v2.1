@@ -434,8 +434,8 @@ class StationWidget(QWidget):
         # Large weight label
         self.weight_label = OutlinedLabel("0 / 0 g", parent=self)
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.weight_label.setFont(QFont("Arial", 56, QFont.Weight.Bold))  # Large font for weight display
-        self.weight_label.setStyleSheet("font-size: 56pt; color: #fff;")
+        self.weight_label.setFont(QFont("Arial", 76, QFont.Weight.Bold))  # Large font for weight display
+        self.weight_label.setStyleSheet("font-size: 76pt; color: #fff;")
         self.weight_label.setFixedHeight(80)  # Prevent vertical stretching
         content_layout.addWidget(self.weight_label, stretch=0)
 
