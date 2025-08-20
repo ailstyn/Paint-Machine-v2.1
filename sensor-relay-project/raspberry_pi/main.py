@@ -749,7 +749,6 @@ def startup(after_startup):
     wizard.show_empty_bottle_prompt(empty_range=empty_range)
     wizard.show()
 
-    selected_bottle_id_final = None
     while True:
         step_result.clear()
         while not step_result or step_result.get("step") != "empty_bottle":
@@ -763,18 +762,11 @@ def startup(after_startup):
             if station_enabled[i] and station_connected[i]
         ]
 
-        # Determine which bottle range all weights fit into
         def in_range(w, rng):
             return rng[0] <= w <= rng[1]
 
-        found = False
-        for bottle_id, rng in bottle_ranges.items():
-            if all(in_range(w, rng["empty"]) for w in active_weights):
-                selected_bottle_id_final = bottle_id
-                found = True
-                break
-
-        if not found:
+        # Only check that all weights are within the selected bottle's empty range
+        if not all(in_range(w, bottle_ranges[selected_bottle_id]["empty"]) for w in active_weights):
             dlg = InfoDialog("Error", "All bottles must be within the empty bottle weight range.", wizard)
             ping_buzzer_invalid()
             dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -782,25 +774,24 @@ def startup(after_startup):
             QTimer.singleShot(2000, dlg.accept)
             continue
         else:
-            # Set target_weight and time_limit using the final bottle ID
-            if selected_bottle_id_final:
-                bottle_config_line = None
-                with open(config_file, "r") as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith(f"bottle_{selected_bottle_id_final}"):
-                            bottle_config_line = line
-                            break
-                if bottle_config_line:
-                    parts = bottle_config_line.split("=")[1].split(":")
-                    if len(parts) >= 3:
-                        try:
-                            globals()['target_weight'] = float(parts[0])
-                            globals()['time_limit'] = int(parts[2])
-                            if DEBUG:
-                                print(f"[DEBUG] Set target_weight to {globals()['target_weight']} and time_limit to {globals()['time_limit']} for bottle {selected_bottle_id_final}")
-                        except Exception as e:
-                            print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id_final}: {e}")
+            # Set target_weight and time_limit using the selected bottle ID from full bottle step
+            bottle_config_line = None
+            with open(config_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith(f"bottle_{selected_bottle_id}"):
+                        bottle_config_line = line
+                        break
+            if bottle_config_line:
+                parts = bottle_config_line.split("=")[1].split(":")
+                if len(parts) >= 3:
+                    try:
+                        globals()['target_weight'] = float(parts[0])
+                        globals()['time_limit'] = int(parts[2])
+                        if DEBUG:
+                            print(f"[DEBUG] Set target_weight to {globals()['target_weight']} and time_limit to {globals()['time_limit']} for bottle {selected_bottle_id}")
+                    except Exception as e:
+                        print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
             station_enabled[:] = wizard.get_station_enabled()
             after_startup()
             wizard.finish_wizard()
