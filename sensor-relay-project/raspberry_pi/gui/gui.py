@@ -2055,10 +2055,25 @@ class StartupWizardDialog(QDialog):
                 oz = float(current_weight) / 28.3495
                 self.weight_texts[station_index] = f"{oz:.1f} oz"
 
-            # --- NEW LOGIC: Continually check bottle ranges ---
-            # --- NEW LOGIC: Check all bottle ranges for this station ---
-            # --- DEBUG: Always set label color to red ---
-            color = "#FF2222"
+            # --- Bottle range logic ---
+            color = "#FF2222"  # Default to red
+            in_range = False
+            try:
+                weight_val = float(current_weight)
+            except (TypeError, ValueError):
+                weight_val = 0.0
+            # Check all bottle ranges for full_bottle prompt
+            if self.active_prompt == "full_bottle" and hasattr(self, "full_bottle_ranges"):
+                for rng in self.full_bottle_ranges.values():
+                    if rng[0] <= weight_val <= rng[1]:
+                        in_range = True
+                        break
+            # Check empty_bottle range for empty_bottle prompt
+            elif self.active_prompt == "empty_bottle" and hasattr(self, "empty_bottle_range"):
+                rng = self.empty_bottle_range
+                if rng[0] <= weight_val <= rng[1]:
+                    in_range = True
+            color = "#11BD33" if in_range else "#FF2222"
             if box.weight_label:
                 box.weight_label.setStyleSheet(f"color: {color};")
     
