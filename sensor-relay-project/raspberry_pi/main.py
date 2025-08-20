@@ -677,8 +677,8 @@ def startup(after_startup):
     wizard.show()
     step_result.clear()
 
-    selected_bottle_name = None
 
+    selected_bottle_id = None
     while True:
         # Wait for user to press CONTINUE
         while not step_result or step_result.get("step") != "full_bottle":
@@ -697,9 +697,9 @@ def startup(after_startup):
             return rng[0] <= w <= rng[1]
 
         found = False
-        for name, rng in full_ranges.items():
+        for bottle_id, rng in full_ranges.items():
             if all(in_range(w, rng) for w in active_weights):
-                selected_bottle_name = name
+                selected_bottle_id = bottle_id
                 found = True
                 break
 
@@ -714,6 +714,26 @@ def startup(after_startup):
         else:
             break  # Proceed to next step
 
+    # Set target_weight and time_limit based on selected bottle
+    if selected_bottle_id:
+        bottle_config_line = None
+        with open(config_file, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith(f"bottle_{selected_bottle_id}"):
+                    bottle_config_line = line
+                    break
+        if bottle_config_line:
+            parts = bottle_config_line.split("=")[1].split(":")
+            if len(parts) >= 3:
+                try:
+                    target_weight = float(parts[0])
+                    time_limit = int(parts[2])
+                    if DEBUG:
+                        print(f"[DEBUG] Set target_weight to {target_weight} and time_limit to {time_limit} for bottle {selected_bottle_id}")
+                except Exception as e:
+                    print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
+
     # Now show empty bottle prompt
     wizard.show_empty_bottle_prompt()
     wizard.show()
@@ -721,8 +741,8 @@ def startup(after_startup):
     # --- 8. Calibration Step: Place empty bottles ---
 
     # Use the selected bottle's empty range from config
-    if selected_bottle_name and selected_bottle_name in bottle_ranges:
-        empty_range = bottle_ranges[selected_bottle_name]["empty"]
+    if selected_bottle_id and selected_bottle_id in bottle_ranges:
+        empty_range = bottle_ranges[selected_bottle_id]["empty"]
     else:
         empty_range = (0, 0)
 
