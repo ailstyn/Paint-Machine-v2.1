@@ -1131,17 +1131,26 @@ def update_station_status(app, station_index, weight, filling_mode, is_filling, 
     print(f"[DEBUG] update_station_status: idx={station_index}, weight={weight}, mode={filling_mode}, is_filling={is_filling}, fill_result={fill_result}, fill_time={fill_time}")
     widget = app.station_widgets[station_index]
     print(f"widget for station {station_index} is {widget}")
+    units = getattr(app, "units", "g")
     if filling_mode == "AUTO":
         if fill_result == "complete":
-            if fill_time is not None:
-                widget.set_status(f"FINAL WEIGHT: {weight} g\nTIME: {fill_time:.2f} s", color="#11BD33")
+            if units == "oz":
+                weight_str = f"{weight / 28.3495:.2f} oz"
             else:
-                widget.set_status(f"FINAL WEIGHT: {weight} g", color="#11BD33")
+                weight_str = f"{weight} g"
+            if fill_time is not None:
+                widget.set_status(f"FINAL WEIGHT: {weight_str}\nTIME: {fill_time:.2f} s", color="#11BD33")
+            else:
+                widget.set_status(f"FINAL WEIGHT: {weight_str}", color="#11BD33")
         elif fill_result == "timeout":
-            if fill_time is not None:
-                widget.set_status(f"TIMEOUT\nFINAL WEIGHT: {weight} g\nTIME: {fill_time:.2f} s", color="#F6EB61")
+            if units == "oz":
+                weight_str = f"{weight / 28.3495:.2f} oz"
             else:
-                widget.set_status(f"TIMEOUT\nFINAL WEIGHT: {weight} g", color="#F6EB61")
+                weight_str = f"{weight} g"
+            if fill_time is not None:
+                widget.set_status(f"TIMEOUT\nFINAL WEIGHT: {weight_str}\nTIME: {fill_time:.2f} s", color="#F6EB61")
+            else:
+                widget.set_status(f"TIMEOUT\nFINAL WEIGHT: {weight_str}", color="#F6EB61")
         elif fill_result is None and is_filling:
             widget.set_status("AUTO FILL RUNNING", color="#F6EB61")
         elif weight < 40:
