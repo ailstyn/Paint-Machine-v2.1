@@ -601,7 +601,7 @@ class MenuDialog(QDialog):
             "SET LANGUAGE",
             "CHANGE UNITS",
             "SET FILLING MODE",
-            "EXIT",
+            "BACK",
             "SHUT DOWN"
         ]
         self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
@@ -636,7 +636,7 @@ class MenuDialog(QDialog):
     def activate_selected(self):
         selected_key = self.menu_keys[self.selected_index]
         parent = self.parent()
-        if selected_key == "EXIT":
+        if selected_key == "BACK":
             self.accept()
             if parent is not None:
                 parent.active_dialog = parent
@@ -1603,7 +1603,17 @@ class SelectionDialog(FadeMixin, QDialog):
         index = self.selected_index
         value = self.options[index][0]
         if self.on_select_callback:
-            self.on_select_callback(value, index)
+            import inspect
+            # Determine how many args the callback expects (excluding self for bound methods)
+            sig = inspect.signature(self.on_select_callback)
+            params = list(sig.parameters.values())
+            # If first param is 'self', ignore it (bound method)
+            if params and params[0].name == 'self':
+                params = params[1:]
+            if len(params) == 1:
+                self.on_select_callback(value)
+            else:
+                self.on_select_callback(value, index)
         self.flash_selected_and_close()
 
     def showEvent(self, event):
