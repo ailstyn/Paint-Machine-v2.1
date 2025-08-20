@@ -179,6 +179,7 @@ def handle_final_weight(station_index, arduino, **ctx):
 
             print("About to call update_station_status in handle_final_weight")
             update_station_status(
+                ctx.get('app'),
                 station_index,
                 final_weight,  # Always use this value
                 ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
@@ -191,6 +192,7 @@ def handle_final_weight(station_index, arduino, **ctx):
             if fill_time is not None:
                 seconds = int(round(fill_time / 1000))
                 update_station_status(
+                    ctx.get('app'),
                     station_index,
                     final_weight,
                     ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
@@ -220,6 +222,7 @@ def handle_fill_time(station_index, arduino, **ctx):
                 # If fill_time reached the time limit, treat as timeout
                 if fill_time >= ctx.get('time_limit', 3000):
                     update_station_status(
+                        ctx.get('app'),
                         station_index,
                         final_weight,
                         ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
@@ -229,6 +232,7 @@ def handle_fill_time(station_index, arduino, **ctx):
                     )
                 else:
                     update_station_status(
+                        ctx.get('app'),
                         station_index,
                         final_weight,
                         ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
