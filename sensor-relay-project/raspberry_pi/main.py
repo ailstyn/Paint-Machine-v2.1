@@ -633,7 +633,7 @@ def startup(after_startup):
         # Check if any scale > 20g
         scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
         if any(w > 20 for w in scale_values):
-            options = [("CONFIRM", "Confirm all scales are clear"), ("BACK", "Back")]
+            options = [("CONFIRM", "CONFIRM"), ("BACK", "BACK")]
             selection_dialog = SelectionDialog(options=options, title="Confirm All Scales Are Clear")
             selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
             selection_dialog.show()
