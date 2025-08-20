@@ -604,7 +604,8 @@ class MenuDialog(QDialog):
             "SET LANGUAGE",
             "CHANGE UNITS",
             "SET FILLING MODE",
-            "EXIT"
+            "EXIT",
+            "SHUT DOWN"
         ]
         self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
         layout = QVBoxLayout(self)
@@ -642,6 +643,13 @@ class MenuDialog(QDialog):
             self.accept()
             if parent is not None:
                 parent.active_dialog = parent
+        elif selected_key == "SHUT DOWN":
+            self.accept()
+            if parent is not None:
+                parent.active_dialog = None
+            QApplication.instance().quit()
+            import os
+            os.system("sudo shutdown now")
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
@@ -1853,13 +1861,12 @@ class StartupWizardDialog(QDialog):
         self.num_stations = num_stations
 
         # State
-        if self.current_digit < len(self.digits) - 1:
-            self.station_enabled = [True] * num_stations
-            self.station_connected = [True] * num_stations
-            self.weight_texts = ["--"] * num_stations
-            self.station_weights = [0.0] * num_stations
-            self.selection_indices = []
-            self.selection_index = 0
+        self.station_enabled = [True] * num_stations
+        self.station_connected = [True] * num_stations
+        self.weight_texts = ["--"] * num_stations
+        self.station_weights = [0.0] * num_stations
+        self.selection_indices = []
+        self.selection_index = 0
         self.active_prompt = None  # Track which prompt is active
 
         # Layouts
