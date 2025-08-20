@@ -785,13 +785,13 @@ def startup(after_startup):
             if bottle_config_line:
                 parts = bottle_config_line.split("=")[1].split(":")
                 try:
-                    target_weight = float(parts[0])
+                    globals()['target_weight'] = float(parts[0])
                     if len(parts) >= 3:
-                        time_limit = int(parts[2])
+                        globals()['time_limit'] = int(parts[2])
                     else:
-                        time_limit = 3000
+                        globals()['time_limit'] = 3000
                     if DEBUG:
-                        print(f"[DEBUG] (empty bottle step) Set target_weight to {target_weight} and time_limit to {time_limit} for bottle {selected_bottle_id}")
+                        print(f"[DEBUG] (empty bottle step) Set target_weight to {globals()['target_weight']} and time_limit to {globals()['time_limit']} for bottle {selected_bottle_id}")
                 except Exception as e:
                     print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
             after_startup()
