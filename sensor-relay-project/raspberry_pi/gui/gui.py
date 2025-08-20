@@ -436,7 +436,6 @@ class StationWidget(QWidget):
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setFont(QFont("Arial", 22, QFont.Weight.Bold))  # Try 16 for a clear reduction
         self.weight_label.setStyleSheet("font-size: 22pt; color: #fff;")
-        self.weight_label.setFixedHeight(38)  # Prevent vertical stretching
         content_layout.addWidget(self.weight_label, stretch=0)
 
         # Status label
