@@ -129,7 +129,6 @@ class OutlinedLabel(QLabel):
     """
     def __init__(self, text="", parent=None, font_size=24, bold=True, color="#fff", bg_color=None, border_radius=14, padding=4, outline_width=6):
         super().__init__(text, parent)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         weight = QFont.Weight.Bold if bold else QFont.Weight.Normal
         self.setFont(QFont("Arial", font_size, weight))
         self._default_color = QColor(color)
