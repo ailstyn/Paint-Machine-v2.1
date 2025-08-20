@@ -1133,7 +1133,7 @@ def main():
         # Run startup and pass after_startup as a callback
         startup(after_startup)
 
-        sys.exit(app_qt.exec())
+        app_qt.exec()
     except KeyboardInterrupt:
         if DEBUG:
             print("Program interrupted by user.")
