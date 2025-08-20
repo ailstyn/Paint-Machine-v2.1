@@ -178,26 +178,29 @@ class OutlinedLabel(QLabel):
             # print("[DEBUG] OutlinedLabel.paintEvent: NOT drawing background")
             text_color = self._default_color
     
-        # Draw text with outline effect
+        # Draw multi-line text with outline effect
         font = self.font()
         painter.setFont(font)
         text = self.text()
+        lines = text.split('\n')
         metrics = painter.fontMetrics()
-        text_width = metrics.horizontalAdvance(text)
-        text_height = metrics.height()
-        x = inner_rect.x() + (inner_rect.width() - text_width) / 2
-        y = inner_rect.y() + (inner_rect.height() + text_height) / 2 - metrics.descent()
-    
-        path = QPainterPath()
-        path.addText(x, y, font, text)
-    
-        painter.setPen(QPen(QColor("black"), self._outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawPath(path)
-    
-        painter.setPen(QPen(text_color, 1))
-        painter.setBrush(text_color)
-        painter.drawPath(path)
+        line_height = metrics.height()
+        total_height = line_height * len(lines)
+        # Center vertically
+        y_start = inner_rect.y() + (inner_rect.height() - total_height) / 2 + line_height - metrics.descent()
+        for i, line in enumerate(lines):
+            text_width = metrics.horizontalAdvance(line)
+            # Center horizontally
+            x = inner_rect.x() + (inner_rect.width() - text_width) / 2
+            y = y_start + i * line_height
+            path = QPainterPath()
+            path.addText(x, y, font, line)
+            painter.setPen(QPen(QColor("black"), self._outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(path)
+            painter.setPen(QPen(text_color, 1))
+            painter.setBrush(text_color)
+            painter.drawPath(path)
 
 class StationBoxWidget(QWidget):
     def __init__(self, station_index, name, color, connected=None, enabled=None, weight_text=None, parent=None):
