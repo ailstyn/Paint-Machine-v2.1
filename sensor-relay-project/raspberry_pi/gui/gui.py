@@ -431,12 +431,24 @@ class StationWidget(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
-        # Large weight label
-        self.weight_label = OutlinedLabel("0 / 0 g", parent=self)
-        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.weight_label.setFont(QFont("Arial", 54, QFont.Weight.Bold))  # Large font for weight display
-        self.weight_label.setStyleSheet("font-size: 54pt; color: #fff;")
-        content_layout.addWidget(self.weight_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
+        # Split large weight display into two labels side by side
+        weight_row = QHBoxLayout()
+        weight_row.setContentsMargins(0, 0, 0, 0)
+        weight_row.setSpacing(0)
+
+        self.current_weight_label = OutlinedLabel("0 / 0 g", parent=self)
+        self.current_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.current_weight_label.setFont(QFont("Arial", 54, QFont.Weight.Bold))
+        self.current_weight_label.setStyleSheet("font-size: 54pt; color: #fff;")
+        weight_row.addWidget(self.current_weight_label, stretch=1)
+
+        self.target_weight_label = OutlinedLabel("--", parent=self)
+        self.target_weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.target_weight_label.setFont(QFont("Arial", 54, QFont.Weight.Bold))
+        self.target_weight_label.setStyleSheet("font-size: 54pt; color: #fff;")
+        weight_row.addWidget(self.target_weight_label, stretch=1)
+
+        content_layout.addLayout(weight_row, stretch=1)
 
         # Status label
         self.status_label = QLabel(self.tr("READY"))
