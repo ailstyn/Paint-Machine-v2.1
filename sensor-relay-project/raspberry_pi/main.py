@@ -171,27 +171,16 @@ def handle_begin_smart_fill(station_index, arduino, **ctx):
 def handle_final_weight(station_index, arduino, **ctx):
     print(f"[DEBUG] handle_final_weight called for station {station_index}")
     try:
-        weight_bytes = arduino.read(4)
-        print(f"[DEBUG][handle_final_weight] raw bytes: {weight_bytes!r}")
-        if len(weight_bytes) == 4:
-            final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            print(f"[DEBUG][handle_final_weight] parsed final_weight: {final_weight}")
-            last_final_weight[station_index] = final_weight
+        msg_type = arduino.read(1)
+        if msg_type == config.FINAL_WEIGHT:
+            weight_bytes = arduino.read(4)
+            print(f"[DEBUG][handle_final_weight] raw bytes: {weight_bytes!r}")
+            if len(weight_bytes) == 4:
+                final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+                print(f"[DEBUG][handle_final_weight] parsed final_weight: {final_weight}")
+                last_final_weight[station_index] = final_weight
 
-            print("About to call update_station_status in handle_final_weight")
-            update_station_status(
-                ctx.get('app'),
-                station_index,
-                final_weight,  # Always use this value
-                ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-                is_filling=False,
-                fill_result="complete",
-                fill_time=None  # No time yet
-            )
-
-            fill_time = last_fill_time[station_index]
-            if fill_time is not None:
-                seconds = int(round(fill_time / 1000))
+                print("About to call update_station_status in handle_final_weight")
                 update_station_status(
                     ctx.get('app'),
                     station_index,
@@ -199,15 +188,31 @@ def handle_final_weight(station_index, arduino, **ctx):
                     ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
                     is_filling=False,
                     fill_result="complete",
-                    fill_time=seconds
+                    fill_time=None
                 )
-                last_fill_time[station_index] = None
-                last_final_weight[station_index] = None
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Final weight: {final_weight}")
+
+                fill_time = last_fill_time[station_index]
+                if fill_time is not None:
+                    seconds = int(round(fill_time / 1000))
+                    update_station_status(
+                        ctx.get('app'),
+                        station_index,
+                        final_weight,
+                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                        is_filling=False,
+                        fill_result="complete",
+                        fill_time=seconds
+                    )
+                    last_fill_time[station_index] = None
+                    last_final_weight[station_index] = None
+                if ctx['DEBUG']:
+                    print(f"Station {station_index+1}: Final weight: {final_weight}")
+            else:
+                if ctx['DEBUG']:
+                    print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
         else:
             if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
+                print(f"Station {station_index+1}: Unexpected message type in handle_final_weight: {msg_type!r}")
     except Exception as e:
         logging.error("Error in handle_final_weight", exc_info=True)
 
