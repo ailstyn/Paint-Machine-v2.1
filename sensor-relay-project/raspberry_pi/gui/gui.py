@@ -1873,6 +1873,7 @@ class StartupWizardDialog(QDialog):
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         self.info_label.setMinimumHeight(100)
         self.info_label.setMaximumHeight(150)
+        self.info_label.setWordWrap(True)
         info_palette = self.info_label.palette()
         info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
         self.info_label.setPalette(info_palette)

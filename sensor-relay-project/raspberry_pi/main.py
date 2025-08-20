@@ -1128,7 +1128,7 @@ def main():
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
             # Declare RelayControlApp as the active dialog, just like other dialogs
-            app.active_dialog = app
+            app_qt.active_dialog = app
 
         # Run startup and pass after_startup as a callback
         startup(after_startup)
