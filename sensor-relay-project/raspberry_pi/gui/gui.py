@@ -2064,29 +2064,8 @@ class StartupWizardDialog(QDialog):
 
             # --- NEW LOGIC: Continually check bottle ranges ---
             # --- NEW LOGIC: Check all bottle ranges for this station ---
-            color = "#FF2222"  # Default to red (out of range)
-            in_range = False
-            try:
-                weight_val = float(current_weight)
-            except (TypeError, ValueError):
-                print(f"[DEBUG] Could not convert current_weight '{current_weight}' to float for station {station_index}")
-                weight_val = 0.0
-            print(f"[DEBUG] Station {station_index} weight_val: {weight_val}, active_prompt: {self.active_prompt}")
-            if self.active_prompt == "full_bottle" and hasattr(self, "full_bottle_ranges"):
-                for name, rng in self.full_bottle_ranges.items():
-                    print(f"[DEBUG] Checking full_bottle range {name}: {rng[0]}-{rng[1]}")
-                    if rng[0] <= weight_val <= rng[1]:
-                        print(f"[DEBUG] Station {station_index} weight {weight_val} is IN range {name}")
-                        in_range = True
-                        break
-            elif self.active_prompt == "empty_bottle" and hasattr(self, "empty_bottle_range"):
-                rng = self.empty_bottle_range
-                print(f"[DEBUG] Checking empty_bottle range: {rng[0]}-{rng[1]}")
-                if rng[0] <= weight_val <= rng[1]:
-                    print(f"[DEBUG] Station {station_index} weight {weight_val} is IN empty_bottle range")
-                    in_range = True
-            color = "#11BD33" if in_range else "#FF2222"
-            print(f"[DEBUG] Station {station_index} label color set to: {color}")
+            # --- DEBUG: Always set label color to red ---
+            color = "#FF2222"
             if box.weight_label:
                 box.weight_label.setStyleSheet(f"color: {color};")
     
