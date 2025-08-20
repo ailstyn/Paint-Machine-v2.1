@@ -612,12 +612,26 @@ class MenuDialog(QDialog):
             if parent is not None:
                 parent.active_dialog = parent
         elif selected_key == "SHUT DOWN":
-            self.accept()
-            if parent is not None:
-                parent.active_dialog = None
-            QApplication.instance().quit()
-            import os
-            os.system("sudo shutdown now")
+            # Show confirmation dialog
+            options = [("No", "No"), ("Yes", "Yes")]
+            confirm_dialog = SelectionDialog(options=options, title="Shut down?")
+            confirm_dialog.selected_index = 0  # 'No' is default
+            confirm_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+            confirm_dialog.show()
+            parent.active_dialog = confirm_dialog
+            def on_confirm(opt, idx):
+                confirm_dialog.accept()
+                if opt == "Yes":
+                    if parent is not None:
+                        parent.active_dialog = None
+                    QApplication.instance().quit()
+                    import os
+                    os.system("sudo shutdown now")
+                else:
+                    # Restore menu dialog
+                    parent.active_dialog = parent
+                    parent.show()
+            confirm_dialog.on_select_callback = on_confirm
         elif selected_key == "SET TARGET WEIGHT":
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
