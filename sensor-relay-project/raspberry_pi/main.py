@@ -784,14 +784,20 @@ def startup(after_startup):
                         break
             if bottle_config_line:
                 parts = bottle_config_line.split("=")[1].split(":")
-                if len(parts) >= 3:
-                    try:
-                        globals()['target_weight'] = float(parts[0])
-                        globals()['time_limit'] = int(parts[2])
-                        if DEBUG:
-                            print(f"[DEBUG] Set target_weight to {globals()['target_weight']} and time_limit to {globals()['time_limit']} for bottle {selected_bottle_id}")
-                    except Exception as e:
-                        print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
+                try:
+                    globals()['target_weight'] = float(parts[0])
+                    # Robustly parse time_limit, fallback to 3000 if missing or invalid
+                    if len(parts) >= 3 and parts[2].strip():
+                        try:
+                            globals()['time_limit'] = int(parts[2])
+                        except Exception:
+                            globals()['time_limit'] = 3000
+                    else:
+                        globals()['time_limit'] = 3000
+                    if DEBUG:
+                        print(f"[DEBUG] Set target_weight to {globals()['target_weight']} and time_limit to {globals()['time_limit']} for bottle {selected_bottle_id}")
+                except Exception as e:
+                    print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
             station_enabled[:] = wizard.get_station_enabled()
             after_startup()
             wizard.finish_wizard()
