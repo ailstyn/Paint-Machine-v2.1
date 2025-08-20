@@ -854,8 +854,10 @@ def reconnect_arduino(station_index, port):
             arduinos[station_index] = None
 
         arduino = serial.Serial(port, 9600, timeout=0.5)
-        arduino.reset_input_buffer()
-        time.sleep(1)
+        # Clear serial buffer before handshake
+        if arduino.in_waiting > 0:
+            arduino.read(arduino.in_waiting)
+        time.sleep(0.5)
 
         arduino.write(config.RESET_HANDSHAKE)
         arduino.flush()
@@ -875,20 +877,31 @@ def reconnect_arduino(station_index, port):
         station_serials = load_station_serials()
         station_serial_number = None
         for _ in range(60):
+            # Ignore weight messages and only look for handshake response
             if arduino.in_waiting > 0:
-                line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                if DEBUG:
-                    print(f"Received from {port}: {repr(line)}")
-                else:
-                    logging.info(f"Received from {port}: {repr(line)}")
-                match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
-                if match:
-                    station_serial_number = match.group(1)
+                peek = arduino.read(1)
+                if peek == b'<' or peek == b'S':
+                    # Try to read a line for handshake
+                    line = peek + arduino.read_until(b'\n')
+                    try:
+                        line_decoded = line.decode(errors='replace').strip()
+                    except Exception:
+                        line_decoded = str(line)
                     if DEBUG:
-                        print(f"Station serial {station_serial_number} detected on {port}")
+                        print(f"Received from {port}: {repr(line_decoded)}")
                     else:
-                        logging.info(f"Station serial {station_serial_number} detected on {port}")
-                    break
+                        logging.info(f"Received from {port}: {repr(line_decoded)}")
+                    match = re.match(r"<SERIAL:(PM-SN\d{4})>", line_decoded)
+                    if match:
+                        station_serial_number = match.group(1)
+                        if DEBUG:
+                            print(f"Station serial {station_serial_number} detected on {port}")
+                        else:
+                            logging.info(f"Station serial {station_serial_number} detected on {port}")
+                        break
+                else:
+                    # Ignore weight messages (binary data)
+                    continue
             time.sleep(0.1)
         if station_serial_number is None or station_serial_number not in station_serials:
             if DEBUG:
