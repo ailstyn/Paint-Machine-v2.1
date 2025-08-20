@@ -1096,7 +1096,7 @@ class BottleProgressBar(QWidget):
             self._anim = QVariantAnimation(
                 startValue=start_value,
                 endValue=end_value,
-                duration=250  # ms, adjust for speed
+                duration=150  # ms, adjust for speed
             )
             self._anim.valueChanged.connect(self._on_anim_value)
             self._anim.finished.connect(lambda: setattr(self, 'value', end_value))
