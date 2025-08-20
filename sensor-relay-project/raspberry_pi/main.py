@@ -601,32 +601,7 @@ def startup(after_startup):
         app.processEvents()
         time.sleep(0.01)
 
-    # Now open the filling mode selection dialog
-    options = [
-        ("AUTO", "Auto Mode"),
-        ("MANUAL", "Manual Mode"),
-        ("SMART", "Smart Mode")
-    ]
-    selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
-    selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-    selection_dialog.show()
-    app.active_dialog = selection_dialog
-
-    filling_mode_selected = None
-    def on_select(mode, index):
-        nonlocal filling_mode_selected
-        filling_mode_selected = mode
-        filling_mode_callback(mode)
-        selection_dialog.accept()
-    selection_dialog.on_select_callback = on_select
-
-    while selection_dialog.isVisible():
-        app.processEvents()
-        time.sleep(0.01)
-
-    app.active_dialog = wizard
-
-    # --- 6. Calibration Step: Clear all scales ---
+    # --- 5. Calibration Step: Clear all scales ---
     step_result.clear()
     while True:
         wizard.show_empty_scale_prompt()
@@ -673,8 +648,47 @@ def startup(after_startup):
 
     # SKIP WAITING FOR TARE CONFIRMATION, just move on to next step
 
+    # --- 6. Filling mode selection dialog ---
+    options = [
+        ("AUTO", "Auto Mode"),
+        ("MANUAL", "Manual Mode"),
+        ("SMART", "Smart Mode")
+    ]
+    selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
+    selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+    selection_dialog.show()
+    app.active_dialog = selection_dialog
+
+    filling_mode_selected = None
+    def on_select(mode, index):
+        nonlocal filling_mode_selected
+        filling_mode_selected = mode
+        filling_mode_callback(mode)
+        selection_dialog.accept()
+    selection_dialog.on_select_callback = on_select
+
+    while selection_dialog.isVisible():
+        app.processEvents()
+        time.sleep(0.01)
+
+    app.active_dialog = wizard
+
+    # --- 7. If MANUAL, show info and go to RelayControlApp ---
+    if filling_mode_selected == "MANUAL":
+        info_dialog = InfoDialog("Manual Mode Selected", "Manual mode selected. You will control filling manually.", wizard)
+        info_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        info_dialog.show()
+        QTimer.singleShot(2500, info_dialog.accept)
+        while info_dialog.isVisible():
+            app.processEvents()
+            time.sleep(0.01)
+        wizard.finish_wizard()
+        app.active_dialog = app
+        after_startup()
+        return
+
+    # --- 8. Continue with calibration steps for AUTO/SMART ---
     # --- 7. Calibration Step: Place full bottles ---
-    # Build all full bottle ranges from config
     full_ranges = {
         name: bottle_ranges[name]["full"]
         for name in bottle_ranges
@@ -682,7 +696,6 @@ def startup(after_startup):
     wizard.show_full_bottle_prompt(full_ranges)
     wizard.show()
     step_result.clear()
-
 
     selected_bottle_id = None
     while True:
@@ -698,7 +711,6 @@ def startup(after_startup):
             if station_enabled[i] and station_connected[i]
         ]
 
-        # Find which bottle range all weights fit into
         def in_range(w, rng):
             return rng[0] <= w <= rng[1]
 
@@ -744,9 +756,7 @@ def startup(after_startup):
     wizard.show_empty_bottle_prompt()
     wizard.show()
 
-
-    # --- 8. Calibration Step: Place empty bottles ---
-    # Use the selected bottle's empty range from config
+    # --- 9. Calibration Step: Place empty bottles ---
     if selected_bottle_id and selected_bottle_id in bottle_ranges:
         empty_range = bottle_ranges[selected_bottle_id]["empty"]
     else:
@@ -761,7 +771,6 @@ def startup(after_startup):
             app.processEvents()
             time.sleep(0.01)
 
-        # After CONTINUE is pressed, check all active stations
         active_weights = [
             wizard.get_weight(i)
             for i in range(NUM_STATIONS)
@@ -771,7 +780,6 @@ def startup(after_startup):
         def in_range(w, rng):
             return rng[0] <= w <= rng[1]
 
-        # Only check that all weights are within the selected bottle's empty range
         if not all(in_range(w, bottle_ranges[selected_bottle_id]["empty"]) for w in active_weights):
             dlg = InfoDialog("Error", "All bottles must be within the empty bottle weight range.", wizard)
             ping_buzzer_invalid()
@@ -780,7 +788,6 @@ def startup(after_startup):
             QTimer.singleShot(2000, dlg.accept)
             continue
         else:
-            # Set target_weight and time_limit using the selected bottle ID from full bottle step
             bottle_config_line = None
             with open(config_file, "r") as f:
                 for line in f:
