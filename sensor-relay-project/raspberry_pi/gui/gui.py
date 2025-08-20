@@ -587,6 +587,11 @@ class StationWidget(QWidget):
         super().paintEvent(event)
 
 class MenuDialog(QDialog):
+    def restore_active_dialog(self):
+        parent = self.parent()
+        if parent:
+            parent.active_dialog = parent
+        self.show_again()
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -640,14 +645,13 @@ class MenuDialog(QDialog):
             self.hide()
             parent.target_weight_dialog = SetTargetWeightDialog(parent)
             parent.active_dialog = parent.target_weight_dialog
-            parent.target_weight_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
-            parent.target_weight_dialog.finished.connect(self.show_again)
+            parent.target_weight_dialog.finished.connect(self.restore_active_dialog)
             parent.target_weight_dialog.show()
         elif selected_key == "SET TIME LIMIT":
             self.hide()
             parent.time_limit_dialog = SetTimeLimitDialog(parent)
             parent.active_dialog = parent.time_limit_dialog
-            parent.time_limit_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
+            parent.time_limit_dialog.finished.connect(self.restore_active_dialog)
             parent.time_limit_dialog.show()
         elif selected_key == "SET LANGUAGE":
             self.hide()
@@ -658,7 +662,7 @@ class MenuDialog(QDialog):
                 on_select=parent.set_language
             )
             parent.active_dialog = parent.language_dialog
-            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
+            parent.language_dialog.finished.connect(self.restore_active_dialog)
             parent.language_dialog.show()
         elif selected_key == "CHANGE UNITS":
             self.hide()
@@ -669,7 +673,7 @@ class MenuDialog(QDialog):
                 on_select=parent.set_units
             )
             parent.active_dialog = parent.change_units_dialog
-            parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", None))
+            parent.change_units_dialog.finished.connect(self.restore_active_dialog)
             parent.change_units_dialog.show()
         elif selected_key == "SET FILLING MODE":
             self.hide()
