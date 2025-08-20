@@ -97,9 +97,10 @@ def handle_request_time_limit(station_index, arduino, **ctx):
 def handle_current_weight(station_index, arduino, **ctx):
     try:
         weight_bytes = arduino.read(4)
+        print(f"[DEBUG][handle_current_weight] raw bytes: {weight_bytes!r}")
         if len(weight_bytes) == 4:
             weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            #print(f"[DEBUG] handle_current_weight: station={station_index}, weight={weight}")
+            print(f"[DEBUG][handle_current_weight] parsed weight: {weight}")
             widgets = ctx.get('station_widgets')
             app = ctx.get('app')
             target_weight = ctx.get('target_weight', 500.0)
@@ -171,10 +172,10 @@ def handle_final_weight(station_index, arduino, **ctx):
     print(f"[DEBUG] handle_final_weight called for station {station_index}")
     try:
         weight_bytes = arduino.read(4)
-        print(f"[DEBUG] weight_bytes: {weight_bytes!r}")
+        print(f"[DEBUG][handle_final_weight] raw bytes: {weight_bytes!r}")
         if len(weight_bytes) == 4:
             final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            print(f"[DEBUG] final_weight: {final_weight}")
+            print(f"[DEBUG][handle_final_weight] parsed final_weight: {final_weight}")
             last_final_weight[station_index] = final_weight
 
             print("About to call update_station_status in handle_final_weight")
