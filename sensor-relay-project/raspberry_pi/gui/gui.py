@@ -436,7 +436,6 @@ class StationWidget(QWidget):
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setFont(QFont("Arial", 76, QFont.Weight.Bold))  # Large font for weight display
         self.weight_label.setStyleSheet("font-size: 76pt; color: #fff;")
-        self.weight_label.setFixedHeight(80)  # Prevent vertical stretching
         content_layout.addWidget(self.weight_label, stretch=0)
 
         # Status label
@@ -679,7 +678,8 @@ class MenuDialog(QDialog):
                 on_select=parent.set_units
             )
             parent.active_dialog = parent.change_units_dialog
-            parent.change_units_dialog.finished.connect(self.restore_active_dialog)
+            # When dialog finishes, set active_dialog to parent (RelayControlApp), do NOT reopen menu
+            parent.change_units_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
             parent.change_units_dialog.show()
         elif selected_key == "SET FILLING MODE":
             self.hide()
