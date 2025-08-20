@@ -774,6 +774,26 @@ def startup(after_startup):
             QTimer.singleShot(2000, dlg.accept)
             continue
         else:
+            # Set target_weight and time_limit using the selected bottle ID from full bottle step
+            bottle_config_line = None
+            with open(config_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith(f"bottle_{selected_bottle_id}"):
+                        bottle_config_line = line
+                        break
+            if bottle_config_line:
+                parts = bottle_config_line.split("=")[1].split(":")
+                try:
+                    target_weight = float(parts[0])
+                    if len(parts) >= 3:
+                        time_limit = int(parts[2])
+                    else:
+                        time_limit = 3000
+                    if DEBUG:
+                        print(f"[DEBUG] (empty bottle step) Set target_weight to {target_weight} and time_limit to {time_limit} for bottle {selected_bottle_id}")
+                except Exception as e:
+                    print(f"[DEBUG] Error parsing bottle config for {selected_bottle_id}: {e}")
             after_startup()
             wizard.finish_wizard()
             app.active_dialog = app
