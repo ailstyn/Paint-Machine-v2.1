@@ -329,6 +329,7 @@ class StationBoxWidget(QWidget):
         self.weight_text = text
         if self.weight_label:
             self.weight_label.setText(text)
+            # Do not set color here; dialog will set color during calibration
 
     def set_highlight(self, highlighted):
         self._highlighted = highlighted
