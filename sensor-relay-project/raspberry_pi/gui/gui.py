@@ -433,14 +433,23 @@ class StationWidget(QWidget):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
-        # Large weight label
+    # Large weight label
         self.weight_label = OutlinedLabel("0 / 0 g", parent=self)
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.weight_label.setFont(QFont("Arial", 54, QFont.Weight.Bold))  # Large font for weight display
         self.weight_label.setStyleSheet("font-size: 54pt; color: #fff;")
+        self.weight_label.setFixedWidth(320)  # Prevent stretching
         content_layout.addWidget(self.weight_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
 
-        # Status label
+        # Units label (small, between weight and status)
+        self.units_label = QLabel("g")
+        self.units_label.setFont(QFont("Arial", 18))
+        self.units_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.units_label.setStyleSheet("color: #aaa; margin-right: 8px;")
+        self.units_label.setFixedWidth(60)
+        content_layout.addWidget(self.units_label, stretch=0, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+    # Status label
         self.status_label = OutlinedLabel(self.tr("READY"), font_size=20, bold=True, color="#fff", border_radius=8, outline_width=3)
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.status_label.setWordWrap(True)
