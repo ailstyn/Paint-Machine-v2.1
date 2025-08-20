@@ -94,29 +94,47 @@ def handle_request_time_limit(station_index, arduino, **ctx):
     except Exception as e:
         logging.error("Error in handle_request_time_limit", exc_info=True)
 
-def handle_current_weight(station_index, weight_bytes, **ctx):
-    """
-    Handles a CURRENT_WEIGHT message.
-    Expects weight_bytes to be exactly 4 bytes (little-endian signed int).
-    """
-    print(f"[DEBUG][handle_current_weight] raw bytes: {weight_bytes!r}")
-    if len(weight_bytes) == 4:
-        weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-        print(f"[DEBUG][handle_current_weight] parsed weight: {weight}")
-        widgets = ctx.get('station_widgets')
-        app = ctx.get('app')
-        target_weight = ctx.get('target_weight', 500.0)
-        unit = getattr(app, "units", "g") if app else "g"
-        if widgets:
-            widget = widgets[station_index]
-            if station_max_weight_error[station_index]:
-                widget.weight_label.setStyleSheet("color: #FF2222;")
-            else:
-                # ...existing color logic...
-                widget.weight_label.setStyleSheet("color: #fff;")
-            widget.set_weight(weight, target_weight, unit)
-    else:
-        print(f"[DEBUG][handle_current_weight] Incomplete bytes: {weight_bytes!r}")
+def handle_current_weight(station_index, arduino, **ctx):
+    try:
+        weight_bytes = arduino.read(4)
+        print(f"[DEBUG][handle_current_weight] raw bytes: {weight_bytes!r}")
+        if len(weight_bytes) == 4:
+            weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+            print(f"[DEBUG][handle_current_weight] parsed weight: {weight}")
+            widgets = ctx.get('station_widgets')
+            app = ctx.get('app')
+            target_weight = ctx.get('target_weight', 500.0)
+            unit = getattr(app, "units", "g") if app else "g"
+            if widgets:
+                widget = widgets[station_index]
+                if station_max_weight_error[station_index]:
+                    widget.weight_label.setStyleSheet("color: #FF2222;")
+                else:
+                    widget.weight_label.setStyleSheet("color: #fff;")
+                if hasattr(widget, "set_weight"):
+                    widget.set_weight(weight, target_weight, unit)
+                else:
+                    if widget.weight_label:
+                        if unit == "g":
+                            widget.weight_label.setText(f"{int(round(weight))} g")
+                        else:
+                            oz = weight / 28.3495
+                            widget.weight_label.setText(f"{oz:.1f} oz")
+            # StartupWizardDialog support
+            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
+                # print(f"[DEBUG] Calling set_weight on StartupWizardDialog for station {station_index} with weight {weight}")
+                ctx['active_dialog'].set_weight(station_index, weight)
+        else:
+            logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
+            widgets = ctx.get('station_widgets')
+            if widgets:
+                widget = widgets[station_index]
+                if widget.weight_label:
+                    widget.weight_label.setText("0.0 g")
+            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
+                ctx['active_dialog'].set_weight(station_index, 0.0)
+    except Exception as e:
+        logging.error("Error in handle_current_weight", exc_info=True)
 
 def handle_begin_auto_fill(station_index, arduino, **ctx):
     try:
@@ -150,72 +168,30 @@ def handle_begin_smart_fill(station_index, arduino, **ctx):
     except Exception as e:
         logging.error("Error in handle_begin_smart_fill", exc_info=True)
 
-def handle_final_weight(station_index, weight_bytes, **ctx):
-    """
-    Handles a FINAL_WEIGHT message.
-    Expects weight_bytes to be exactly 4 bytes (little-endian signed int).
-    """
-    print(f"[DEBUG][handle_final_weight] raw bytes: {weight_bytes!r}")
-    if len(weight_bytes) == 4:
-        final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-        print(f"[DEBUG][handle_final_weight] parsed final_weight: {final_weight}")
-        last_final_weight[station_index] = final_weight
+def handle_final_weight(station_index, arduino, **ctx):
+    print(f"[DEBUG] handle_final_weight called for station {station_index}")
+    try:
+        weight_bytes = arduino.read(4)
+        print(f"[DEBUG][handle_final_weight] raw bytes: {weight_bytes!r}")
+        if len(weight_bytes) == 4:
+            final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
+            print(f"[DEBUG][handle_final_weight] parsed final_weight: {final_weight}")
+            last_final_weight[station_index] = final_weight
 
-        print("About to call update_station_status in handle_final_weight")
-        update_station_status(
-            ctx.get('app'),
-            station_index,
-            final_weight,
-            ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-            is_filling=False,
-            fill_result="complete",
-            fill_time=None
-        )
-
-        fill_time = last_fill_time[station_index]
-        if fill_time is not None:
-            seconds = int(round(fill_time / 1000))
+            print("About to call update_station_status in handle_final_weight")
             update_station_status(
                 ctx.get('app'),
                 station_index,
-                final_weight,
+                final_weight,  # Always use this value
                 ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
                 is_filling=False,
                 fill_result="complete",
-                fill_time=seconds
+                fill_time=None  # No time yet
             )
-            last_fill_time[station_index] = None
-            last_final_weight[station_index] = None
-        if ctx.get('DEBUG'):
-            print(f"Station {station_index+1}: Final weight: {final_weight}")
-    else:
-        print(f"[DEBUG][handle_final_weight] Incomplete bytes: {weight_bytes!r}")
 
-def handle_fill_time(station_index, time_bytes, **ctx):
-    """
-    Handles a FILL_TIME message.
-    Expects time_bytes to be exactly 4 bytes (little-endian unsigned int).
-    """
-    print(f"[DEBUG][handle_fill_time] raw bytes: {time_bytes!r}")
-    if len(time_bytes) == 4:
-        fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
-        print(f"[DEBUG][handle_fill_time] parsed fill_time: {fill_time}")
-        last_fill_time[station_index] = fill_time
-        final_weight = last_final_weight[station_index]
-        if final_weight is not None:
-            seconds = int(round(fill_time / 1000))
-            # If fill_time reached the time limit, treat as timeout
-            if fill_time >= ctx.get('time_limit', 3000):
-                update_station_status(
-                    ctx.get('app'),
-                    station_index,
-                    final_weight,
-                    ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-                    is_filling=False,
-                    fill_result="timeout",
-                    fill_time=seconds
-                )
-            else:
+            fill_time = last_fill_time[station_index]
+            if fill_time is not None:
+                seconds = int(round(fill_time / 1000))
                 update_station_status(
                     ctx.get('app'),
                     station_index,
@@ -225,12 +201,55 @@ def handle_fill_time(station_index, time_bytes, **ctx):
                     fill_result="complete",
                     fill_time=seconds
                 )
-            last_fill_time[station_index] = None
-            last_final_weight[station_index] = None
-        if ctx.get('DEBUG'):
-            print(f"Station {station_index+1}: Fill time: {fill_time}")
-    else:
-        print(f"[DEBUG][handle_fill_time] Incomplete bytes: {time_bytes!r}")
+                last_fill_time[station_index] = None
+                last_final_weight[station_index] = None
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Final weight: {final_weight}")
+        else:
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
+    except Exception as e:
+        logging.error("Error in handle_final_weight", exc_info=True)
+
+def handle_fill_time(station_index, arduino, **ctx):
+    try:
+        time_bytes = arduino.read(4)
+        if len(time_bytes) == 4:
+            fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
+            last_fill_time[station_index] = fill_time
+            final_weight = last_final_weight[station_index]
+            if final_weight is not None:
+                seconds = int(round(fill_time / 1000))
+                # If fill_time reached the time limit, treat as timeout
+                if fill_time >= ctx.get('time_limit', 3000):
+                    update_station_status(
+                        ctx.get('app'),
+                        station_index,
+                        final_weight,
+                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                        is_filling=False,
+                        fill_result="timeout",
+                        fill_time=seconds
+                    )
+                else:
+                    update_station_status(
+                        ctx.get('app'),
+                        station_index,
+                        final_weight,
+                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
+                        is_filling=False,
+                        fill_result="complete",
+                        fill_time=seconds
+                    )
+                last_fill_time[station_index] = None
+                last_final_weight[station_index] = None
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Fill time: {fill_time} ms")
+        else:
+            if ctx['DEBUG']:
+                print(f"Station {station_index+1}: Incomplete fill time bytes: {time_bytes!r}")
+    except Exception as e:
+        logging.error("Error in handle_fill_time", exc_info=True)
 
 def handle_unknown(station_index, arduino, message_type, **ctx):
     try:
@@ -994,7 +1013,11 @@ def poll_hardware(app):
                     # print(f"[poll_hardware] Station {station_index+1}: in_waiting={arduino.in_waiting}")
 
                 while arduino.in_waiting > 0:
-                    msg_type = arduino.read(1)
+                    message_type = arduino.read(1)
+                    # if DEBUG:
+                    #     print(f"[poll_hardware] Station {station_index+1}: message_type={message_type!r}")
+                    handler = MESSAGE_HANDLERS.get(message_type)
+                    # --- Unified context for handlers ---
                     ctx = {
                         'FILL_LOCKED': FILL_LOCKED,
                         'DEBUG': DEBUG,
@@ -1006,19 +1029,13 @@ def poll_hardware(app):
                         'refresh_ui': refresh_ui,
                         'app': app,
                     }
-                    if msg_type == config.CURRENT_WEIGHT:
-                        weight_bytes = arduino.read(4)
-                        handle_current_weight(station_index, weight_bytes, **ctx)
-                    elif msg_type == config.FINAL_WEIGHT:
-                        weight_bytes = arduino.read(4)
-                        handle_final_weight(station_index, weight_bytes, **ctx)
-                    elif msg_type == config.FILL_TIME:
-                        time_bytes = arduino.read(4)
-                        handle_fill_time(station_index, time_bytes, **ctx)
-                    # ... handle other message types as needed ...
+                    # Remove legacy update_station_weight logic
+                    # Weight updates should use widget.set_weight directly
+
+                    if handler:
+                        handler(station_index, arduino, **ctx)
                     else:
-                        # Optionally skip unknown message data
-                        pass
+                        handle_unknown(station_index, arduino, message_type, **ctx)
             except serial.SerialException as e:
                 if DEBUG:
                     print(f"Lost connection to Arduino {station_index+1}: {e}")
