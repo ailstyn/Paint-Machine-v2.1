@@ -1491,17 +1491,21 @@ class SetTimeLimitDialog(QDialog):
 
     def activate_selected(self):
         try:
-            tenths = int("".join(str(d) for d in self.digits))
-            value_ms = tenths * 100  # Convert tenths of a second to ms
-            parent = self.parent()
-            if parent and hasattr(parent, "set_time_limit"):
-                parent.set_time_limit(value_ms)
-                if hasattr(parent, "show_timed_info"):
-                    seconds = tenths / 10.0
-                    parent.show_timed_info("TIME LIMIT SAVED:", f"{seconds:.1f} sec", timeout_ms=2000)
-            self.accept()
-            if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
-                parent.menu_dialog.accept()
+            if self.current_digit < 3:
+                self.current_digit += 1
+                self.update_display()
+            else:
+                tenths = int("".join(str(d) for d in self.digits))
+                value_ms = tenths * 100  # Convert tenths of a second to ms
+                parent = self.parent()
+                if parent and hasattr(parent, "set_time_limit"):
+                    parent.set_time_limit(value_ms)
+                    if hasattr(parent, "show_timed_info"):
+                        seconds = tenths / 10.0
+                        parent.show_timed_info("TIME LIMIT SAVED:", f"{seconds:.1f} sec", timeout_ms=2000)
+                self.accept()
+                if parent and hasattr(parent, "menu_dialog") and parent.menu_dialog is not None:
+                    parent.menu_dialog.accept()
         except Exception as e:
             logging.error(f"Error in SetTimeLimitDialog.activate_selected: {e}", exc_info=True)
 
