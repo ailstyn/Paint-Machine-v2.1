@@ -591,6 +591,7 @@ class MenuDialog(QDialog):
         parent = self.parent()
         if parent:
             parent.active_dialog = parent
+        # Show menu immediately after restoring active_dialog
         self.show_again()
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -794,7 +795,8 @@ class RelayControlApp(QWidget):
             if self.menu_dialog is None or not self.menu_dialog.isVisible():
                 self.menu_dialog = MenuDialog(self)
                 self.active_dialog = self.menu_dialog
-                self.menu_dialog.finished.connect(lambda: setattr(self, "active_dialog", None))
+                # When menu dialog finishes, restore active_dialog to self
+                self.menu_dialog.finished.connect(lambda: setattr(self, "active_dialog", self))
                 self.menu_dialog.show()
         except Exception as e:
             logging.error(f"Error in RelayControlApp.show_menu: {e}", exc_info=True)
