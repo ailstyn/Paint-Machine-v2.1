@@ -521,6 +521,7 @@ class StationWidget(QWidget):
             logging.error(f"Error in StationWidget.adjust_weight_label_font (station_number={getattr(self, 'station_number', '?')}): {e}", exc_info=True)
 
     def set_status(self, text, color="#fff"):
+        print(f"[DEBUG][StationWidget.set_status] station={getattr(self, 'station_number', '?')}, text={text!r}, color={color}")
         try:
             if self.status_label is not None:
                 self.status_label.setText(text)
