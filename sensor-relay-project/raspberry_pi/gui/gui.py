@@ -1009,7 +1009,7 @@ class InfoDialog(FadeMixin, QDialog):
         self.setModal(True)
         self.setMinimumWidth(400)
         self.setMinimumHeight(220)
-        self.setMaximumHeight(320)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
         self._bg_color = QColor("#222")
         self._border_radius = 0
@@ -1037,8 +1037,8 @@ class InfoDialog(FadeMixin, QDialog):
         value_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
         self.value_label.setPalette(value_palette)
         self.value_label.setMinimumHeight(48)
-        self.value_label.setMaximumHeight(180)
         self.value_label.setWordWrap(True)
+        self.value_label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout.addWidget(self.value_label, stretch=1)  # Add vertical stretch
 
         layout.addStretch(1)  # Extra stretch at the bottom
