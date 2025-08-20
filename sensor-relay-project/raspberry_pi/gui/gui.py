@@ -1937,7 +1937,7 @@ class StartupWizardDialog(QDialog):
             padding=8
         )
         self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.accept_label.setMinimumHeight(72)
+        self.accept_label.setMinimumHeight(50)
         self.accept_label.setFixedWidth(360)
         self.accept_label.set_highlight(False)
         self.main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
