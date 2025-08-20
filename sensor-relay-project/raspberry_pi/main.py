@@ -646,7 +646,7 @@ def startup(after_startup):
         name: bottle_ranges[name]["full"]
         for name in bottle_ranges
     }
-    wizard.show_full_bottle_prompt(full_ranges=full_ranges)
+    wizard.show_full_bottle_prompt(full_ranges)
     wizard.show()
     step_result.clear()
 

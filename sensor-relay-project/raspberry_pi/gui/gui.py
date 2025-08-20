@@ -1990,13 +1990,16 @@ class StartupWizardDialog(QDialog):
 
         self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_scale")
 
-    def show_full_bottle_prompt(self, small_range=(225, 275), large_range=(675, 725)):
-        print(f"[DEBUG] show_full_bottle_prompt called, small_range={small_range}, large_range={large_range}")
+    def show_full_bottle_prompt(self, full_ranges):
+        print(f"[DEBUG] show_full_bottle_prompt called, full_ranges={full_ranges}")
         self.active_prompt = "full_bottle"
-        self.full_bottle_small_range = small_range
-        self.full_bottle_large_range = large_range
+        self.full_bottle_ranges = full_ranges
         self.main_label.setText("Place Full Bottle")
-        self.info_label.setText("Place a full bottle on each enabled station. Press CONTINUE when ready.")
+        # Build info text listing all bottle ranges
+        info_lines = ["Place a full bottle on each enabled station. Press CONTINUE when ready."]
+        for name, rng in full_ranges.items():
+            info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
+        self.info_label.setText("\n".join(info_lines))
         self.selection_indices = ["accept"]
         self.selection_index = 0
         self.update_highlight()
