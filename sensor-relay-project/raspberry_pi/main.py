@@ -191,7 +191,7 @@ def handle_final_weight(station_index, arduino, **ctx):
 
             fill_time = last_fill_time[station_index]
             if fill_time is not None:
-                seconds = int(round(fill_time / 1000))
+                seconds = fill_time / 1000.0
                 update_station_status(
                     ctx.get('app'),
                     station_index,
@@ -219,7 +219,7 @@ def handle_fill_time(station_index, arduino, **ctx):
             last_fill_time[station_index] = fill_time
             final_weight = last_final_weight[station_index]
             if final_weight is not None:
-                seconds = int(round(fill_time / 1000))
+                seconds = fill_time / 1000.0
                 # If fill_time reached the time limit, treat as timeout
                 if fill_time >= ctx.get('time_limit', 3000):
                     update_station_status(
@@ -640,6 +640,7 @@ def startup(after_startup):
         if any(w > 20 for w in scale_values):
             options = [("CONFIRM", "CONFIRM"), ("BACK", "BACK")]
             selection_dialog = SelectionDialog(options=options, title="Confirm All Scales Are Clear")
+            selection_dialog.selected_index = 1  # Make 'BACK' the default selected option
             selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
             selection_dialog.show()
             app.active_dialog = selection_dialog
