@@ -786,12 +786,12 @@ def startup(after_startup):
                 parts = bottle_config_line.split("=")[1].split(":")
                 try:
                     globals()['target_weight'] = float(parts[0])
-                    print(f"target weight set to {globals()['target_weight']}")
+                    print(f"target weight {target_weight} set to {globals()['target_weight']}")
                     # Robustly parse time_limit, fallback to 3000 if missing or invalid
                     if len(parts) >= 3 and parts[2].strip():
                         try:
                             globals()['time_limit'] = int(parts[2])
-                            print(f"time limit set to {globals()['time_limit']}")
+                            print(f"time limit {time_limit} set to {globals()['time_limit']}")
                         except Exception:
                             globals()['time_limit'] = 3000
                             print(f"time limit set to default {globals()['time_limit']}")
