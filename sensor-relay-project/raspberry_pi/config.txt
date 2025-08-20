@@ -16,6 +16,6 @@ station2_enabled=false
 station3_enabled=true
 station4_enabled=false
 
-# Bottle sizes (format: name:full:empty)
-bottle_small=250:30
-bottle_large=700:30
+# Bottle sizes (format: name=full:empty:default_time_limit)
+bottle_01=250:30:3000
+bottle_02=700:30:5000

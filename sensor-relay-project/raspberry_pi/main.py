@@ -388,8 +388,17 @@ def load_bottle_sizes(config_path):
                 if line.startswith("bottle_"):
                     key, value = line.split("=")
                     name = key.replace("bottle_", "")
-                    min_str, max_str = value.split(":")
-                    bottle_sizes[name] = (float(min_str), float(max_str))
+                    parts = value.split(":")
+                    if len(parts) == 3:
+                        full_weight = float(parts[0])
+                        empty_weight = float(parts[1])
+                        default_time_limit = int(parts[2])
+                        bottle_sizes[name] = (full_weight, empty_weight, default_time_limit)
+                    elif len(parts) == 2:
+                        # fallback for old format
+                        full_weight = float(parts[0])
+                        empty_weight = float(parts[1])
+                        bottle_sizes[name] = (full_weight, empty_weight, None)
     except Exception as e:
         if DEBUG:
             print(f"Error loading bottle sizes: {e}")
@@ -407,13 +416,16 @@ def load_bottle_weight_ranges(config_path, tolerance=BOTTLE_WEIGHT_TOLERANCE):
                     key, value = line.split("=")
                     name = key.replace("bottle_", "")
                     parts = value.split(":")
-                    if len(parts) == 2:
+                    if len(parts) >= 2:
                         full_weight = float(parts[0])
                         empty_weight = float(parts[1])
                         bottle_ranges[name] = {
                             "full": (full_weight - tolerance, full_weight + tolerance),
                             "empty": (empty_weight - tolerance, empty_weight + tolerance)
                         }
+                        # Optionally store time limit if present
+                        if len(parts) == 3:
+                            bottle_ranges[name]["default_time_limit"] = int(parts[2])
     except Exception as e:
         if DEBUG:
             print(f"Error loading bottle weight ranges: {e}")
@@ -476,6 +488,7 @@ def startup(after_startup):
     station_serials = load_station_serials()
     station_enabled = load_station_enabled(config_file)
     bottle_sizes = load_bottle_sizes(config_file)
+    bottle_ranges = load_bottle_weight_ranges(config_file, tolerance=BOTTLE_WEIGHT_TOLERANCE)
 
     # --- 2. Connect and initialize Arduinos ---
     if DEBUG:
@@ -553,7 +566,7 @@ def startup(after_startup):
     # --- 3.5. Create StartupWizardDialog ---
     app = QApplication.instance() or QApplication(sys.argv)
 
-    wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
+    wizard = StartupWizardDialog(num_stations=NUM_STATIONS, bottle_ranges=bottle_ranges)
     app.active_dialog = wizard
     
     # Set correct labels for station verification
@@ -628,11 +641,16 @@ def startup(after_startup):
     # SKIP WAITING FOR TARE CONFIRMATION, just move on to next step
 
     # --- 7. Calibration Step: Place full bottles ---
-    small_full_range = (375, 425)
-    large_full_range = (715, 765)
-    wizard.show_full_bottle_prompt(small_range=small_full_range, large_range=large_full_range)
+    # Build all full bottle ranges from config
+    full_ranges = {
+        name: bottle_ranges[name]["full"]
+        for name in bottle_ranges
+    }
+    wizard.show_full_bottle_prompt(full_ranges=full_ranges)
     wizard.show()
     step_result.clear()
+
+    selected_bottle_name = None
 
     while True:
         # Wait for user to press CONTINUE
@@ -647,14 +665,19 @@ def startup(after_startup):
             if station_enabled[i] and station_connected[i]
         ]
 
+        # Find which bottle range all weights fit into
         def in_range(w, rng):
             return rng[0] <= w <= rng[1]
 
-        all_small = all(in_range(w, small_full_range) for w in active_weights)
-        all_large = all(in_range(w, large_full_range) for w in active_weights)
+        found = False
+        for name, rng in full_ranges.items():
+            if all(in_range(w, rng) for w in active_weights):
+                selected_bottle_name = name
+                found = True
+                break
 
-        if not (all_small or all_large):
-            dlg = InfoDialog("Error", "All bottles must be within the same size range (small or large).", wizard)
+        if not found:
+            dlg = InfoDialog("Error", "All bottles must be within the same size range.", wizard)
             ping_buzzer_invalid()
             dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
             dlg.show()
@@ -670,11 +693,9 @@ def startup(after_startup):
 
     # --- 8. Calibration Step: Place empty bottles ---
 
-    # Determine which bottle size was selected in the previous step
-    if all_small:
-        empty_range = (20, 30)
-    elif all_large:
-        empty_range = (30, 40)
+    # Use the selected bottle's empty range from config
+    if selected_bottle_name and selected_bottle_name in bottle_ranges:
+        empty_range = bottle_ranges[selected_bottle_name]["empty"]
     else:
         empty_range = (0, 0)
 
@@ -703,16 +724,13 @@ def startup(after_startup):
             dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
             dlg.show()
             QTimer.singleShot(2000, dlg.accept)
-            # Loop again, so InfoDialog will show every time
             continue
         else:
             # Create RelayControlApp first for seamless transition
             station_enabled[:] = wizard.get_station_enabled()
-            after_startup()  # This creates and shows RelayControlApp
-            
-            # Now close the wizard (fade out)
+            after_startup()
             wizard.finish_wizard()
-            app.active_dialog = app  # Ensure main window is now active
+            app.active_dialog = app
             break
 
 

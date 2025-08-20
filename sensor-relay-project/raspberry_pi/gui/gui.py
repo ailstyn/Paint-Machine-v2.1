@@ -1836,7 +1836,7 @@ class ButtonColumnWidget(QWidget):
 class StartupWizardDialog(QDialog):
     step_completed = pyqtSignal(dict)
 
-    def __init__(self, parent=None, num_stations=4):
+    def __init__(self, parent=None, num_stations=4, bottle_ranges=None):
         super().__init__(parent)
         print("[DEBUG] StartupWizardDialog.__init__ called")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
@@ -2037,20 +2037,23 @@ class StartupWizardDialog(QDialog):
                 oz = float(current_weight) / 28.3495
                 self.weight_texts[station_index] = f"{oz:.1f} oz"
 
-            # Color the weight label based on full bottle ranges if in full bottle prompt
-            if hasattr(self, "full_bottle_small_range") and hasattr(self, "full_bottle_large_range"):
-                in_small = self.full_bottle_small_range[0] <= current_weight <= self.full_bottle_small_range[1]
-                in_large = self.full_bottle_large_range[0] <= current_weight <= self.full_bottle_large_range[1]
-                color = "#11BD33" if in_small or in_large else "#FF2222"
-                if box.weight_label:
-                    box.weight_label.setStyleSheet(f"color: {color};")
-            # Color the weight label based on empty bottle range if in empty bottle prompt
-            if hasattr(self, "empty_bottle_range"):
-                in_empty = self.empty_bottle_range[0] <= current_weight <= self.empty_bottle_range[1]
-                color = "#11BD33" if in_empty else "#FF2222"
-                if box.weight_label:
-                    box.weight_label.setStyleSheet(f"color: {color};")
-
+            # --- NEW LOGIC: Continually check bottle ranges ---
+            color = "#FF2222"  # Default to red (out of range)
+            if self.active_prompt == "full_bottle":
+                for rng in self.bottle_ranges.values():
+                    full_range = rng["full"]
+                    if full_range[0] <= current_weight <= full_range[1]:
+                        color = "#11BD33"
+                        break
+            elif self.active_prompt == "empty_bottle":
+                for rng in self.bottle_ranges.values():
+                    empty_range = rng["empty"]
+                    if empty_range[0] <= current_weight <= empty_range[1]:
+                        color = "#11BD33"
+                        break
+            if box.weight_label:
+                box.weight_label.setStyleSheet(f"color: {color};")
+    
     def update_highlight(self):
         print(f"[DEBUG] update_highlight called, selection_index={self.selection_index}, selection_indices={self.selection_indices}")
         for i, frame in enumerate(self.station_frames):
