@@ -278,8 +278,8 @@ class StationBoxWidget(QWidget):
         self.weight_label = QLabel(weight_text if weight_text is not None else "--")
         self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.weight_label.setMinimumHeight(36)
-        self.weight_label.setMaximumHeight(44)
+        self.weight_label.setMinimumHeight(24)
+        self.weight_label.setMaximumHeight(38)
         layout.addWidget(self.weight_label)
 
         self.setMinimumWidth(216)
