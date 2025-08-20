@@ -589,6 +589,8 @@ class StationWidget(QWidget):
 class MenuDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
         self.selected_index = 0
         self.menu_keys = [
             "SET TARGET WEIGHT",
@@ -600,11 +602,14 @@ class MenuDialog(QDialog):
         ]
         self.menu_items = [self.parent().tr(key) for key in self.menu_keys]
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 24, 24, 24)
+        layout.setSpacing(12)
         self.labels = []
         for item in self.menu_items:
             label = OutlinedLabel(item, font_size=28, bold=True, color="#fff")
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setFixedSize(320, 64)
+            label.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            label.setMinimumHeight(64)
             self.labels.append(label)
             layout.addWidget(label)
         self.setLayout(layout)
@@ -612,12 +617,9 @@ class MenuDialog(QDialog):
 
     def update_selection_box(self):
         for i, label in enumerate(self.labels):
-            if i == self.selected_index:
-                set_frame_highlight(label, True)
-            else:
-                set_frame_highlight(label, False)
             if isinstance(label, OutlinedLabel):
-                label.set_highlight(False)
+                label.set_highlight(i == self.selected_index)
+            # Optionally, you can add a border or background for non-OutlinedLabel
 
     def select_next(self):
         self.selected_index = (self.selected_index + 1) % len(self.labels)
