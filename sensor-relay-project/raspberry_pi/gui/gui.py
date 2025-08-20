@@ -1083,16 +1083,30 @@ class BottleProgressBar(QWidget):
             self.value = value
             self.bar_color = QColor(bar_color)
             self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
-            # No stylesheet needed
+            self._anim = None  # Animation object
         except Exception as e:
             logging.error(f"Error in BottleProgressBar.__init__: {e}", exc_info=True)
 
     def set_value(self, value):
         try:
-            self.value = value
-            self.update()
+            if self._anim is not None and self._anim.state() == self._anim.State.Running:
+                self._anim.stop()
+            start_value = self.value
+            end_value = value
+            self._anim = QVariantAnimation(
+                startValue=start_value,
+                endValue=end_value,
+                duration=250  # ms, adjust for speed
+            )
+            self._anim.valueChanged.connect(self._on_anim_value)
+            self._anim.finished.connect(lambda: setattr(self, 'value', end_value))
+            self._anim.start()
         except Exception as e:
             logging.error(f"Error in BottleProgressBar.set_value: {e}", exc_info=True)
+
+    def _on_anim_value(self, val):
+        self.value = val
+        self.update()
 
     def set_max(self, max_value):
         try:
