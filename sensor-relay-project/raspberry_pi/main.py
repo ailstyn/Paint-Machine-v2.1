@@ -1116,19 +1116,20 @@ def main():
             )
             app.set_calibrate = None
             app.target_weight = target_weight
-
+        
             for i, widget in enumerate(app.station_widgets):
                 if station_enabled[i]:
                     widget.set_weight(0, target_weight, "g")
-
+        
             timer.timeout.disconnect()
             timer.timeout.connect(lambda: poll_hardware(app))
+            button_timer.timeout.disconnect()
+            button_timer.timeout.connect(lambda: handle_button_presses(app))
             app.show()
             GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
-
-            # Declare RelayControlApp as the active dialog, just like other dialogs
-            app_qt.active_dialog = app
+        
+            app.active_dialog = app
 
         # Run startup and pass after_startup as a callback
         startup(after_startup)
