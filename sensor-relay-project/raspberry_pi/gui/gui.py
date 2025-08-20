@@ -274,16 +274,9 @@ class StationBoxWidget(QWidget):
             self.enabled_label.setMaximumHeight(40)
             layout.addWidget(self.enabled_label)
 
-        # Weight label
-        self.weight_label = OutlinedLabel(
-            weight_text if weight_text is not None else "--",
-            font_size=24,
-            bold=True,
-            color="#0f0",
-            bg_color=None,
-            border_radius=8,
-            padding=2
-        )
+    # Weight label
+        self.weight_label = QLabel(weight_text if weight_text is not None else "--")
+        self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setMinimumHeight(36)
         self.weight_label.setMaximumHeight(44)
