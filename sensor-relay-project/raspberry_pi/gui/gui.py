@@ -2066,14 +2066,18 @@ class StartupWizardDialog(QDialog):
             # --- NEW LOGIC: Check all bottle ranges for this station ---
             color = "#FF2222"  # Default to red (out of range)
             in_range = False
+            try:
+                weight_val = float(current_weight)
+            except (TypeError, ValueError):
+                weight_val = 0.0
             if self.active_prompt == "full_bottle" and hasattr(self, "full_bottle_ranges"):
                 for rng in self.full_bottle_ranges.values():
-                    if rng[0] <= current_weight <= rng[1]:
+                    if rng[0] <= weight_val <= rng[1]:
                         in_range = True
                         break
             elif self.active_prompt == "empty_bottle" and hasattr(self, "empty_bottle_range"):
                 rng = self.empty_bottle_range
-                if rng[0] <= current_weight <= rng[1]:
+                if rng[0] <= weight_val <= rng[1]:
                     in_range = True
             color = "#11BD33" if in_range else "#FF2222"
             if box.weight_label:
