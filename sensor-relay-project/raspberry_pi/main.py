@@ -1136,7 +1136,7 @@ def update_station_status(app, station_index, weight, filling_mode, is_filling, 
                 widget.set_status(f"AUTO FILL TIMEOUT {fill_time:.2f}s", color="#F6EB61")
             else:
                 widget.set_status("AUTO FILL TIMEOUT", color="#F6EB61")
-        elif is_filling:
+        elif fill_result is None and is_filling:
             widget.set_status("AUTO FILL RUNNING", color="#F6EB61")
         elif weight < 40:
             widget.set_status("AUTO FILL READY", color="#11BD33")
