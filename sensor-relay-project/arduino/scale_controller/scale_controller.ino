@@ -390,10 +390,10 @@ void fill() {
     long finalWeight = scale.get_units(3);
     Serial.write(FINAL_WEIGHT);
     Serial.write((byte*)&finalWeight, sizeof(finalWeight));
-    
+
     unsigned long fillTime = millis() - fillStartTime;
     Serial.write(FILL_TIME);
-    Serial.println(fillTime);
+    Serial.write((byte*)&fillTime, sizeof(fillTime));
 }
 
 void manual_fill() {
