@@ -1885,7 +1885,7 @@ class StartupWizardDialog(QDialog):
         self.info_label = QLabel()
         self.info_label.setFont(QFont("Arial", 22))
         self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setFixedHeight(100)
+        self.info_label.setFixedHeight(200)
         self.info_label.setWordWrap(True)
         info_palette = self.info_label.palette()
         info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
