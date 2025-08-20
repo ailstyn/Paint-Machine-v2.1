@@ -1183,6 +1183,7 @@ def main():
             app.set_calibrate = None
             app.target_weight = target_weight
             app.time_limit = time_limit
+            app.filling_mode = filling_mode  # Ensure filling_mode is set
 
             for i, widget in enumerate(app.station_widgets):
                 if station_enabled[i]:
