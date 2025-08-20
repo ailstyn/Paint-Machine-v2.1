@@ -432,9 +432,9 @@ class StationWidget(QWidget):
         content_layout.setSpacing(0)
 
         # Large weight label
-        self.weight_label = OutlinedLabel("0 / 0 g", font_size=32, bold=True, color="#fff")  # <-- white infill
+        self.weight_label = OutlinedLabel("0 / 0 g", font_size=20, bold=True, color="#fff")  # <-- white infill
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.weight_label.setFont(QFont("Arial", 32, QFont.Weight.Bold))
+        self.weight_label.setFont(QFont("Arial", 20, QFont.Weight.Bold))
         content_layout.addWidget(self.weight_label, stretch=2)
 
         # Status label
