@@ -623,11 +623,38 @@ def startup(after_startup):
 
     # --- 6. Calibration Step: Clear all scales ---
     step_result.clear()
-    wizard.show_empty_scale_prompt()
-    wizard.show()
-    while not step_result or step_result.get("step") != "empty_scale":
-        app.processEvents()
-        time.sleep(0.01)
+    while True:
+        wizard.show_empty_scale_prompt()
+        wizard.show()
+        while not step_result or step_result.get("step") != "empty_scale":
+            app.processEvents()
+            time.sleep(0.01)
+
+        # Check if any scale > 20g
+        scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+        if any(w > 20 for w in scale_values):
+            options = [("CONFIRM", "Confirm all scales are clear"), ("BACK", "Back")]
+            selection_dialog = SelectionDialog(options=options, title="Confirm All Scales Are Clear")
+            selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+            selection_dialog.show()
+            app.active_dialog = selection_dialog
+            user_choice = None
+            def on_select(opt, idx):
+                nonlocal user_choice
+                user_choice = opt
+                selection_dialog.accept()
+            selection_dialog.on_select_callback = on_select
+            while selection_dialog.isVisible():
+                app.processEvents()
+                time.sleep(0.01)
+            app.active_dialog = wizard
+            if user_choice == "CONFIRM":
+                break  # Proceed to next step
+            else:
+                step_result.clear()  # Retry clear scale step
+                continue
+        else:
+            break  # All scales are clear, proceed
 
     # Send TARE_SCALE to each enabled and connected Arduino
     for i, arduino in enumerate(arduinos):
