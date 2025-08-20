@@ -440,6 +440,7 @@ class StationWidget(QWidget):
         # Status label
         self.status_label = OutlinedLabel(self.tr("READY"), font_size=20, bold=True, color="#fff", border_radius=8, outline_width=3)
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.status_label.setWordWrap(True)
         self.status_label.setStyleSheet("background: transparent;")
         content_layout.addWidget(self.status_label, stretch=1, alignment=Qt.AlignmentFlag.AlignVCenter)  # Center vertically
 
