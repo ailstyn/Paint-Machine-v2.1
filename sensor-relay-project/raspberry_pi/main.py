@@ -536,12 +536,19 @@ def startup(after_startup):
                             print(f"[DEBUG] Sent CONFIRM_ID to station on {port}")
                         break
                 time.sleep(0.1)
-            if station_serial_number is None or station_serial_number not in station_serials:
+            # Accept if detected serial is a substring of any entry in station_serials
+            matched_entry = None
+            if station_serial_number is not None:
+                for entry in station_serials:
+                    if station_serial_number in entry:
+                        matched_entry = entry
+                        break
+            if matched_entry is None:
                 if DEBUG:
                     print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
                 arduino.close()
                 continue
-            station_index = station_serials.index(station_serial_number)
+            station_index = station_serials.index(matched_entry)
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
