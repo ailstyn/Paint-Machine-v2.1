@@ -490,12 +490,12 @@ def log_final_weight(station_index, final_weight):
 def startup(after_startup):
     global arduinos, scale_calibrations, station_enabled, station_serials, DEBUG
 
-    print(app.tr("[DEBUG] startup: loading serials, bottle sizes, and ranges") if hasattr(app, 'tr') else "[DEBUG] startup: loading serials, bottle sizes, and ranges")
+    print("[DEBUG] startup: loading serials, bottle sizes, and ranges")
     station_serials = load_station_serials()
     bottle_sizes = load_bottle_sizes(config_file)
     bottle_ranges = load_bottle_weight_ranges(config_file, tolerance=BOTTLE_WEIGHT_TOLERANCE)
 
-    print(app.tr("[DEBUG] startup: connecting and initializing Arduinos...") if hasattr(app, 'tr') else "[DEBUG] startup: connecting and initializing Arduinos...")
+    print("[DEBUG] startup: connecting and initializing Arduinos...")
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
     for port in config.arduino_ports:
@@ -574,26 +574,26 @@ def startup(after_startup):
             if DEBUG:
                 print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
 
-    print(app.tr("[DEBUG] startup: checking E-STOP state...") if hasattr(app, 'tr') else "[DEBUG] startup: checking E-STOP state...")
+    print("[DEBUG] startup: checking E-STOP state...")
     while GPIO.input(config.E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
-    print(app.tr("[DEBUG] startup: E-STOP released, continuing startup.") if hasattr(app, 'tr') else "[DEBUG] startup: E-STOP released, continuing startup.")
+    print("[DEBUG] startup: E-STOP released, continuing startup.")
 
-    print(app.tr("[DEBUG] startup: creating StartupWizardDialog...") if hasattr(app, 'tr') else "[DEBUG] startup: creating StartupWizardDialog...")
+    print("[DEBUG] startup: creating StartupWizardDialog...")
     app = QApplication.instance() or QApplication(sys.argv)
 
     wizard = StartupWizardDialog(num_stations=NUM_STATIONS, bottle_ranges=bottle_ranges)
-    print(app.tr("[DEBUG] startup: StartupWizardDialog created") if hasattr(app, 'tr') else "[DEBUG] startup: StartupWizardDialog created")
+    print("[DEBUG] startup: StartupWizardDialog created")
     app.active_dialog = wizard
 
-    print(app.tr("[DEBUG] startup: setting station labels in wizard") if hasattr(app, 'tr') else "[DEBUG] startup: setting station labels in wizard")
+    print("[DEBUG] startup: setting station labels in wizard")
     wizard.set_station_labels(
         names=[f"Station {i+1}" for i in range(NUM_STATIONS)],
         connected=station_connected,
         enabled=station_enabled
     )
 
-    print(app.tr("[DEBUG] startup: showing station verification dialog") if hasattr(app, 'tr') else "[DEBUG] startup: showing station verification dialog")
+    print("[DEBUG] startup: showing station verification dialog")
     wizard.show_station_verification()
     wizard.show()
 
@@ -667,16 +667,16 @@ def startup(after_startup):
         ("MANUAL", "Manual Mode"),
         ("SMART", "Smart Mode")
     ]
-    print(app.tr("[DEBUG] Creating filling mode SelectionDialog...") if hasattr(app, 'tr') else "[DEBUG] Creating filling mode SelectionDialog...")
+    print("[DEBUG] Creating filling mode SelectionDialog...")
+    print("[DEBUG] About to create SelectionDialog for filling mode...")
     try:
-        print(app.tr("[DEBUG] About to create SelectionDialog for filling mode...") if hasattr(app, 'tr') else "[DEBUG] About to create SelectionDialog for filling mode...")
         selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
-        print(app.tr(f"[DEBUG] SelectionDialog created: {selection_dialog}") if hasattr(app, 'tr') else f"[DEBUG] SelectionDialog created: {selection_dialog}")
+        print(f"[DEBUG] SelectionDialog created: {selection_dialog}")
         selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-        print(app.tr("[DEBUG] About to show SelectionDialog for filling mode...") if hasattr(app, 'tr') else "[DEBUG] About to show SelectionDialog for filling mode...")
+        print("[DEBUG] About to show SelectionDialog for filling mode...")
         try:
             selection_dialog.show()
-            print(app.tr("[DEBUG] SelectionDialog show() returned (should not crash before this)") if hasattr(app, 'tr') else "[DEBUG] SelectionDialog show() returned (should not crash before this)")
+            print("[DEBUG] SelectionDialog show() returned (should not crash before this)")
         except Exception as exc:
             print(f"[DEBUG] Exception during SelectionDialog show: {exc}")
             logging.error("Exception during SelectionDialog show", exc_info=True)
@@ -698,7 +698,7 @@ def startup(after_startup):
         while selection_dialog.isVisible():
             app.processEvents()
             time.sleep(0.01)
-        print(app.tr("[DEBUG] SelectionDialog no longer visible.") if hasattr(app, 'tr') else "[DEBUG] SelectionDialog no longer visible.")
+        print("[DEBUG] SelectionDialog no longer visible.")
     except Exception as e:
         print(f"[DEBUG] Exception during filling mode dialog: {e}")
         logging.error(f"Exception during filling mode dialog: {e}")
