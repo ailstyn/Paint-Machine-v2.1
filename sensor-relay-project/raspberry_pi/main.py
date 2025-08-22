@@ -1222,71 +1222,71 @@ def main():
             except Exception as e:
                 if DEBUG:
                     print(f"[DEBUG] Exception initializing Arduino on {port} (main): {e}")
-    try:
-        logging.info("Starting main application.")
-        load_scale_calibrations()
-        global station_enabled
-        config_path = "config.txt"
-        station_enabled = load_station_enabled(config_path)
-        if DEBUG:
-            print(f"Loaded station_enabled: {station_enabled}")
-        setup_gpio()
+        try:
+            logging.info("Starting main application.")
+            load_scale_calibrations()
+            global station_enabled
+            config_path = "config.txt"
+            station_enabled = load_station_enabled(config_path)
+            if DEBUG:
+                print(f"Loaded station_enabled: {station_enabled}")
+            setup_gpio()
 
-        app_qt = QApplication(sys.argv)
+            app_qt = QApplication(sys.argv)
 
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-        timer = QTimer()
-        button_timer = QTimer()
+            timer = QTimer()
+            button_timer = QTimer()
 
-        # Start button polling timer BEFORE startup
-        button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
-        button_timer.start(50)
+            # Start button polling timer BEFORE startup
+            button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
+            button_timer.start(50)
 
-        # Start poll_hardware BEFORE startup
-        timer.timeout.connect(lambda: poll_hardware(app_qt))
-        timer.start(35)
+            # Start poll_hardware BEFORE startup
+            timer.timeout.connect(lambda: poll_hardware(app_qt))
+            timer.start(35)
 
-        def after_startup():
-            global RELAY_POWER_ENABLED
-            app = RelayControlApp(
-                station_enabled=station_enabled,
-                filling_mode_callback=filling_mode_callback
-            )
-            app.set_calibrate = None
-            app.target_weight = target_weight
-            app.time_limit = time_limit
-            app.filling_mode = filling_mode  # Ensure filling_mode is set
+            def after_startup():
+                global RELAY_POWER_ENABLED
+                app = RelayControlApp(
+                    station_enabled=station_enabled,
+                    filling_mode_callback=filling_mode_callback
+                )
+                app.set_calibrate = None
+                app.target_weight = target_weight
+                app.time_limit = time_limit
+                app.filling_mode = filling_mode  # Ensure filling_mode is set
 
-            for i, widget in enumerate(app.station_widgets):
-                if station_enabled[i]:
-                    widget.set_weight(0, target_weight, "g")
+                for i, widget in enumerate(app.station_widgets):
+                    if station_enabled[i]:
+                        widget.set_weight(0, target_weight, "g")
 
-            timer.timeout.disconnect()
-            timer.timeout.connect(lambda: poll_hardware(app))
-            button_timer.timeout.disconnect()
-            button_timer.timeout.connect(lambda: handle_button_presses(app))
-            app.show()
-            GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
-            RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
+                timer.timeout.disconnect()
+                timer.timeout.connect(lambda: poll_hardware(app))
+                button_timer.timeout.disconnect()
+                button_timer.timeout.connect(lambda: handle_button_presses(app))
+                app.show()
+                GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
+                RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
-            app.active_dialog = app
+                app.active_dialog = app
 
-        # Run startup and pass after_startup as a callback
-        startup(after_startup)
+            # Run startup and pass after_startup as a callback
+            startup(after_startup)
 
-        app_qt.exec()
-    except KeyboardInterrupt:
-        if DEBUG:
-            print("Program interrupted by user.")
-        logging.info("Program interrupted by user.")
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-    finally:
-        if DEBUG:
-            print("Shutting down...")
-        logging.info("Shutting down and cleaning up GPIO.")
-        GPIO.cleanup()
+            app_qt.exec()
+        except KeyboardInterrupt:
+            if DEBUG:
+                print("Program interrupted by user.")
+            logging.info("Program interrupted by user.")
+        except Exception as e:
+            logging.error(f"Unexpected error: {e}")
+        finally:
+            if DEBUG:
+                print("Shutting down...")
+            logging.info("Shutting down and cleaning up GPIO.")
+            GPIO.cleanup()
 
 if __name__ == "__main__":
     main()
