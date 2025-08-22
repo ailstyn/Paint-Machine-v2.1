@@ -490,14 +490,12 @@ def log_final_weight(station_index, final_weight):
 def startup(after_startup):
     global arduinos, scale_calibrations, station_enabled, station_serials, DEBUG
 
-    # --- 1. Load serials, bottle sizes, and ranges ---
+    print("[DEBUG] startup: loading serials, bottle sizes, and ranges")
     station_serials = load_station_serials()
     bottle_sizes = load_bottle_sizes(config_file)
     bottle_ranges = load_bottle_weight_ranges(config_file, tolerance=BOTTLE_WEIGHT_TOLERANCE)
 
-    # --- 2. Connect and initialize Arduinos ---
-    if DEBUG:
-        print("[DEBUG] Connecting and initializing Arduinos...")
+    print("[DEBUG] startup: connecting and initializing Arduinos...")
     station_connected = [False] * NUM_STATIONS
     arduinos = [None] * NUM_STATIONS
     for port in config.arduino_ports:
@@ -576,27 +574,26 @@ def startup(after_startup):
             if DEBUG:
                 print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
 
-    # --- 3. Wait for E-STOP release ---
-    if DEBUG:
-        print("[DEBUG] Checking E-STOP state...")
+    print("[DEBUG] startup: checking E-STOP state...")
     while GPIO.input(config.E_STOP_PIN) == GPIO.LOW:
         time.sleep(0.1)
-    if DEBUG:
-        print("[DEBUG] E-STOP released, continuing startup.")
+    print("[DEBUG] startup: E-STOP released, continuing startup.")
 
-    # --- 3.5. Create StartupWizardDialog ---
+    print("[DEBUG] startup: creating StartupWizardDialog...")
     app = QApplication.instance() or QApplication(sys.argv)
 
     wizard = StartupWizardDialog(num_stations=NUM_STATIONS, bottle_ranges=bottle_ranges)
+    print("[DEBUG] startup: StartupWizardDialog created")
     app.active_dialog = wizard
-    
-    # Set correct labels for station verification
+
+    print("[DEBUG] startup: setting station labels in wizard")
     wizard.set_station_labels(
         names=[f"Station {i+1}" for i in range(NUM_STATIONS)],
         connected=station_connected,
         enabled=station_enabled
     )
-    
+
+    print("[DEBUG] startup: showing station verification dialog")
     wizard.show_station_verification()
     wizard.show()
 

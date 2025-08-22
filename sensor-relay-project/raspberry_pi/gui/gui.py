@@ -1872,8 +1872,9 @@ class StartupWizardDialog(QDialog):
     step_completed = pyqtSignal(dict)
 
     def __init__(self, parent=None, num_stations=4, bottle_ranges=None):
+        print("[DEBUG] StartupWizardDialog.__init__ start")
         super().__init__(parent)
-        print("[DEBUG] StartupWizardDialog.__init__ called")
+        print("[DEBUG] StartupWizardDialog.__init__ after super")
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
         self.setFixedSize(1024, 600)
@@ -1888,6 +1889,7 @@ class StartupWizardDialog(QDialog):
         self.selection_index = 0
         self.active_prompt = None  # Track which prompt is active
 
+        print("[DEBUG] StartupWizardDialog.__init__ setting up layouts")
         # Layouts
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(24, 16, 24, 16)
@@ -1901,6 +1903,7 @@ class StartupWizardDialog(QDialog):
         main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
         self.main_label.setPalette(main_palette)
         self.main_layout.addWidget(self.main_label)
+        print("[DEBUG] StartupWizardDialog.__init__ finished main label setup")
 
         # Info label
         self.info_label = QLabel()
