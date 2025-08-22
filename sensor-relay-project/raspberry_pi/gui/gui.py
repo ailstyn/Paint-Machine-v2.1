@@ -2258,6 +2258,7 @@ class OfflineStationWidget(QWidget):
         print(f"[DEBUG] OfflineStationWidget: OutlinedLabel bg_color={offline_label._default_bg}")
         offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
+        offline_label.setWordWrap(True)
         layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Add a blank weight_label, but hide it so it doesn't show up
