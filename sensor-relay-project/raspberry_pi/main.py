@@ -672,12 +672,17 @@ def startup(after_startup):
     ]
     print("[DEBUG] Creating filling mode SelectionDialog...")
     try:
+        print("[DEBUG] About to create SelectionDialog for filling mode...")
         selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
-        print("[DEBUG] SelectionDialog created.")
+        print(f"[DEBUG] SelectionDialog created: {selection_dialog}")
         selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-        print("[DEBUG] About to show SelectionDialog...")
-        selection_dialog.show()
-        print("[DEBUG] SelectionDialog shown.")
+        print("[DEBUG] About to show SelectionDialog for filling mode...")
+        try:
+            selection_dialog.show()
+            print("[DEBUG] SelectionDialog show() returned (should not crash before this)")
+        except Exception as exc:
+            print(f"[DEBUG] Exception during SelectionDialog show: {exc}")
+            logging.error("Exception during SelectionDialog show", exc_info=True)
         app.active_dialog = selection_dialog
 
         filling_mode_selected = None
