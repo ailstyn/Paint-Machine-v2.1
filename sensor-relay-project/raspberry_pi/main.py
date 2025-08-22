@@ -8,6 +8,8 @@ import serial
 import RPi.GPIO as GPIO # type: ignore
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
+import faulthandler
+faulthandler.enable()
 from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
