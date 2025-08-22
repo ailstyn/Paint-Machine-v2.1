@@ -509,9 +509,11 @@ def startup(after_startup):
             arduino.reset_input_buffer()
             if DEBUG:
                 print(f"[DEBUG] Flushed serial buffer for {port}")
-            # Send handshake sequence
-            arduino.write(b'PMID')
-            arduino.flush()
+            # Send handshake sequence one byte at a time
+            for b in b'PMID':
+                arduino.write(bytes([b]))
+                arduino.flush()
+                time.sleep(0.01)
             station_serial_number = None
             for _ in range(60):
                 if arduino.in_waiting > 0:
@@ -842,49 +844,6 @@ def filling_mode_callback(mode):
                 except Exception as e:
                     print(f"[main.py] Failed to send EXIT_MANUAL_END to station {i+1}: {e}")
 
-def initialize_arduinos():
-    global arduinos, DEBUG
-    if DEBUG:
-        print("[DEBUG] Connecting and initializing Arduinos (initialize_arduinos)...")
-    station_connected = [False] * NUM_STATIONS
-    arduinos = [None] * NUM_STATIONS
-    for port in config.arduino_ports:
-        try:
-            if DEBUG:
-                print(f"[DEBUG] Trying port {port} (initialize_arduinos)...")
-            arduino = serial.Serial(port, 9600, timeout=0.5)
-            arduino.reset_input_buffer()
-            if DEBUG:
-                print(f"[DEBUG] Flushed serial buffer for {port} (initialize_arduinos)")
-            # Send PMID one byte at a time, with a short delay
-            for b in b'PMID':
-                arduino.write(bytes([b]))
-                arduino.flush()
-                time.sleep(0.01)
-            station_serial_number = None
-            for _ in range(60):
-                if arduino.in_waiting > 0:
-                    line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                    if DEBUG:
-                        print(f"[DEBUG] Received from {port} (initialize_arduinos): {repr(line)}")
-                    match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
-                    if match:
-                        station_serial_number = match.group(1)
-                        # Send CONFIRM_ID byte after receiving serial
-                        arduino.write(config.CONFIRM_ID)
-                        arduino.flush()
-                        break
-            if station_serial_number:
-                if DEBUG:
-                    print(f"[DEBUG] Recognized station on {port}: {station_serial_number} (initialize_arduinos)")
-                station_connected[0] = True
-                arduinos[0] = arduino
-            else:
-                if DEBUG:
-                    print(f"[DEBUG] No recognized station detected on port {port} (initialize_arduinos), skipping...")
-        except Exception as e:
-            if DEBUG:
-                print(f"[DEBUG] Exception initializing Arduino on {port} (initialize_arduinos): {e}")
 
 def reconnect_arduino(station_index, port):
     if DEBUG:
