@@ -1523,6 +1523,7 @@ class SetTimeLimitDialog(QDialog):
 
 class SelectionDialog(FadeMixin, QDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
+        print("[DEBUG] SelectionDialog.__init__ started")
         super().__init__(parent)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
         self.setModal(True)
@@ -1541,6 +1542,7 @@ class SelectionDialog(FadeMixin, QDialog):
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(24, 24, 24, 24)
         outer_layout.setSpacing(12)
+        print("[DEBUG] SelectionDialog.__init__ layout setup")
 
         # Title label (optional)
         if title:
@@ -1567,9 +1569,12 @@ class SelectionDialog(FadeMixin, QDialog):
 
         outer_layout.addLayout(h_center_layout)
         self.setLayout(outer_layout)
+        print("[DEBUG] SelectionDialog.__init__ before update_selection_box")
         self.update_selection_box()
+        print("[DEBUG] SelectionDialog.__init__ finished")
 
     def update_selection_box(self):
+        print(f"[DEBUG] SelectionDialog.update_selection_box called, selected_index={self.selected_index}")
         for i, label in enumerate(self.labels):
             # Use yellow background for highlight, no drop shadow
             if i == self.selected_index:
@@ -1578,14 +1583,17 @@ class SelectionDialog(FadeMixin, QDialog):
                 label.set_highlight(False)
 
     def select_next(self):
+        print("[DEBUG] SelectionDialog.select_next called")
         self.selected_index = (self.selected_index + 1) % len(self.labels)
         self.update_selection_box()
 
     def select_prev(self):
+        print("[DEBUG] SelectionDialog.select_prev called")
         self.selected_index = (self.selected_index - 1) % len(self.labels)
         self.update_selection_box()
 
     def activate_selected(self):
+        print("[DEBUG] SelectionDialog.activate_selected called")
         index = self.selected_index
         value = self.options[index][0]
         if self.on_select_callback:
