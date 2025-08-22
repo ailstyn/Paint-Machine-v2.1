@@ -518,11 +518,22 @@ def startup(after_startup):
                     line = arduino.read_until(b'\n').decode(errors='replace').strip()
                     if DEBUG:
                         print(f"[DEBUG] Received from {port}: {repr(line)}")
-                    match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
+                    # Accept any serial message containing SNxxx or SNxxxx
+                    match = re.search(r"SN\d{3,4}", line)
                     if match:
-                        station_serial_number = match.group(1)
+                        # Extract the full serial string if possible
+                        serial_match = re.search(r"<SERIAL:([A-Z\-]*SN\d{3,4})>", line)
+                        if serial_match:
+                            station_serial_number = serial_match.group(1)
+                        else:
+                            station_serial_number = match.group(0)
                         if DEBUG:
                             print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
+                        # Send CONFIRM_ID after any valid serial
+                        arduino.write(config.CONFIRM_ID)
+                        arduino.flush()
+                        if DEBUG:
+                            print(f"[DEBUG] Sent CONFIRM_ID to station on {port}")
                         break
                 time.sleep(0.1)
             if station_serial_number is None or station_serial_number not in station_serials:
@@ -531,10 +542,6 @@ def startup(after_startup):
                 arduino.close()
                 continue
             station_index = station_serials.index(station_serial_number)
-            arduino.write(config.CONFIRM_ID)
-            arduino.flush()
-            if DEBUG:
-                print(f"[DEBUG] Sent CONFIRM_ID to station {station_index+1} on {port}")
             got_request = False
             for _ in range(40):
                 if arduino.in_waiting > 0:
