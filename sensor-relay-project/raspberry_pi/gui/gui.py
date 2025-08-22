@@ -71,12 +71,8 @@ class FadeMixin:
     FADE_DURATION = 350  # ms
 
     def _init_fade(self):
-        self._fade_out_in_progress = False
-        self.opacity_effect = QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self.opacity_effect)
-        self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
-        self.fade_anim.setDuration(self.FADE_DURATION)
-        animation_manager.register(self.fade_anim)  # Register animation
+        # Fade-in effect disabled for stability
+        pass
 
     def showEvent(self, event):
         if not hasattr(self, 'fade_anim'):
@@ -1798,6 +1794,7 @@ class OverlayWidget(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+
         self._border_color = QColor("#CD0A0A")
         self._border_radius = 32
         self._border_width = 8
