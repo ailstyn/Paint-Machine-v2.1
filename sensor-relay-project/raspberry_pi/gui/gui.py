@@ -2231,6 +2231,12 @@ class StartupWizardDialog(QDialog):
                 box.weight_label.setText(self.weight_texts[i] if self.weight_texts and i < len(self.weight_texts) else "--")
 
 class OfflineStationWidget(QWidget):
+    def update_language(self):
+        # Update the offline label text based on current language
+        parent = self.parent()
+        tr = parent.tr if parent and hasattr(parent, "tr") else (lambda k: LANGUAGES["en"].get(k, k))
+        for child in self.findChildren(OutlinedLabel):
+            child.setText(tr("STATION_OFFLINE"))
     def __init__(self, color, *args, **kwargs):
         super().__init__(*args, **kwargs)
         print(f"[DEBUG] OfflineStationWidget.__init__: color={color}")
