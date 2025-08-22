@@ -856,8 +856,11 @@ def initialize_arduinos():
             arduino.reset_input_buffer()
             if DEBUG:
                 print(f"[DEBUG] Flushed serial buffer for {port} (initialize_arduinos)")
-            arduino.write(b'PMID')
-            arduino.flush()
+            # Send PMID one byte at a time, with a short delay
+            for b in b'PMID':
+                arduino.write(bytes([b]))
+                arduino.flush()
+                time.sleep(0.01)
             station_serial_number = None
             for _ in range(60):
                 if arduino.in_waiting > 0:
@@ -867,6 +870,9 @@ def initialize_arduinos():
                     match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
                     if match:
                         station_serial_number = match.group(1)
+                        # Send CONFIRM_ID byte after receiving serial
+                        arduino.write(config.CONFIRM_ID)
+                        arduino.flush()
                         break
             if station_serial_number:
                 if DEBUG:
