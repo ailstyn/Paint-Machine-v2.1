@@ -670,22 +670,36 @@ def startup(after_startup):
         ("MANUAL", "Manual Mode"),
         ("SMART", "Smart Mode")
     ]
-    selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
-    selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-    selection_dialog.show()
-    app.active_dialog = selection_dialog
+    print("[DEBUG] Creating filling mode SelectionDialog...")
+    try:
+        selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
+        print("[DEBUG] SelectionDialog created.")
+        selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        print("[DEBUG] About to show SelectionDialog...")
+        selection_dialog.show()
+        print("[DEBUG] SelectionDialog shown.")
+        app.active_dialog = selection_dialog
 
-    filling_mode_selected = None
-    def on_select(mode, index):
-        nonlocal filling_mode_selected
-        filling_mode_selected = mode
-        filling_mode_callback(mode)
-        selection_dialog.accept()
-    selection_dialog.on_select_callback = on_select
+        filling_mode_selected = None
+        def on_select(mode, index):
+            print(f"[DEBUG] on_select called with mode={mode}, index={index}")
+            nonlocal filling_mode_selected
+            filling_mode_selected = mode
+            try:
+                filling_mode_callback(mode)
+            except Exception as e:
+                print(f"[DEBUG] Exception in filling_mode_callback: {e}")
+            selection_dialog.accept()
+            print("[DEBUG] SelectionDialog accepted.")
+        selection_dialog.on_select_callback = on_select
 
-    while selection_dialog.isVisible():
-        app.processEvents()
-        time.sleep(0.01)
+        while selection_dialog.isVisible():
+            app.processEvents()
+            time.sleep(0.01)
+        print("[DEBUG] SelectionDialog no longer visible.")
+    except Exception as e:
+        print(f"[DEBUG] Exception during filling mode dialog: {e}")
+        logging.error(f"Exception during filling mode dialog: {e}")
 
     app.active_dialog = wizard
 
