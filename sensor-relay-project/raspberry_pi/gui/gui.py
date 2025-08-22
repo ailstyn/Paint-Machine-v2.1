@@ -67,27 +67,6 @@ def frame_paintEvent(self, event):
         painter.setPen(Qt.PenStyle.NoPen)
     painter.drawRoundedRect(rect, radius, radius)
 
-class FadeMixin:
-    FADE_DURATION = 350  # ms
-
-    def _init_fade(self):
-        # Fade-in effect disabled for stability
-        pass
-
-    def showEvent(self, event):
-        if not hasattr(self, 'fade_anim'):
-            self._init_fade()
-        self.opacity_effect.setOpacity(0)
-        self.fade_anim.stop()
-        self.fade_anim.setStartValue(0)
-        self.fade_anim.setEndValue(1)
-        try:
-            self.fade_anim.finished.disconnect(self._on_fade_in_finished)
-        except Exception:
-            pass
-        self.fade_anim.finished.connect(self._on_fade_in_finished)
-        self.fade_anim.start()
-        super().showEvent(event)
 
     def _on_fade_in_finished(self):
         self.opacity_effect.setOpacity(1)
@@ -1028,7 +1007,7 @@ class RelayControlApp(QWidget):
             else:
                 logging.error(f"Error connecting to station {station_index+1}: {e}")
 
-class InfoDialog(FadeMixin, QDialog):
+class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -1559,7 +1538,7 @@ class SetTimeLimitDialog(QDialog):
         painter.drawRoundedRect(rect, self._border_radius, self._border_radius)
         super().paintEvent(event)
 
-class SelectionDialog(FadeMixin, QDialog):
+class SelectionDialog(QDialog):
     def __init__(self, options, parent=None, title="", label_text="", outlined=True, on_select=None):
         print("[DEBUG] SelectionDialog.__init__ started")
         super().__init__(parent)
