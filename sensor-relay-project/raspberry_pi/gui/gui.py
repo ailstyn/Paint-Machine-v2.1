@@ -1849,47 +1849,23 @@ class ButtonColumnWidget(QWidget):
         layout.addStretch(1)
         self.setLayout(layout)
 
-    def flash_icon(self, index, flash_color="#11BD33", duration=150, fade_duration=350):
+    def flash_icon(self, index, flash_color="#11BD33", duration=200, fade_duration=0):
         if not (0 <= index < len(self.labels)):
             return
         label = self.labels[index]
-        start_color = QColor(flash_color)
-        end_color = QColor(Qt.GlobalColor.white)
-
-        # If an animation is running, stop it
-        if self.animations[index] is not None:
-            self.animations[index].stop()
-            self.animations[index].deleteLater()
-            self.animations[index] = None
-
-        # Flash to color instantly
+        original_palette = label.palette()
+        original_color = original_palette.color(QPalette.ColorRole.WindowText)
         palette = label.palette()
-        palette.setColor(QPalette.ColorRole.WindowText, start_color)
+        palette.setColor(QPalette.ColorRole.WindowText, QColor(flash_color))
         label.setPalette(palette)
 
-        # Animate fade out to white
-        animation = QVariantAnimation(label)
-        animation.setDuration(fade_duration)  # Slower fade out
-        animation.setStartValue(start_color)
-        animation.setEndValue(end_color)
-
-        def on_value_changed(value):
-
+        # Use QTimer to revert color after 0.2 seconds
+        from PyQt6.QtCore import QTimer
+        def revert_color():
             palette = label.palette()
-            palette.setColor(QPalette.ColorRole.WindowText, value)
+            palette.setColor(QPalette.ColorRole.WindowText, original_color)
             label.setPalette(palette)
-
-        animation.valueChanged.connect(on_value_changed)
-
-        def on_finished():
-            palette = label.palette()
-            palette.setColor(QPalette.ColorRole.WindowText, end_color)
-            label.setPalette(palette)
-            self.animations[index] = None
-
-        animation.finished.connect(on_finished)
-        self.animations[index] = animation
-        animation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)
+        QTimer.singleShot(duration, revert_color)
 
 class StartupWizardDialog(QDialog):
     step_completed = pyqtSignal(dict)
