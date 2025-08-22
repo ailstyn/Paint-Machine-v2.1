@@ -622,10 +622,21 @@ class MenuDialog(QDialog):
         self.update_selection_box()
 
     def update_selection_box(self):
+        # Only update highlight if no fade-in animation is active for this dialog
+        fadein_active = any(
+            hasattr(anim, 'targetObject') and anim.targetObject() is getattr(self, 'opacity_effect', None)
+            for anim in animation_manager.active_animations
+        )
+        if fadein_active:
+            print("[SelectionDialog] Fade-in animation active, skipping highlight update")
+            return
+        print(f"[DEBUG] SelectionDialog.update_selection_box called, selected_index={self.selected_index}")
         for i, label in enumerate(self.labels):
-            if isinstance(label, OutlinedLabel):
-                label.set_highlight(i == self.selected_index)
-            # Optionally, you can add a border or background for non-OutlinedLabel
+            # Use yellow background for highlight, no drop shadow
+            if i == self.selected_index:
+                label.set_highlight(True)
+            else:
+                label.set_highlight(False)
 
     def select_next(self):
         self.selected_index = (self.selected_index + 1) % len(self.labels)
@@ -1605,6 +1616,14 @@ class SelectionDialog(FadeMixin, QDialog):
         print("[DEBUG] SelectionDialog.__init__ finished")
 
     def update_selection_box(self):
+        # Only update highlight if no fade-in animation is active for this dialog
+        fadein_active = any(
+            hasattr(anim, 'targetObject') and anim.targetObject() is getattr(self, 'opacity_effect', None)
+            for anim in animation_manager.active_animations
+        )
+        if fadein_active:
+            print("[SelectionDialog] Fade-in animation active, skipping highlight update")
+            return
         print(f"[DEBUG] SelectionDialog.update_selection_box called, selected_index={self.selected_index}")
         for i, label in enumerate(self.labels):
             # Use yellow background for highlight, no drop shadow
@@ -1614,12 +1633,10 @@ class SelectionDialog(FadeMixin, QDialog):
                 label.set_highlight(False)
 
     def select_next(self):
-        print("[DEBUG] SelectionDialog.select_next called")
         self.selected_index = (self.selected_index + 1) % len(self.labels)
         self.update_selection_box()
 
     def select_prev(self):
-        print("[DEBUG] SelectionDialog.select_prev called")
         self.selected_index = (self.selected_index - 1) % len(self.labels)
         self.update_selection_box()
 
