@@ -506,7 +506,10 @@ class StationWidget(QWidget):
         print(f"[DEBUG][StationWidget.set_status] station={getattr(self, 'station_number', '?')}, text={text!r}, color={color}")
         try:
             if self.status_label is not None:
-                self.status_label.setText(text)
+                # Translate status text if key exists in LANGUAGES
+                lang = getattr(self.parent(), "language", "en") if hasattr(self.parent(), "language") else "en"
+                translated_text = LANGUAGES.get(lang, LANGUAGES["en"]).get(text, text)
+                self.status_label.setText(translated_text)
                 status_palette = self.status_label.palette()
                 status_palette.setColor(QPalette.ColorRole.WindowText, QColor(color))
                 self.status_label.setPalette(status_palette)
