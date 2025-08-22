@@ -674,13 +674,6 @@ def startup(after_startup):
         selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
         print(f"[DEBUG] SelectionDialog created: {selection_dialog}")
         selection_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-        print("[DEBUG] About to show SelectionDialog for filling mode...")
-        try:
-            selection_dialog.show()
-            print("[DEBUG] SelectionDialog show() returned (should not crash before this)")
-        except Exception as exc:
-            print(f"[DEBUG] Exception during SelectionDialog show: {exc}")
-            logging.error("Exception during SelectionDialog show", exc_info=True)
         app.active_dialog = selection_dialog
 
         filling_mode_selected = None
@@ -697,18 +690,16 @@ def startup(after_startup):
         selection_dialog.on_select_callback = on_select
 
         # Timeout logic: auto-select 'AUTO' after 5 seconds if no selection
-        timeout_seconds = 5.0
-        start_time = time.time()
-        while selection_dialog.isVisible():
-            app.processEvents()
-            time.sleep(0.01)
-            if time.time() - start_time > timeout_seconds:
-                if filling_mode_selected is None:
-                    print("[DEBUG] Timeout reached, auto-selecting 'AUTO' mode.")
-                    filling_mode_selected = "AUTO"
-                    filling_mode_callback("AUTO")
-                    selection_dialog.accept()
-        print("[DEBUG] SelectionDialog no longer visible.")
+        def auto_select():
+            if selection_dialog.isVisible() and filling_mode_selected is None:
+                print("[DEBUG] Timeout reached, auto-selecting 'AUTO' mode.")
+                filling_mode_selected = "AUTO"
+                filling_mode_callback("AUTO")
+                selection_dialog.accept()
+        QTimer.singleShot(5000, auto_select)
+
+        selection_dialog.exec()  # Modal dialog
+        print("[DEBUG] SelectionDialog exec() finished.")
     except Exception as e:
         print(f"[DEBUG] Exception during filling mode dialog: {e}")
         logging.error(f"Exception during filling mode dialog: {e}")
