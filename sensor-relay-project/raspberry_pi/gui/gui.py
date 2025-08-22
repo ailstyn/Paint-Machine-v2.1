@@ -2253,10 +2253,11 @@ class OfflineStationWidget(QWidget):
         offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
         layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Add a blank weight_label
+        # Add a blank weight_label, but hide it so it doesn't show up
         self.weight_label = QLabel("")
         self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.weight_label.setVisible(False)
         layout.addWidget(self.weight_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.setLayout(layout)
 
