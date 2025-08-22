@@ -490,10 +490,8 @@ def log_final_weight(station_index, final_weight):
 def startup(after_startup):
     global arduinos, scale_calibrations, station_enabled, station_serials, DEBUG
 
-    # --- 1. Load calibration, serials, enabled states ---
-    load_scale_calibrations()
+    # --- 1. Load serials, bottle sizes, and ranges ---
     station_serials = load_station_serials()
-    station_enabled = load_station_enabled(config_file)
     bottle_sizes = load_bottle_sizes(config_file)
     bottle_ranges = load_bottle_weight_ranges(config_file, tolerance=BOTTLE_WEIGHT_TOLERANCE)
 

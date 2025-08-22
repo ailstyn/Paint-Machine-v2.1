@@ -1,4 +1,5 @@
 #!/bin/bash
+env > /tmp/env_update.txt
 # filepath: /sensor-relay-project/update_and_flash.sh
 
 set -e

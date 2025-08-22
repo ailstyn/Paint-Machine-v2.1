@@ -1,4 +1,5 @@
 #!/bin/bash
+env > /tmp/env_kiosk.txt
 # filepath: ~/start_kiosk.sh
 
 # Wait for X to be ready
