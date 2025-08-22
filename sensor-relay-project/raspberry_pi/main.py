@@ -669,6 +669,7 @@ def startup(after_startup):
     ]
     print("[DEBUG] Creating filling mode SelectionDialog...")
     print("[DEBUG] About to create SelectionDialog for filling mode...")
+
     try:
         selection_dialog = SelectionDialog(options=options, title="FILLING MODE")
         print(f"[DEBUG] SelectionDialog created: {selection_dialog}")
@@ -695,9 +696,18 @@ def startup(after_startup):
             print("[DEBUG] SelectionDialog accepted.")
         selection_dialog.on_select_callback = on_select
 
+        # Timeout logic: auto-select 'AUTO' after 5 seconds if no selection
+        timeout_seconds = 5.0
+        start_time = time.time()
         while selection_dialog.isVisible():
             app.processEvents()
             time.sleep(0.01)
+            if time.time() - start_time > timeout_seconds:
+                if filling_mode_selected is None:
+                    print("[DEBUG] Timeout reached, auto-selecting 'AUTO' mode.")
+                    filling_mode_selected = "AUTO"
+                    filling_mode_callback("AUTO")
+                    selection_dialog.accept()
         print("[DEBUG] SelectionDialog no longer visible.")
     except Exception as e:
         print(f"[DEBUG] Exception during filling mode dialog: {e}")
