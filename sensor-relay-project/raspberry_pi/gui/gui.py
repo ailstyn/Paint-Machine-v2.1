@@ -2219,7 +2219,18 @@ class OfflineStationWidget(QWidget):
         offline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         offline_label.setFont(QFont("Arial", 48, QFont.Weight.Bold))
         layout.addWidget(offline_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Add a weight_label that always displays "--"
+        self.weight_label = QLabel("--")
+        self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.weight_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
         self.setLayout(layout)
+
+    def set_weight(self, current_weight, target_weight=None, unit="g"):
+        # Dummy method: do nothing, but present for interface compatibility
+        self.weight_label.setText("--")
 
     def paintEvent(self, event):
         print(f"[DEBUG] OfflineStationWidget.paintEvent: bg_color={self.bg_color.name()}, rect={self.rect()}")
