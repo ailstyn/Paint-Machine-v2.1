@@ -1280,7 +1280,6 @@ def main():
 
                 app.active_dialog = app
 
-            initialize_arduinos()
             startup(after_startup)
 
             app_qt.exec()
