@@ -1,4 +1,7 @@
 #!/bin/bash
+echo "[DEBUG] start_kiosk.sh: pwd=$(pwd)"
+echo "[DEBUG] start_kiosk.sh: whoami=$(whoami)"
+echo "[DEBUG] start_kiosk.sh: groups=$(groups)"
 env > /tmp/env_kiosk.txt
 # filepath: ~/start_kiosk.sh
 

@@ -1,4 +1,11 @@
 #!/bin/bash
+echo "[DEBUG] update.sh: pwd=$(pwd)"
+echo "[DEBUG] update.sh: whoami=$(whoami)"
+echo "[DEBUG] update.sh: groups=$(groups)"
+echo "[DEBUG] update.sh: lsusb="
+lsusb
+echo "[DEBUG] update.sh: ls -l /dev/ttyACM* /dev/ttyUSB*"
+ls -l /dev/ttyACM* /dev/ttyUSB* 2>&1 || true
 env > /tmp/env_update.txt
 # filepath: /sensor-relay-project/update_and_flash.sh
 
