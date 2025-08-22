@@ -673,7 +673,7 @@ class MenuDialog(QDialog):
                 on_select=parent.set_language
             )
             parent.active_dialog = parent.language_dialog
-            parent.language_dialog.finished.connect(self.restore_active_dialog)
+            parent.language_dialog.finished.connect(lambda: setattr(parent, "active_dialog", parent))
             parent.language_dialog.show()
         elif selected_key == "CHANGE UNITS":
             self.hide()
