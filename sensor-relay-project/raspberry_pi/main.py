@@ -1185,6 +1185,7 @@ def update_station_status(app, station_index, weight, filling_mode, is_filling, 
     widget = app.station_widgets[station_index]
     print(f"widget for station {station_index} is {widget}")
     units = getattr(app, "units", "g")
+    tr = getattr(app, "tr", lambda k: k)
     if filling_mode == "AUTO":
         if fill_result == "complete":
             if units == "oz":
@@ -1192,26 +1193,30 @@ def update_station_status(app, station_index, weight, filling_mode, is_filling, 
             else:
                 weight_str = f"{weight} g"
             if fill_time is not None:
-                widget.set_status(f"FINAL WEIGHT: {weight_str}\nTIME: {fill_time:.2f} s", color="#11BD33")
+                status_text = f"{tr('FINAL WEIGHT')}: {weight_str}\n{tr('TIME')}: {fill_time:.2f} s"
+                widget.set_status(status_text, color="#11BD33")
             else:
-                widget.set_status(f"FINAL WEIGHT: {weight_str}", color="#11BD33")
+                status_text = f"{tr('FINAL WEIGHT')}: {weight_str}"
+                widget.set_status(status_text, color="#11BD33")
         elif fill_result == "timeout":
             if units == "oz":
                 weight_str = f"{weight / 28.3495:.2f} oz"
             else:
                 weight_str = f"{weight} g"
             if fill_time is not None:
-                widget.set_status(f"TIMEOUT\nFINAL WEIGHT: {weight_str}\nTIME: {fill_time:.2f} s", color="#F6EB61")
+                status_text = f"{tr('TIMEOUT')}\n{tr('FINAL WEIGHT')}: {weight_str}\n{tr('TIME')}: {fill_time:.2f} s"
+                widget.set_status(status_text, color="#F6EB61")
             else:
-                widget.set_status(f"TIMEOUT\nFINAL WEIGHT: {weight_str}", color="#F6EB61")
+                status_text = f"{tr('TIMEOUT')}\n{tr('FINAL WEIGHT')}: {weight_str}"
+                widget.set_status(status_text, color="#F6EB61")
         elif fill_result is None and is_filling:
-            widget.set_status("AUTO FILL RUNNING", color="#F6EB61")
+            widget.set_status(tr("AUTO FILL RUNNING"), color="#F6EB61")
         elif weight < 40:
-            widget.set_status("AUTO FILL READY", color="#11BD33")
+            widget.set_status(tr("AUTO FILL READY"), color="#11BD33")
         else:
-            widget.set_status("READY", color="#fff")
+            widget.set_status(tr("READY"), color="#fff")
     else:
-        widget.set_status("READY", color="#fff")
+        widget.set_status(tr("READY"), color="#fff")
 
 
 # ========== MAIN ENTRY POINT ==========
