@@ -12,6 +12,36 @@ import weakref
 
 DEBUG = True
 
+# --- Animation Manager ---
+class AnimationManager:
+    def __init__(self):
+        self.active_animations = []
+
+    def register(self, animation):
+        print(f"[AnimationManager] Registering animation: {animation}")
+        self.active_animations.append(animation)
+        animation.finished.connect(lambda: self.unregister(animation))
+
+    def unregister(self, animation):
+        print(f"[AnimationManager] Unregistering animation: {animation}")
+        if animation in self.active_animations:
+            self.active_animations.remove(animation)
+
+    def stop_all(self):
+        print(f"[AnimationManager] Stopping all animations ({len(self.active_animations)})")
+        for anim in self.active_animations:
+            try:
+                anim.stop()  # If using QPropertyAnimation
+            except Exception:
+                try:
+                    anim.deleteLater()
+                except Exception:
+                    pass
+        self.active_animations.clear()
+
+# Global instance
+animation_manager = AnimationManager()
+
 def set_frame_highlight(frame, highlighted):
     frame.setGraphicsEffect(None)
     frame.setProperty("highlighted", highlighted)
@@ -46,6 +76,7 @@ class FadeMixin:
         self.setGraphicsEffect(self.opacity_effect)
         self.fade_anim = QPropertyAnimation(self.opacity_effect, b"opacity")
         self.fade_anim.setDuration(self.FADE_DURATION)
+        animation_manager.register(self.fade_anim)  # Register animation
 
     def showEvent(self, event):
         if not hasattr(self, 'fade_anim'):
@@ -1836,8 +1867,6 @@ class ButtonColumnWidget(QWidget):
             self.animations[index].stop()
             self.animations[index].deleteLater()
             self.animations[index] = None
-
-
 
         # Flash to color instantly
         palette = label.palette()
