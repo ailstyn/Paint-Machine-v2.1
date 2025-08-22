@@ -282,8 +282,8 @@ class StationBoxWidget(QWidget):
             self.enabled_label.setMaximumHeight(40)
             layout.addWidget(self.enabled_label)
 
-    # Weight label
-        self.weight_label = QLabel(weight_text if weight_text is not None else "--")
+        # Weight label
+        self.weight_label = QLabel(self.tr("--") if weight_text is None else weight_text)
         self.weight_label.setFont(QFont("Arial", 24, QFont.Weight.Bold))
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setMinimumHeight(24)
@@ -297,14 +297,14 @@ class StationBoxWidget(QWidget):
     def set_connected(self, connected, color):
         self.connected = connected
         if self.connected_label:
-            self.connected_label.setText("CONNECTED" if connected else "DISCONNECTED")
+            self.connected_label.setText(self.tr("CONNECTED") if connected else self.tr("DISCONNECTED"))
             self.connected_label._default_bg = QColor(color) if connected else None
             self.connected_label.update()
 
     def set_enabled(self, enabled, color):
         self.enabled = enabled
         if self.enabled_label:
-            self.enabled_label.setText("ENABLED" if enabled else "DISABLED")
+            self.enabled_label.setText(self.tr("ENABLED") if enabled else self.tr("DISABLED"))
             self.enabled_label._default_bg = QColor(color) if enabled else None
             self.enabled_label.update()
 
@@ -319,14 +319,17 @@ class StationBoxWidget(QWidget):
             target_weight = 0 if target_weight is not None else None
 
         if unit == "g":
-            text = f"{int(round(current_weight))} / {int(round(target_weight))} g" if target_weight is not None else f"{int(round(current_weight))} g"
+            if target_weight is not None:
+                text = f"{int(round(current_weight))} / {int(round(target_weight))} {self.tr('g')}"
+            else:
+                text = f"{int(round(current_weight))} {self.tr('g')}"
         else:
             current_oz = current_weight / 28.3495
             if target_weight is not None:
                 target_oz = target_weight / 28.3495
-                text = f"{current_oz:.1f} / {target_oz:.1f} oz"
+                text = f"{current_oz:.1f} / {target_oz:.1f} {self.tr('oz')}"
             else:
-                text = f"{current_oz:.1f} oz"
+                text = f"{current_oz:.1f} {self.tr('oz')}"
         self.weight_text = text
         if self.weight_label:
             self.weight_label.setText(text)
@@ -440,7 +443,7 @@ class StationWidget(QWidget):
         content_layout.setSpacing(0)
 
         # Large weight label
-        self.weight_label = OutlinedLabel("0 / 0 g", parent=self)
+        self.weight_label = OutlinedLabel(self.tr("0 / 0 g"), parent=self)
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.weight_label.setFont(QFont("Arial", 76, QFont.Weight.Bold))  # Large font for weight display
         self.weight_label.setStyleSheet("font-size: 76pt; color: #fff;")
@@ -477,10 +480,10 @@ class StationWidget(QWidget):
         try:
             if self.weight_label is not None:
                 if unit == "g":
-                    new_text = f"{int(round(current_weight))} g"
+                    new_text = f"{int(round(current_weight))} {self.tr('g')}"
                 else:  # "oz"
                     current_oz = current_weight / 28.3495
-                    new_text = f"{current_oz:.2f} oz"
+                    new_text = f"{current_oz:.2f} {self.tr('oz')}"
                 if self.weight_label.text() != new_text:
                     self.weight_label.setText(new_text)
                     pass  # No dynamic font resizing
@@ -630,8 +633,8 @@ class MenuDialog(QDialog):
                 parent.active_dialog = parent
         elif selected_key == "SHUT DOWN":
             # Show confirmation dialog
-            options = [("No", "No"), ("Yes", "Yes")]
-            confirm_dialog = SelectionDialog(options=options, title="Shut down?")
+            options = [("No", parent.tr("Cancel")), ("Yes", parent.tr("Confirm"))]
+            confirm_dialog = SelectionDialog(options=options, title=parent.tr("SHUT DOWN"))
             confirm_dialog.selected_index = 0  # 'No' is default
             confirm_dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
             confirm_dialog.show()
