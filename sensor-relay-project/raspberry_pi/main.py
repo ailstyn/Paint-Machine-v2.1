@@ -505,8 +505,6 @@ def startup(after_startup):
             if DEBUG:
                 print(f"[DEBUG] Trying port {port}...")
             arduino = serial.Serial(port, 9600, timeout=0.5)
-            # Flush any leftover bytes from upload or previous session
-            arduino.reset_input_buffer()
             if DEBUG:
                 print(f"[DEBUG] Flushed serial buffer for {port}")
             # Send handshake sequence one byte at a time
