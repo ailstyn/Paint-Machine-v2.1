@@ -1077,11 +1077,6 @@ class InfoDialog(QDialog):
         painter.drawRect(rect)
         super().paintEvent(event)
 
-    def accept(self):
-        self.fade_accept()
-
-    def reject(self):
-        self.fade_reject()
 
 class BottleProgressBar(QWidget):
     def __init__(self, max_value=100, value=0, bar_color="#4FC3F7", parent=None):
