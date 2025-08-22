@@ -1,8 +1,5 @@
 #!/bin/bash
-echo "[DEBUG] start_kiosk.sh: pwd=$(pwd)"
-echo "[DEBUG] start_kiosk.sh: whoami=$(whoami)"
-echo "[DEBUG] start_kiosk.sh: groups=$(groups)"
-env > /tmp/env_kiosk.txt
+
 # filepath: ~/start_kiosk.sh
 
 # Wait for X to be ready
@@ -16,6 +13,7 @@ if ping -c 1 -W 2 8.8.8.8 >/dev/null 2>&1; then
 	echo "Internet connection detected. Running update.sh..."
 	cd /home/chris/Paint-Machine-v2.1/sensor-relay-project
 	./update.sh
+	sleep 5
 	cd raspberry_pi
 	python3 main.py
 else
