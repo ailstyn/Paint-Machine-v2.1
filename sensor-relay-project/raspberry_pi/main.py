@@ -1186,6 +1186,42 @@ def update_station_status(app, station_index, weight, filling_mode, is_filling, 
 # ========== MAIN ENTRY POINT ==========
 
 def main():
+        # --- Arduino initialization (duplicate for handshake reliability) ---
+        if DEBUG:
+            print("[DEBUG] Connecting and initializing Arduinos (main)...")
+        station_connected = [False] * NUM_STATIONS
+        arduinos = [None] * NUM_STATIONS
+        for port in config.arduino_ports:
+            try:
+                if DEBUG:
+                    print(f"[DEBUG] Trying port {port} (main)...")
+                arduino = serial.Serial(port, 9600, timeout=0.5)
+                arduino.reset_input_buffer()
+                if DEBUG:
+                    print(f"[DEBUG] Flushed serial buffer for {port} (main)")
+                arduino.write(b'PMID')
+                arduino.flush()
+                station_serial_number = None
+                for _ in range(60):
+                    if arduino.in_waiting > 0:
+                        line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                        if DEBUG:
+                            print(f"[DEBUG] Received from {port} (main): {repr(line)}")
+                        match = re.match(r"<SERIAL:(PM-SN\d{4})>", line)
+                        if match:
+                            station_serial_number = match.group(1)
+                            break
+                if station_serial_number:
+                    if DEBUG:
+                        print(f"[DEBUG] Recognized station on {port}: {station_serial_number} (main)")
+                    station_connected[0] = True
+                    arduinos[0] = arduino
+                else:
+                    if DEBUG:
+                        print(f"[DEBUG] No recognized station detected on port {port} (main), skipping...")
+            except Exception as e:
+                if DEBUG:
+                    print(f"[DEBUG] Exception initializing Arduino on {port} (main): {e}")
     try:
         logging.info("Starting main application.")
         load_scale_calibrations()
