@@ -14,6 +14,20 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
+from startup import (
+    StartupWizardDialog,
+    run_startup_sequence,
+    step_load_serials_and_ranges,
+    step_connect_arduinos,
+    step_check_estop,
+    step_station_verification,
+    step_clear_all_scales,
+    step_filling_mode_selection,
+    step_full_bottle,
+    step_empty_bottle,
+    step_full_bottle_check,
+    step_empty_bottle_check,
+)
 from config import STATS_LOG_FILE, STATS_LOG_DIR
 
 # === ERROR LOGGING (MINIMAL) ===
@@ -486,7 +500,7 @@ def log_final_weight(station_index, final_weight):
         f.write(f"{datetime.now().isoformat()} session={SESSION_ID} station={station_index+1} weight={final_weight}\n")
 
 # ========== STARTUP ==========
-
+"""
 def startup(after_startup):
     global arduinos, scale_calibrations, station_enabled, station_serials, DEBUG
 
@@ -853,7 +867,7 @@ def startup(after_startup):
             wizard.finish_wizard()
             app.active_dialog = app
             break
-
+"""
 
 def filling_mode_callback(mode):
     global filling_mode
