@@ -1998,6 +1998,10 @@ class StartupWizardDialog(QDialog):
         self.main_layout.addLayout(self.stations_layout, stretch=2)
         self.main_layout.addStretch(1)
 
+        # Accept and Back buttons in a horizontal layout
+        self.button_row = QHBoxLayout()
+        self.button_row.setSpacing(32)  # Space between buttons
+
         self.accept_label = OutlinedLabel(
             "CONTINUE",
             font_size=36,
@@ -2011,7 +2015,6 @@ class StartupWizardDialog(QDialog):
         self.accept_label.setMinimumHeight(50)
         self.accept_label.setFixedWidth(360)
         self.accept_label.set_highlight(False)
-        self.main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.back_label = OutlinedLabel(
             "BACK",
@@ -2026,8 +2029,11 @@ class StartupWizardDialog(QDialog):
         self.back_label.setMinimumHeight(50)
         self.back_label.setFixedWidth(360)
         self.back_label.set_highlight(False)
-        self.main_layout.addWidget(self.back_label, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.back_label.hide()  # Only show on steps > 0
+
+        self.button_row.addWidget(self.back_label)
+        self.button_row.addWidget(self.accept_label)
+        self.main_layout.addLayout(self.button_row, stretch=0)
 
         self.button_column = ButtonColumnWidget(parent=self)
         h_layout = QHBoxLayout()
@@ -2037,58 +2043,28 @@ class StartupWizardDialog(QDialog):
         h_layout.addWidget(self.button_column, stretch=0)
         self.setLayout(h_layout)
 
-        # No direct step logic here; main loop controls which prompt to show
-
-    def show_station_verification(self):
-        self.active_prompt = "station_verification"
-        self.main_label.setText("Verify Stations")
-        self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
-        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
-        self.selection_index = len(self.selection_indices) - 1
+    # --- Navigation Methods ---
+    def select_next(self):
+        if not self.selection_indices:
+            return
+        self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
         self.update_highlight()
-        self.back_label.hide()
 
-        # Connect CONTINUE button to emit step_completed signal
-        self.accept_label.mousePressEvent = lambda e: self._emit_station_verification_completed()
-
-    def _emit_station_verification_completed(self):
-        # Emit the enabled station list when user presses CONTINUE
-        self.step_completed.emit({
-            "step": "station_verification",
-            "enabled": self.station_enabled.copy()
-        })
-
-    def show_empty_scale_prompt(self):
-        self.active_prompt = "empty_scale"
-        self.main_label.setText("Place Empty Scale")
-        self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE or BACK.")
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
+    def select_prev(self):
+        if not self.selection_indices:
+            return
+        self.selection_index = (self.selection_index - 1) % len(self.selection_indices)
         self.update_highlight()
-        self.back_label.show()
 
-    def show_full_bottle_prompt(self, full_ranges):
-        self.active_prompt = "full_bottle"
-        self.full_bottle_ranges = full_ranges
-        self.main_label.setText("Place Full Bottle")
-        info_lines = ["Place a full bottle on each enabled station. Press CONTINUE or BACK."]
-        for name, rng in full_ranges.items():
-            info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
-        self.info_label.setText("\n".join(info_lines))
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
-        self.update_highlight()
-        self.back_label.show()
-
-    def show_empty_bottle_prompt(self, empty_range=(0, 0)):
-        self.active_prompt = "empty_bottle"
-        self.empty_bottle_range = empty_range
-        self.main_label.setText("Place Empty Bottle")
-        self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Press CONTINUE or BACK.")
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
-        self.update_highlight()
-        self.back_label.show()
+    def update_highlight(self):
+        # Highlight the currently selected label
+        for idx, sel in enumerate(self.selection_indices):
+            if sel == "accept":
+                self.accept_label.set_highlight(idx == self.selection_index)
+            elif sel == "back":
+                self.back_label.set_highlight(idx == self.selection_index)
+            elif isinstance(sel, int) and sel < len(self.station_boxes):
+                self.station_boxes[sel].set_highlight(idx == self.selection_index)
 
     def activate_selected(self):
         selected = self.selection_indices[self.selection_index]
@@ -2099,6 +2075,44 @@ class StartupWizardDialog(QDialog):
             self.step_completed.emit({"step": self.active_prompt, "action": "backup"})
         elif isinstance(selected, int):
             self.toggle_station(selected)
+
+    # --- Prompt Methods ---
+    def show_station_verification(self):
+        self.active_prompt = "station_verification"
+        self.main_label.setText("Verify Stations")
+        self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
+        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
+        self.selection_index = len(self.selection_indices) - 1
+        self.update_highlight()
+
+    def show_empty_scale_prompt(self):
+        self.active_prompt = "empty_scale"
+        self.main_label.setText("Place Empty Scale")
+        self.info_label.setText("Remove all bottles and objects from the scale. Use UP/DOWN to select, CONTINUE or BACK.")
+        self.selection_indices = ["back", "accept"]
+        self.selection_index = 1
+        self.update_highlight()
+
+    def show_full_bottle_prompt(self, full_ranges):
+        self.active_prompt = "full_bottle"
+        self.full_bottle_ranges = full_ranges
+        self.main_label.setText("Place Full Bottle")
+        info_lines = ["Place a full bottle on each enabled station. Use UP/DOWN to select, CONTINUE or BACK."]
+        for name, rng in full_ranges.items():
+            info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
+        self.info_label.setText("\n".join(info_lines))
+        self.selection_indices = ["back", "accept"]
+        self.selection_index = 1
+        self.update_highlight()
+
+    def show_empty_bottle_prompt(self, empty_range=(0, 0)):
+        self.active_prompt = "empty_bottle"
+        self.empty_bottle_range = empty_range
+        self.main_label.setText("Place Empty Bottle")
+        self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Use UP/DOWN to select, CONTINUE or BACK.")
+        self.selection_indices = ["back", "accept"]
+        self.selection_index = 1
+        self.update_highlight()
 
     def complete_step(self, step_name, extra_data=None):
         info = {"step": step_name}
@@ -2139,3 +2153,8 @@ class StartupWizardDialog(QDialog):
                 box.weight_label.setStyleSheet("color: #11BD33;")  # Green
             else:
                 box.weight_label.setStyleSheet("color: #FF2222;")  # Red
+
+    def toggle_station(self, station_index):
+        # Toggle enabled/disabled state for a station during verification
+        self.station_enabled[station_index] = not self.station_enabled[station_index]
+        self.station_boxes[station_index].set_enabled(self.station_enabled[station_index], STATION_COLORS[station_index])
