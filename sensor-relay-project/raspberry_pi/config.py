@@ -1,11 +1,3 @@
-DEBUG = True
-
-NUM_STATIONS = 4
-target_weight = 500.0
-time_limit = 3000
-
-config_file = "config.txt"
-
 # Log directories
 LOG_DIR = "logs"
 ERROR_LOG_DIR = "logs/errors"
@@ -14,6 +6,28 @@ STATS_LOG_DIR = "logs/stats"
 from datetime import datetime
 SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
 
+# ========== CONFIG & CONSTANTS ==========
+NUM_STATIONS = 4
+config_file = "config.txt"
+target_weight = 500.0
+time_limit = 3000
+scale_calibrations = []
+DEBUG = True
+
+# ========== GLOBALS ==========
+E_STOP = False
+FILL_LOCKED = False
+last_fill_time = [None] * NUM_STATIONS
+last_final_weight = [None] * NUM_STATIONS
+fill_time_limit_reached = False
+SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
+arduinos = [None] * NUM_STATIONS
+station_connected = [arduino is not None for arduino in arduinos]
+serial_numbers = [arduino.serial_number if arduino else None for arduino in arduinos]
+filling_mode = "AUTO"
+station_max_weight_error = [False] * NUM_STATIONS
+BOTTLE_WEIGHT_TOLERANCE = 25
+RELAY_POWER_ENABLED = False
 
 # Protocol bytes
 REQUEST_TARGET_WEIGHT = b'\x01'

@@ -1,234 +1,173 @@
-"""
-Experimental startup sequence logic for Paint Machine
-"""
-
-from PyQt6.QtCore import QObject, pyqtSignal
-from PyQt6.QtWidgets import QDialog
-from PyQt6.QtGui import QFont, QColor
-from PyQt6.QtCore import Qt
 import time
 from startup import step_clear_all_scales
 import logging
+import config
+import serial
+import re
 
-
-class StartupWizardDialog(QDialog):
-    step_completed = pyqtSignal(dict)
-
-    def __init__(self, parent=None, num_stations=4, bottle_ranges=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.setModal(True)
-        self.setFixedSize(1024, 600)
-        self.num_stations = num_stations
-
-        # State
-        self.station_enabled = [True] * num_stations
-        self.station_connected = [True] * num_stations
-        self.weight_texts = ["--"] * num_stations
-        self.station_weights = [0.0] * num_stations
-        self.selection_indices = []
-        self.selection_index = 0
-        self.active_prompt = None
-
-        # Layouts
-        self.main_layout = QVBoxLayout()
-        self.main_layout.setContentsMargins(24, 16, 24, 16)
-        self.main_layout.setSpacing(8)
-
-        self.main_label = QLabel()
-        self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
-        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_palette = self.main_label.palette()
-        main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
-        self.main_label.setPalette(main_palette)
-        self.main_layout.addWidget(self.main_label)
-
-        self.info_label = QLabel()
-        self.info_label.setFont(QFont("Arial", 22))
-        self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setFixedHeight(200)
-        self.info_label.setWordWrap(True)
-        info_palette = self.info_label.palette()
-        info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
-        self.info_label.setPalette(info_palette)
-        self.main_layout.addWidget(self.info_label)
-
-        self.stations_layout = QHBoxLayout()
-        self.stations_layout.setSpacing(10)
-        self.station_boxes = []
-        self.station_frames = []
-        for i in range(self.num_stations):
-            box = StationBoxWidget(
-                station_index=i,
-                name=f"Station {i+1}",
-                color=STATION_COLORS[i],
-                connected=True,
-                enabled=True,
-                weight_text="--",
-                parent=self
-            )
-            box.setMinimumWidth(216)
-            box.setMinimumHeight(110)
-            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
-            self.station_boxes.append(box)
-            frame = QFrame()
-            frame.setObjectName(f"stationFrame_{i}")
-            frame.setFrameShape(QFrame.Shape.StyledPanel)
-            frame.setLineWidth(0)
-            frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(1, 1, 1, 1)
-            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
-            frame.layout().addWidget(box)
-            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
-            self.station_frames.append(frame)
-            self.stations_layout.addWidget(frame)
-        self.main_layout.addLayout(self.stations_layout, stretch=2)
-        self.main_layout.addStretch(1)
-
-        self.accept_label = OutlinedLabel(
-            "CONTINUE",
-            font_size=36,
-            bold=True,
-            color="#fff",
-            bg_color=None,
-            border_radius=16,
-            padding=8
-        )
-        self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.accept_label.setMinimumHeight(50)
-        self.accept_label.setFixedWidth(360)
-        self.accept_label.set_highlight(False)
-        self.main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-        self.back_label = OutlinedLabel(
-            "BACK",
-            font_size=36,
-            bold=True,
-            color="#fff",
-            bg_color=None,
-            border_radius=16,
-            padding=8
-        )
-        self.back_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.back_label.setMinimumHeight(50)
-        self.back_label.setFixedWidth(360)
-        self.back_label.set_highlight(False)
-        self.main_layout.addWidget(self.back_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.back_label.hide()  # Only show on steps > 0
-
-        self.button_column = ButtonColumnWidget(parent=self)
-        h_layout = QHBoxLayout()
-        h_layout.setContentsMargins(0, 0, 0, 0)
-        h_layout.setSpacing(0)
-        h_layout.addLayout(self.main_layout, stretch=10)
-        h_layout.addWidget(self.button_column, stretch=0)
-        self.setLayout(h_layout)
-
-        # No direct step logic here; main loop controls which prompt to show
-
-    def show_station_verification(self):
-        self.active_prompt = "station_verification"
-        self.main_label.setText("Verify Stations")
-        self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
-        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
-        self.selection_index = len(self.selection_indices) - 1
-        self.update_highlight()
-        self.back_label.hide()
-
-    def show_empty_scale_prompt(self):
-        self.active_prompt = "empty_scale"
-        self.main_label.setText("Place Empty Scale")
-        self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE or BACK.")
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
-        self.update_highlight()
-        self.back_label.show()
-
-    def show_full_bottle_prompt(self, full_ranges):
-        self.active_prompt = "full_bottle"
-        self.full_bottle_ranges = full_ranges
-        self.main_label.setText("Place Full Bottle")
-        info_lines = ["Place a full bottle on each enabled station. Press CONTINUE or BACK."]
-        for name, rng in full_ranges.items():
-            info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
-        self.info_label.setText("\n".join(info_lines))
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
-        self.update_highlight()
-        self.back_label.show()
-
-    def show_empty_bottle_prompt(self, empty_range=(0, 0)):
-        self.active_prompt = "empty_bottle"
-        self.empty_bottle_range = empty_range
-        self.main_label.setText("Place Empty Bottle")
-        self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Press CONTINUE or BACK.")
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
-        self.update_highlight()
-        self.back_label.show()
-
-    def activate_selected(self):
-        selected = self.selection_indices[self.selection_index]
-        print(f"[DEBUG] activate_selected called, active_prompt={self.active_prompt}, selection={selected}")
-        if selected == "accept":
-            self.complete_step(self.active_prompt)
-        elif selected == "back":
-            self.step_completed.emit({"step": self.active_prompt, "action": "backup"})
-        elif isinstance(selected, int):
-            self.toggle_station(selected)
-
-    def complete_step(self, step_name, extra_data=None):
-        info = {"step": step_name}
-        if extra_data:
-            info.update(extra_data)
-        self.step_completed.emit(info)
-
-# Example step functions
+from utils import (
+    load_scale_calibrations,
+    load_station_enabled,
+    save_station_enabled,
+    load_station_serials,
+    load_bottle_sizes,
+    load_bottle_weight_ranges,
+    clear_serial_buffer,
+)
 
 def step_load_serials_and_ranges(context):
-    print("Step: Load serials, bottle sizes, and ranges")
-    # Simulate loading config, serials, bottle sizes, ranges
-    context['station_serials'] = ['SN001', 'SN002', 'SN003', 'SN004']
-    context['bottle_sizes'] = {'A': (500, 50, 3000)}
-    context['bottle_ranges'] = {'A': {'full': (475, 525), 'empty': (25, 75)}}
+    print("Step: Load serials, bottle sizes, ranges, and calibration values")
+    # Load serials
+    context['station_serials'] = load_station_serials()
+    # Load bottle sizes and ranges
+    context['bottle_sizes'] = load_bottle_sizes(context['config_file'])
+    context['bottle_ranges'] = load_bottle_weight_ranges(context['config_file'], tolerance=context.get('BOTTLE_WEIGHT_TOLERANCE', 25))
+    # Load calibration values
+    context['scale_calibrations'] = load_scale_calibrations()
+    print(f"[DEBUG] Loaded serials: {context['station_serials']}")
+    print(f"[DEBUG] Loaded bottle sizes: {context['bottle_sizes']}")
+    print(f"[DEBUG] Loaded bottle ranges: {context['bottle_ranges']}")
+    print(f"[DEBUG] Loaded scale calibrations: {context['scale_calibrations']}")
     return 'completed'
 
 
 def step_connect_arduinos(context):
     print("Step: Connect and initialize Arduinos")
-    # Simulate connecting
-    context['station_connected'] = [True, True, True, True]
-    context['arduinos'] = ['Arduino1', 'Arduino2', 'Arduino3', 'Arduino4']
+    NUM_STATIONS = context['NUM_STATIONS']
+    station_serials = context['station_serials']
+    scale_calibrations = context['scale_calibrations']
+    config = context['config']
+    DEBUG = context.get('DEBUG', False)
+
+    station_connected = [False] * NUM_STATIONS
+    arduinos = [None] * NUM_STATIONS
+
+    for port in getattr(config, 'arduino_ports', []):
+        try:
+            if DEBUG:
+                print(f"[DEBUG] Trying port {port}...")
+            arduino = serial.Serial(port, 9600, timeout=0.5)
+            for b in b'PMID':
+                arduino.write(bytes([b]))
+                arduino.flush()
+                time.sleep(0.01)
+            station_serial_number = None
+            for _ in range(60):
+                if arduino.in_waiting > 0:
+                    line = arduino.read_until(b'\n').decode(errors='replace').strip()
+                    if DEBUG:
+                        print(f"[DEBUG] Received from {port}: {repr(line)}")
+                    match = re.search(r"SN\d{3,4}", line)
+                    if match:
+                        serial_match = re.search(r"<SERIAL:([A-Z\-]*SN\d{3,4})>", line)
+                        if serial_match:
+                            station_serial_number = serial_match.group(1)
+                        else:
+                            station_serial_number = match.group(0)
+                        if DEBUG:
+                            print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
+                        arduino.write(config.CONFIRM_ID)
+                        arduino.flush()
+                        break
+                time.sleep(0.1)
+            matched_entry = None
+            if station_serial_number is not None:
+                for entry in station_serials:
+                    if station_serial_number in entry:
+                        matched_entry = entry
+                        break
+            if matched_entry is None:
+                if DEBUG:
+                    print(f"[DEBUG] No recognized station detected on port {port}, skipping...")
+                arduino.close()
+                continue
+            station_index = station_serials.index(matched_entry)
+            got_request = False
+            for _ in range(40):
+                if arduino.in_waiting > 0:
+                    req = arduino.read(1)
+                    if req == config.REQUEST_CALIBRATION:
+                        if DEBUG:
+                            print(f"[DEBUG] Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
+                        arduino.write(config.REQUEST_CALIBRATION)
+                        arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
+                        got_request = True
+                        break
+                    else:
+                        arduino.reset_input_buffer()
+                time.sleep(0.1)
+            if not got_request:
+                if DEBUG:
+                    print(f"[DEBUG] Station {station_index+1}: Did not receive calibration request, skipping.")
+                arduino.close()
+                continue
+            arduinos[station_index] = arduino
+            station_connected[station_index] = True
+            if DEBUG:
+                print(f"[DEBUG] Station {station_index+1} on {port} initialized and ready.")
+        except Exception as e:
+            if DEBUG:
+                print(f"[DEBUG] Error initializing Arduino on {port}: {e}")
+
+    context['station_connected'] = station_connected
+    context['arduinos'] = arduinos
     return 'completed'
-
-
-def step_check_estop(context):
-    print("Step: Check E-STOP state")
-    # Simulate E-STOP released
-    context['estop_released'] = True
-    return 'completed'
-
 
 def step_station_verification(context):
     wizard = context['wizard']
     app = context['app']
+    NUM_STATIONS = context['NUM_STATIONS']
+    station_connected = context.get('station_connected', [True] * NUM_STATIONS)
+    station_enabled = context.get('station_enabled', [True] * NUM_STATIONS)
+
+    wizard.set_station_labels(
+        names=[f"Station {i+1}" for i in range(NUM_STATIONS)],
+        connected=station_connected,
+        enabled=station_enabled
+    )
+
     step_result = {}
+
+    def on_step_completed(info):
+        step_result.clear()
+        step_result.update(info)
+
+    # Connect the signal/callback
+    wizard.step_completed.connect(on_step_completed)
+
     wizard.show_station_verification()
     wizard.show()
     while not step_result or step_result.get("step") != "station_verification":
         app.processEvents()
         time.sleep(0.01)
-    # Optionally update context with results
-    context['station_enabled'] = step_result.get('enabled', [])
+
+    # Save the enabled/disabled stations to context
+    context['station_enabled'] = step_result.get("enabled", station_enabled)
     return 'completed'
 
 
 def step_tare_scales(context):
     print("Step: Send TARE_SCALE to Arduinos")
-    # Simulate sending TARE
+    arduinos = context.get('arduinos', [])
+    station_enabled = context.get('station_enabled', [])
+    station_connected = context.get('station_connected', [])
+    config = context.get('config')
+    logging = context.get('logging')
+
+    # Send TARE_SCALE to each enabled and connected Arduino
+    for i, arduino in enumerate(arduinos):
+        if arduino and station_enabled[i] and station_connected[i]:
+            try:
+                arduino.write(config.TARE_SCALE)
+                arduino.flush()
+                print(f"[DEBUG] Sent TARE_SCALE to station {i+1}")
+            except Exception as e:
+                if logging:
+                    logging.error(f"Error sending TARE_SCALE to station {i+1}: {e}")
+                print(f"[ERROR] Error sending TARE_SCALE to station {i+1}: {e}")
+
     context['tare_sent'] = True
-    return 'completed'
+    return
 
 
 def step_filling_mode_selection(context):
@@ -304,20 +243,6 @@ def step_filling_mode_selection(context):
     return 'completed'
 
 
-def step_full_bottle(context):
-    print("Step: Calibration - Place full bottles")
-    context['selected_bottle_id'] = 'A'
-    context['target_weight'] = 500
-    context['time_limit'] = 3000
-    return 'completed'
-
-
-def step_empty_bottle(context):
-    print("Step: Calibration - Place empty bottles")
-    context['empty_bottle_ok'] = True
-    return 'completed'
-
-
 def step_clear_all_scales(context):
     wizard = context['wizard']
     app = context['app']
@@ -383,12 +308,18 @@ def step_full_bottle_check(context):
     NUM_STATIONS = context['NUM_STATIONS']
     station_enabled = context['station_enabled']
     station_connected = context['station_connected']
-    bottle_ranges = context['bottle_ranges']
     config_file = context['config_file']
     DEBUG = context.get('DEBUG', False)
 
+    # Load all bottle ranges from config.txt
+    bottle_ranges = load_bottle_weight_ranges(config_file, tolerance=context.get('BOTTLE_WEIGHT_TOLERANCE', 25))
+    context['bottle_ranges'] = bottle_ranges  # Update context in case other steps use it
+
     full_ranges = {name: bottle_ranges[name]["full"] for name in bottle_ranges}
+
+    # Pass full_ranges to wizard so it can update weight label colors
     wizard.show_full_bottle_prompt(full_ranges)
+    wizard.update_weight_labels_for_full_bottle(full_ranges)
     wizard.show()
     step_result = {}
 
@@ -398,6 +329,7 @@ def step_full_bottle_check(context):
         while not step_result or step_result.get("step") != "full_bottle":
             app.processEvents()
             time.sleep(0.01)
+            wizard.update_weight_labels_for_full_bottle(full_ranges)
 
         # After CONTINUE is pressed, check all active stations
         active_weights = [
@@ -458,7 +390,6 @@ def step_full_bottle_check(context):
     context['target_weight'] = target_weight
     context['time_limit'] = time_limit
 
-    # Now show empty bottle prompt (if needed, or return to let next step handle it)
     wizard.show_empty_bottle_prompt()
     wizard.show()
 
@@ -486,6 +417,7 @@ def step_empty_bottle_check(context):
         empty_range = (0, 0)
 
     wizard.show_empty_bottle_prompt(empty_range=empty_range)
+    wizard.update_weight_labels_for_empty_bottle(empty_range)
     wizard.show()
     step_result = {}
 
@@ -494,6 +426,7 @@ def step_empty_bottle_check(context):
         while not step_result or step_result.get("step") != "empty_bottle":
             app.processEvents()
             time.sleep(0.01)
+            wizard.update_weight_labels_for_empty_bottle(empty_range)
 
         active_weights = [
             wizard.get_weight(i)
@@ -546,12 +479,11 @@ def step_empty_bottle_check(context):
 startup_steps = [
     step_load_serials_and_ranges,
     step_connect_arduinos,
-    step_check_estop,
     step_station_verification,
     step_clear_all_scales,
     step_filling_mode_selection,
-    step_full_bottle,
-    step_empty_bottle,
+    step_full_bottle_check,
+    step_empty_bottle_check,
 ]
 
 def run_startup_sequence(context):
@@ -581,7 +513,8 @@ def run_startup_sequence(context):
             logging.error(f"Unknown result from step {step_func.__name__}: {result}")
             break
     print("[DEBUG] Startup sequence finished.")
-
+    
+"""
 if __name__ == "__main__":
     wizard = StartupWizardDialog()
     app = None  # Replace with actual app instance
@@ -606,4 +539,4 @@ if __name__ == "__main__":
     result = step_filling_mode_selection(context)
     if result == 'manual_selected':
         import sys
-        sys.exit()  # Exits the script early
+        sys.exit()  # Exits the script early"""

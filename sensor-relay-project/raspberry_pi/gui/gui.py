@@ -1867,344 +1867,6 @@ class ButtonColumnWidget(QWidget):
             label.setPalette(palette)
         QTimer.singleShot(duration, revert_color)
 
-class StartupWizardDialog(QDialog):
-    step_completed = pyqtSignal(dict)
-
-    def __init__(self, parent=None, num_stations=4, bottle_ranges=None):
-        print("[DEBUG] StartupWizardDialog.__init__ start")
-        super().__init__(parent)
-        print("[DEBUG] StartupWizardDialog.__init__ after super")
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
-        self.setModal(True)
-        self.setFixedSize(1024, 600)
-        self.num_stations = num_stations
-
-        # State
-        self.station_enabled = [True] * num_stations
-        self.station_connected = [True] * num_stations
-        self.weight_texts = ["--"] * num_stations
-        self.station_weights = [0.0] * num_stations
-        self.selection_indices = []
-        self.selection_index = 0
-        self.active_prompt = None  # Track which prompt is active
-
-        print("[DEBUG] StartupWizardDialog.__init__ setting up layouts")
-        # Layouts
-        self.main_layout = QVBoxLayout()
-        self.main_layout.setContentsMargins(24, 16, 24, 16)
-        self.main_layout.setSpacing(8)
-
-        # Main label
-        self.main_label = QLabel()
-        self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
-        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        main_palette = self.main_label.palette()
-        main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
-        self.main_label.setPalette(main_palette)
-        self.main_layout.addWidget(self.main_label)
-        print("[DEBUG] StartupWizardDialog.__init__ finished main label setup")
-
-        # Info label
-        self.info_label = QLabel()
-        self.info_label.setFont(QFont("Arial", 22))
-        self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.info_label.setFixedHeight(200)
-        self.info_label.setWordWrap(True)
-        info_palette = self.info_label.palette()
-        info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
-        self.info_label.setPalette(info_palette)
-        self.main_layout.addWidget(self.info_label)
-
-        # Station boxes row
-        self.stations_layout = QHBoxLayout()
-        self.stations_layout.setSpacing(10)
-        self.station_boxes = []
-        self.station_frames = []
-        for i in range(self.num_stations):
-            box = StationBoxWidget(
-                station_index=i,
-                name=f"Station {i+1}",
-                color=STATION_COLORS[i],
-                connected=True,
-                enabled=True,
-                weight_text="--",
-                parent=self
-            )
-            box.setMinimumWidth(216)
-            box.setMinimumHeight(110)
-            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
-            self.station_boxes.append(box)
-            frame = QFrame()
-            frame.setObjectName(f"stationFrame_{i}")
-            frame.setFrameShape(QFrame.Shape.StyledPanel)
-            frame.setLineWidth(0)
-            frame.setLayout(QVBoxLayout())
-            frame.layout().setContentsMargins(1, 1, 1, 1)
-            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
-            frame.layout().addWidget(box)
-            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-            frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
-            self.station_frames.append(frame)
-            self.stations_layout.addWidget(frame)
-        self.main_layout.addLayout(self.stations_layout, stretch=2)
-        self.main_layout.addStretch(1)
-
-        # Continue button
-        self.accept_label = OutlinedLabel(
-            "CONTINUE",
-            font_size=36,
-            bold=True,
-            color="#fff",
-            bg_color=None,
-            border_radius=16,
-            padding=8
-        )
-        self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.accept_label.setMinimumHeight(50)
-        self.accept_label.setFixedWidth(360)
-        self.accept_label.set_highlight(False)
-        self.main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-        # Button column
-        self.button_column = ButtonColumnWidget(parent=self)
-        h_layout = QHBoxLayout()
-        h_layout.setContentsMargins(0, 0, 0, 0)
-        h_layout.setSpacing(0)
-        h_layout.addLayout(self.main_layout, stretch=10)
-        h_layout.addWidget(self.button_column, stretch=0)
-        self.setLayout(h_layout)
-
-        print("[DEBUG] StartupWizardDialog initialized, calling show_station_verification()")
-        self.show_station_verification()
-
-    def show_station_verification(self):
-        print("[DEBUG] show_station_verification called")
-        self.active_prompt = "station_verification"
-        self.main_label.setText("Verify Stations")
-        self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
-        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
-        self.selection_index = len(self.selection_indices) - 1  # Default to CONTINUE
-        self.update_highlight()
-
-        # Connect station box click events for toggling
-        for i, box in enumerate(self.station_boxes):
-            box.mousePressEvent = lambda e, idx=i: self.toggle_station(idx)
-
-    def activate_selected(self):
-        print(f"[DEBUG] activate_selected called, active_prompt={self.active_prompt}, selection={self.selection_indices[self.selection_index]}")
-        if self.selection_indices[self.selection_index] == "accept":
-            print(f"[DEBUG] CONTINUE selected in prompt: {self.active_prompt}")
-            if self.active_prompt == "station_verification":
-                print("[DEBUG] Completing station_verification step")
-                self.complete_step("station_verification", {"enabled": self.station_enabled.copy()})
-            elif self.active_prompt == "empty_scale":
-                print("[DEBUG] Completing empty_scale step")
-                self.complete_step("empty_scale")
-            elif self.active_prompt == "full_bottle":
-                print("[DEBUG] Completing full_bottle step")
-                self.complete_step("full_bottle")
-            elif self.active_prompt == "empty_bottle":
-                print("[DEBUG] Completing empty_bottle step")
-                self.complete_step("empty_bottle")
-        else:
-            idx = self.selection_indices[self.selection_index]
-            print(f"[DEBUG] Station index selected: {idx}")
-            if isinstance(idx, int):
-                self.toggle_station(idx)
-
-    def show_empty_scale_prompt(self):
-        print("[DEBUG] show_empty_scale_prompt called")
-        self.active_prompt = "empty_scale"
-        self.main_label.setText("Place Empty Scale")
-        self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE when ready.")
-        self.selection_indices = ["accept"]
-        self.selection_index = 0
-        self.update_highlight()
-
-        # Disconnect station box click events
-        for box in self.station_boxes:
-            box.mousePressEvent = lambda e: None
-
-        self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_scale")
-
-    def show_full_bottle_prompt(self, full_ranges):
-        print(f"[DEBUG] show_full_bottle_prompt called, full_ranges={full_ranges}")
-        self.active_prompt = "full_bottle"
-        self.full_bottle_ranges = full_ranges
-        self.main_label.setText("Place Full Bottle")
-        # Build info text listing all bottle ranges
-        info_lines = ["Place a full bottle on each enabled station. Press CONTINUE when ready."]
-        for name, rng in full_ranges.items():
-            info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
-        self.info_label.setText("\n".join(info_lines))
-        self.selection_indices = ["accept"]
-        self.selection_index = 0
-        self.update_highlight()
-        self.accept_label.mousePressEvent = lambda e: self.complete_step("full_bottle")
-
-    def show_empty_bottle_prompt(self, empty_range=(0, 0)):
-        print(f"[DEBUG] show_empty_bottle_prompt called, empty_range={empty_range}")
-        self.active_prompt = "empty_bottle"
-        self.empty_bottle_range = empty_range
-        self.main_label.setText("Place Empty Bottle")
-        self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Press CONTINUE when ready.")
-        self.selection_indices = ["accept"]
-        self.selection_index = 0
-        self.update_highlight()
-
-        self.accept_label.mousePressEvent = lambda e: self.complete_step("empty_bottle")
-
-    def finish_wizard(self):
-        print("[DEBUG] finish_wizard called")
-        self.accept()
-
-    def set_weight(self, station_index, current_weight, target_weight=None, unit="g"):
-        # print(f"[DEBUG] set_weight called for station {station_index}, current_weight={current_weight}, target_weight={target_weight}, unit={unit}")
-        if (
-            0 <= station_index < len(self.station_boxes)
-            and self.station_enabled[station_index]
-            and self.station_connected[station_index]
-        ):
-            box = self.station_boxes[station_index]
-            box.set_weight(current_weight, target_weight, unit)
-            try:
-                self.station_weights[station_index] = float(current_weight)
-            except (TypeError, ValueError):
-                self.station_weights[station_index] = 0.0
-            if unit == "g":
-                self.weight_texts[station_index] = f"{int(round(float(current_weight)))} g"
-            else:
-                oz = float(current_weight) / 28.3495
-                self.weight_texts[station_index] = f"{oz:.1f} oz"
-
-            # --- Prompt-specific color logic ---
-            color = "#11BD33"  # Default to green
-            # For station_verification and empty_scale, always green
-            if self.active_prompt in ["station_verification", "empty_scale"]:
-                pass
-            # For full_bottle and empty_bottle, use range logic
-            else:
-                color = "#FF2222"  # Default to red
-                in_range = False
-                try:
-                    weight_val = float(current_weight)
-                except (TypeError, ValueError):
-                    weight_val = 0.0
-                if self.active_prompt == "full_bottle" and hasattr(self, "full_bottle_ranges"):
-                    for rng in self.full_bottle_ranges.values():
-                        if rng[0] <= weight_val <= rng[1]:
-                            in_range = True
-                            break
-                elif self.active_prompt == "empty_bottle" and hasattr(self, "empty_bottle_range"):
-                    rng = self.empty_bottle_range
-                    if rng[0] <= weight_val <= rng[1]:
-                        in_range = True
-                color = "#11BD33" if in_range else "#FF2222"
-            if box.weight_label:
-                box.weight_label.setStyleSheet(f"color: {color};")
-    
-    def update_highlight(self):
-        print(f"[DEBUG] update_highlight called, selection_index={self.selection_index}, selection_indices={self.selection_indices}")
-        for i, frame in enumerate(self.station_frames):
-            is_highlighted = (
-                self.selection_indices[self.selection_index] == i
-                if i in self.selection_indices[:-1] else False
-            )
-            frame.setProperty("highlighted", is_highlighted)
-            frame.style().unpolish(frame)
-            frame.style().polish(frame)
-            frame.update()
-        self.accept_label.set_highlight(self.selection_indices[self.selection_index] == "accept")
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect()
-        painter.setBrush(QColor("#222"))
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRect(rect)
-        super().paintEvent(event)
-
-    def get_station_enabled(self):
-        print("[DEBUG] get_station_enabled called")
-        return self.station_enabled
-
-    def get_weight(self, station_index):
-        print(f"[DEBUG] get_weight called for station {station_index}")
-        if 0 <= station_index < len(self.station_weights):
-            return self.station_weights[station_index]
-        return 0.0
-
-    def show_info_dialog(self, title, message, timeout_ms=1800):
-        print(f"[DEBUG] show_info_dialog called: {title} - {message}")
-        dlg = InfoDialog(title, message, self)
-        dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
-        dlg.show()
-        QTimer.singleShot(timeout_ms, dlg.accept)
-
-    def complete_step(self, step_name, extra_data=None):
-        print(f"[DEBUG] complete_step called for step: {step_name}, extra_data={extra_data}")
-        info = {"step": step_name}
-        if extra_data:
-            info.update(extra_data)
-        self.step_completed.emit(info)
-
-    def select_prev(self):
-        print("[DEBUG] select_prev called")
-        if self.selection_indices:
-            self.selection_index = (self.selection_index - 1) % len(self.selection_indices)
-            self.update_highlight()
-
-    def select_next(self):
-        print("[DEBUG] select_next called")
-        if self.selection_indices:
-            self.selection_index = (self.selection_index + 1) % len(self.selection_indices)
-            self.update_highlight()
-
-    def toggle_station(self, index):
-        """
-        Toggle the enabled/disabled state of a station.
-        """
-        if 0 <= index < len(self.station_boxes):
-            box = self.station_boxes[index]
-            new_enabled_state = not self.station_enabled[index]
-            self.station_enabled[index] = new_enabled_state
-            box.set_enabled(new_enabled_state, STATION_COLORS[index % len(STATION_COLORS)])
-            # Update connected state based on new enabled state
-            new_connected_state = new_enabled_state
-            self.station_connected[index] = new_connected_state
-            box.set_connected(new_connected_state, STATION_COLORS[index % len(STATION_COLORS)])
-            if DEBUG:
-                print(f"[DEBUG] Station {index+1} toggled to {'ENABLED' if new_enabled_state else 'DISABLED'}")
-            else:
-                logging.info(f"Station {index+1} toggled to {'ENABLED' if new_enabled_state else 'DISABLED'}")
-
-    def set_station_labels(self, names=None, connected=None, enabled=None, weight_texts=None):
-        print("[DEBUG] set_station_labels called")
-        if names:
-            self.station_names = names
-        if connected:
-            self.station_connected = connected
-        if enabled:
-            self.station_enabled = enabled
-        if weight_texts:
-            self.weight_texts = weight_texts
-        self.update_station_widgets()
-
-    def update_station_widgets(self):
-        print("[DEBUG] update_station_widgets called")
-        for i, box in enumerate(self.station_boxes):
-            if self.station_names and i < len(self.station_names):
-                box.name_label.setText(self.station_names[i])
-            if box.connected_label:
-                box.connected_label.setText("CONNECTED" if self.station_connected[i] else "DISCONNECTED")
-                box.set_connected(self.station_connected[i], STATION_COLORS[i % len(STATION_COLORS)])
-            if self.station_enabled and i < len(self.station_enabled):
-                if box.enabled_label:
-                    box.enabled_label.setText("ENABLED" if self.station_enabled[i] else "DISABLED")
-                    box.set_enabled(self.station_enabled[i], STATION_COLORS[i % len(STATION_COLORS)])
-            if box.weight_label:
-                box.weight_label.setText(self.weight_texts[i] if self.weight_texts and i < len(self.weight_texts) else "--")
 
 class OfflineStationWidget(QWidget):
     def update_language(self):
@@ -2261,13 +1923,219 @@ class OfflineStationWidget(QWidget):
         painter.drawRect(rect)
         super().paintEvent(event)
 
-if __name__ == "__main__":
-    import sys
-    from PyQt6.QtWidgets import QApplication
+class StartupWizardDialog(QDialog):
+    step_completed = pyqtSignal(dict)
 
-    app = QApplication(sys.argv)
-    # Example: all stations offline except station 1
-    station_enabled = [True, False, False, False]
-    window = RelayControlApp(station_enabled=station_enabled)
-    window.show()
-    sys.exit(app.exec())
+    def __init__(self, parent=None, num_stations=4, bottle_ranges=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setModal(True)
+        self.setFixedSize(1024, 600)
+        self.num_stations = num_stations
+
+        # State
+        self.station_enabled = [True] * num_stations
+        self.station_connected = [True] * num_stations
+        self.weight_texts = ["--"] * num_stations
+        self.station_weights = [0.0] * num_stations
+        self.selection_indices = []
+        self.selection_index = 0
+        self.active_prompt = None
+
+        # Layouts
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(24, 16, 24, 16)
+        self.main_layout.setSpacing(8)
+
+        self.main_label = QLabel()
+        self.main_label.setFont(QFont("Arial", 36, QFont.Weight.Bold))
+        self.main_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        main_palette = self.main_label.palette()
+        main_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
+        self.main_label.setPalette(main_palette)
+        self.main_layout.addWidget(self.main_label)
+
+        self.info_label = QLabel()
+        self.info_label.setFont(QFont("Arial", 22))
+        self.info_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self.info_label.setFixedHeight(200)
+        self.info_label.setWordWrap(True)
+        info_palette = self.info_label.palette()
+        info_palette.setColor(QPalette.ColorRole.WindowText, QColor("#eee"))
+        self.info_label.setPalette(info_palette)
+        self.main_layout.addWidget(self.info_label)
+
+        self.stations_layout = QHBoxLayout()
+        self.stations_layout.setSpacing(10)
+        self.station_boxes = []
+        self.station_frames = []
+        for i in range(self.num_stations):
+            box = StationBoxWidget(
+                station_index=i,
+                name=f"Station {i+1}",
+                color=STATION_COLORS[i],
+                connected=True,
+                enabled=True,
+                weight_text="--",
+                parent=self
+            )
+            box.setMinimumWidth(216)
+            box.setMinimumHeight(110)
+            box.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
+            self.station_boxes.append(box)
+            frame = QFrame()
+            frame.setObjectName(f"stationFrame_{i}")
+            frame.setFrameShape(QFrame.Shape.StyledPanel)
+            frame.setLineWidth(0)
+            frame.setLayout(QVBoxLayout())
+            frame.layout().setContentsMargins(1, 1, 1, 1)
+            frame.layout().setAlignment(Qt.AlignmentFlag.AlignCenter)
+            frame.layout().addWidget(box)
+            frame.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+            frame.paintEvent = lambda event, f=frame: frame_paintEvent(f, event)
+            self.station_frames.append(frame)
+            self.stations_layout.addWidget(frame)
+        self.main_layout.addLayout(self.stations_layout, stretch=2)
+        self.main_layout.addStretch(1)
+
+        self.accept_label = OutlinedLabel(
+            "CONTINUE",
+            font_size=36,
+            bold=True,
+            color="#fff",
+            bg_color=None,
+            border_radius=16,
+            padding=8
+        )
+        self.accept_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.accept_label.setMinimumHeight(50)
+        self.accept_label.setFixedWidth(360)
+        self.accept_label.set_highlight(False)
+        self.main_layout.addWidget(self.accept_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.back_label = OutlinedLabel(
+            "BACK",
+            font_size=36,
+            bold=True,
+            color="#fff",
+            bg_color=None,
+            border_radius=16,
+            padding=8
+        )
+        self.back_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.back_label.setMinimumHeight(50)
+        self.back_label.setFixedWidth(360)
+        self.back_label.set_highlight(False)
+        self.main_layout.addWidget(self.back_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.back_label.hide()  # Only show on steps > 0
+
+        self.button_column = ButtonColumnWidget(parent=self)
+        h_layout = QHBoxLayout()
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        h_layout.setSpacing(0)
+        h_layout.addLayout(self.main_layout, stretch=10)
+        h_layout.addWidget(self.button_column, stretch=0)
+        self.setLayout(h_layout)
+
+        # No direct step logic here; main loop controls which prompt to show
+
+    def show_station_verification(self):
+        self.active_prompt = "station_verification"
+        self.main_label.setText("Verify Stations")
+        self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
+        self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
+        self.selection_index = len(self.selection_indices) - 1
+        self.update_highlight()
+        self.back_label.hide()
+
+        # Connect CONTINUE button to emit step_completed signal
+        self.accept_label.mousePressEvent = lambda e: self._emit_station_verification_completed()
+
+    def _emit_station_verification_completed(self):
+        # Emit the enabled station list when user presses CONTINUE
+        self.step_completed.emit({
+            "step": "station_verification",
+            "enabled": self.station_enabled.copy()
+        })
+
+    def show_empty_scale_prompt(self):
+        self.active_prompt = "empty_scale"
+        self.main_label.setText("Place Empty Scale")
+        self.info_label.setText("Remove all bottles and objects from the scale. Press CONTINUE or BACK.")
+        self.selection_indices = ["back", "accept"]
+        self.selection_index = 1
+        self.update_highlight()
+        self.back_label.show()
+
+    def show_full_bottle_prompt(self, full_ranges):
+        self.active_prompt = "full_bottle"
+        self.full_bottle_ranges = full_ranges
+        self.main_label.setText("Place Full Bottle")
+        info_lines = ["Place a full bottle on each enabled station. Press CONTINUE or BACK."]
+        for name, rng in full_ranges.items():
+            info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
+        self.info_label.setText("\n".join(info_lines))
+        self.selection_indices = ["back", "accept"]
+        self.selection_index = 1
+        self.update_highlight()
+        self.back_label.show()
+
+    def show_empty_bottle_prompt(self, empty_range=(0, 0)):
+        self.active_prompt = "empty_bottle"
+        self.empty_bottle_range = empty_range
+        self.main_label.setText("Place Empty Bottle")
+        self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Press CONTINUE or BACK.")
+        self.selection_indices = ["back", "accept"]
+        self.selection_index = 1
+        self.update_highlight()
+        self.back_label.show()
+
+    def activate_selected(self):
+        selected = self.selection_indices[self.selection_index]
+        print(f"[DEBUG] activate_selected called, active_prompt={self.active_prompt}, selection={selected}")
+        if selected == "accept":
+            self.complete_step(self.active_prompt)
+        elif selected == "back":
+            self.step_completed.emit({"step": self.active_prompt, "action": "backup"})
+        elif isinstance(selected, int):
+            self.toggle_station(selected)
+
+    def complete_step(self, step_name, extra_data=None):
+        info = {"step": step_name}
+        if extra_data:
+            info.update(extra_data)
+        self.step_completed.emit(info)
+
+    def update_weight_labels_for_full_bottle(self, full_ranges, selected_bottle_id=None):
+        """
+        Update weight label colors for each station during full bottle check.
+        Green if in range, red if out of range.
+        """
+        for i, box in enumerate(self.station_boxes):
+            if not self.station_enabled[i] or not self.station_connected[i]:
+                continue
+            weight = self.station_weights[i]
+            # Determine which range to use
+            # If a bottle is selected, use its range; otherwise, use the first available
+            if selected_bottle_id and selected_bottle_id in full_ranges:
+                rng = full_ranges[selected_bottle_id]
+            else:
+                rng = list(full_ranges.values())[0]
+            if rng[0] <= weight <= rng[1]:
+                box.weight_label.setStyleSheet("color: #11BD33;")  # Green
+            else:
+                box.weight_label.setStyleSheet("color: #FF2222;")  # Red
+
+    def update_weight_labels_for_empty_bottle(self, empty_range):
+        """
+        Update weight label colors for each station during empty bottle check.
+        Green if in range, red if out of range.
+        """
+        for i, box in enumerate(self.station_boxes):
+            if not self.station_enabled[i] or not self.station_connected[i]:
+                continue
+            weight = self.station_weights[i]
+            if empty_range[0] <= weight <= empty_range[1]:
+                box.weight_label.setStyleSheet("color: #11BD33;")  # Green
+            else:
+                box.weight_label.setStyleSheet("color: #FF2222;")  # Red

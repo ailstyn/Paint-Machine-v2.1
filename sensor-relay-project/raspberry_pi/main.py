@@ -1,10 +1,10 @@
 import os
 import logging
-import config
 import sys
 import time
 import signal
 import serial
+import config
 import RPi.GPIO as GPIO # type: ignore
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
@@ -14,6 +14,8 @@ from PyQt6.QtCore import QTimer, Qt
 from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, StartupWizardDialog
 from gui.languages import LANGUAGES
 import re
+from message_handlers import MESSAGE_HANDLERS, handle_unknown
+from message_handlers import MESSAGE_HANDLERS
 from startup import (
     StartupWizardDialog,
     run_startup_sequence,
@@ -28,6 +30,53 @@ from startup import (
     step_full_bottle_check,
     step_empty_bottle_check,
 )
+
+from utils import (
+    load_scale_calibrations,
+    load_station_enabled,
+    save_station_enabled,
+    load_station_serials,
+    load_bottle_sizes,
+    load_bottle_weight_ranges,
+    clear_serial_buffer,
+    update_station_status
+)
+
+from config import (
+    NUM_STATIONS,
+    config_file,
+    target_weight,
+    time_limit,
+    scale_calibrations,
+    DEBUG,
+    E_STOP,
+    FILL_LOCKED,
+    last_fill_time,
+    last_final_weight,
+    fill_time_limit_reached,
+    SESSION_ID,
+    arduinos,
+    station_connected,
+    serial_numbers,
+    filling_mode,
+    station_max_weight_error,
+    BOTTLE_WEIGHT_TOLERANCE,
+    RELAY_POWER_ENABLED,
+    UP_BUTTON_PIN,
+    DOWN_BUTTON_PIN,
+    SELECT_BUTTON_PIN,
+    E_STOP_PIN,
+    BUZZER_PIN,
+    RELAY_POWER_PIN,
+    CONFIRM_ID,
+    RESET_HANDSHAKE,
+    REQUEST_CALIBRATION,
+    REQUEST_TARGET_WEIGHT,
+    REQUEST_TIME_LIMIT,
+    arduino_ports,
+    E_STOP_ACTIVATED,
+)
+
 from config import STATS_LOG_FILE, STATS_LOG_DIR
 
 # === ERROR LOGGING (MINIMAL) ===
@@ -49,414 +98,6 @@ print(f"Logging to: {os.path.abspath(ERROR_LOG_FILE)}")
 
 logging.error("Test error log entry: If you see this, logging is working.")
 
-# ========== CONFIG & CONSTANTS ==========
-NUM_STATIONS = 4
-config_file = "config.txt"
-target_weight = 500.0
-time_limit = 3000
-scale_calibrations = []
-DEBUG = True
-
-# ========== GLOBALS ==========
-E_STOP = False
-PREV_E_STOP_STATE = GPIO.HIGH
-FILL_LOCKED = False
-last_fill_time = [None] * NUM_STATIONS
-last_final_weight = [None] * NUM_STATIONS
-fill_time_limit_reached = False
-SESSION_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
-arduinos = [None] * NUM_STATIONS
-station_connected = [arduino is not None for arduino in arduinos]
-serial_numbers = [arduino.serial_number if arduino else None for arduino in arduinos]
-filling_mode = "AUTO"  # Default mode
-station_max_weight_error = [False] * NUM_STATIONS
-BOTTLE_WEIGHT_TOLERANCE = 25
-RELAY_POWER_ENABLED = False  # Add this global flag
-
-# ========== MESSAGE HANDLERS ==========
-def handle_request_target_weight(station_index, arduino, **ctx):
-    try:
-        # Reject fill requests until relay power is enabled
-        if not RELAY_POWER_ENABLED:
-            if DEBUG:
-                print(f"Station {station_index+1}: Fill request rejected, relay power not enabled yet. Sending STOP.")
-            arduino.write(config.STOP)  # Send STOP to Arduino to abort fill
-            return
-        if ctx['FILL_LOCKED']:
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Fill locked, sending STOP_FILL")
-            arduino.write(config.STOP)
-        else:
-            arduino.write(config.TARGET_WEIGHT)
-            arduino.write(f"{ctx['target_weight']}\n".encode('utf-8'))
-    except Exception as e:
-        logging.error("Error in handle_request_target_weight", exc_info=True)
-
-def handle_request_calibration(station_index, arduino, **ctx):
-    try:
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {ctx['scale_calibrations'][station_index]}")
-        arduino.write(config.REQUEST_CALIBRATION)
-        arduino.write(f"{ctx['scale_calibrations'][station_index]}\n".encode('utf-8'))
-    except Exception as e:
-        logging.error("Error in handle_request_calibration", exc_info=True)
-
-def handle_request_time_limit(station_index, arduino, **ctx):
-    try:
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: REQUEST_TIME_LIMIT")
-        arduino.write(config.REQUEST_TIME_LIMIT)
-        arduino.write(f"{ctx['time_limit']}\n".encode('utf-8'))
-    except Exception as e:
-        logging.error("Error in handle_request_time_limit", exc_info=True)
-
-def handle_current_weight(station_index, arduino, **ctx):
-    try:
-        weight_bytes = arduino.read(4)
-        # print(f"[DEBUG][handle_current_weight] raw bytes: {weight_bytes!r}")
-        if len(weight_bytes) == 4:
-            weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            # print(f"[DEBUG][handle_current_weight] parsed weight: {weight}")
-            widgets = ctx.get('station_widgets')
-            app = ctx.get('app')
-            target_weight = ctx.get('target_weight', 500.0)
-            unit = getattr(app, "units", "g") if app else "g"
-            if widgets:
-                widget = widgets[station_index]
-                if station_max_weight_error[station_index]:
-                    widget.weight_label.setStyleSheet("color: #FF2222;")
-                else:
-                    widget.weight_label.setStyleSheet("color: #fff;")
-                if hasattr(widget, "set_weight"):
-                    widget.set_weight(weight, target_weight, unit)
-                else:
-                    if widget.weight_label:
-                        if unit == "g":
-                            widget.weight_label.setText(f"{int(round(weight))} g")
-                        else:
-                            oz = weight / 28.3495
-                            widget.weight_label.setText(f"{oz:.1f} oz")
-            # StartupWizardDialog support
-            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
-                # print(f"[DEBUG] Calling set_weight on StartupWizardDialog for station {station_index} with weight {weight}")
-                ctx['active_dialog'].set_weight(station_index, weight)
-        else:
-            logging.error(f"Station {station_index}: Incomplete weight bytes received: {weight_bytes!r}")
-            widgets = ctx.get('station_widgets')
-            if widgets:
-                widget = widgets[station_index]
-                if widget.weight_label:
-                    widget.weight_label.setText("0.0 g")
-            if ctx['active_dialog'] is not None and ctx['active_dialog'].__class__.__name__ == "StartupWizardDialog":
-                ctx['active_dialog'].set_weight(station_index, 0.0)
-    except Exception as e:
-        logging.error("Error in handle_current_weight", exc_info=True)
-
-def handle_begin_auto_fill(station_index, arduino, **ctx):
-    try:
-        widgets = ctx['station_widgets']
-        app = ctx.get('app')
-        if widgets:
-            widget = widgets[station_index]
-            if hasattr(widget, "set_status"):
-                if app:
-                    widget.set_status(app.tr("AUTO FILL RUNNING"))
-                else:
-                    widget.set_status("AUTO FILL RUNNING")
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: BEGIN_AUTO_FILL received, status set.")
-    except Exception as e:
-        logging.error("Error in handle_begin_auto_fill", exc_info=True)
-
-def handle_begin_smart_fill(station_index, arduino, **ctx):
-    try:
-        widgets = ctx['station_widgets']
-        app = ctx.get('app')
-        if widgets:
-            widget = widgets[station_index]
-            if hasattr(widget, "set_status"):
-                if app:
-                    widget.set_status(app.tr("SMART FILL RUNNING"))
-                else:
-                    widget.set_status("SMART FILL RUNNING")
-        if ctx['DEBUG']:
-            print(f"Station {station_index+1}: BEGIN_SMART_FILL received, status set.")
-    except Exception as e:
-        logging.error("Error in handle_begin_smart_fill", exc_info=True)
-
-def handle_final_weight(station_index, arduino, **ctx):
-    print(f"[DEBUG] handle_final_weight called for station {station_index}")
-    try:
-        weight_bytes = arduino.read(4)
-        print(f"[DEBUG][handle_final_weight] raw bytes: {weight_bytes!r}")
-        if len(weight_bytes) == 4:
-            final_weight = int.from_bytes(weight_bytes, byteorder='little', signed=True)
-            print(f"[DEBUG][handle_final_weight] parsed final_weight: {final_weight}")
-            last_final_weight[station_index] = final_weight
-
-            print("About to call update_station_status in handle_final_weight")
-            update_station_status(
-                ctx.get('app'),
-                station_index,
-                final_weight,  # Always use this value
-                ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-                is_filling=False,
-                fill_result="complete",
-                fill_time=None  # No time yet
-            )
-
-            fill_time = last_fill_time[station_index]
-            if fill_time is not None:
-                seconds = fill_time / 1000.0
-                update_station_status(
-                    ctx.get('app'),
-                    station_index,
-                    final_weight,
-                    ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-                    is_filling=False,
-                    fill_result="complete",
-                    fill_time=seconds
-                )
-                last_fill_time[station_index] = None
-                last_final_weight[station_index] = None
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Final weight: {final_weight}")
-        else:
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Incomplete final weight bytes: {weight_bytes!r}")
-    except Exception as e:
-        logging.error("Error in handle_final_weight", exc_info=True)
-
-def handle_fill_time(station_index, arduino, **ctx):
-    try:
-        time_bytes = arduino.read(4)
-        if len(time_bytes) == 4:
-            fill_time = int.from_bytes(time_bytes, byteorder='little', signed=False)
-            last_fill_time[station_index] = fill_time
-            final_weight = last_final_weight[station_index]
-            if final_weight is not None:
-                seconds = fill_time / 1000.0
-                # If fill_time reached the time limit, treat as timeout
-                if fill_time >= ctx.get('time_limit', 3000):
-                    update_station_status(
-                        ctx.get('app'),
-                        station_index,
-                        final_weight,
-                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-                        is_filling=False,
-                        fill_result="timeout",
-                        fill_time=seconds
-                    )
-                else:
-                    update_station_status(
-                        ctx.get('app'),
-                        station_index,
-                        final_weight,
-                        ctx.get('app').filling_mode if ctx.get('app') else "AUTO",
-                        is_filling=False,
-                        fill_result="complete",
-                        fill_time=seconds
-                    )
-                last_fill_time[station_index] = None
-                last_final_weight[station_index] = None
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Fill time: {fill_time} ms")
-        else:
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Incomplete fill time bytes: {time_bytes!r}")
-    except Exception as e:
-        logging.error("Error in handle_fill_time", exc_info=True)
-
-def handle_unknown(station_index, arduino, message_type, **ctx):
-    try:
-        if arduino.in_waiting > 0:
-            extra = arduino.readline().decode('utf-8', errors='replace').strip()
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
-            else:
-                logging.error(f"Station {station_index+1}: Unknown message_type: {message_type!r}, extra: {extra!r}")
-        else:
-            if ctx['DEBUG']:
-                print(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
-            else:
-                logging.error(f"Station {station_index+1}: Unknown message_type: {message_type!r}")
-            if ctx['refresh_ui']:
-                ctx['refresh_ui']()
-    except Exception as e:
-        logging.error("Error in handle_unknown", exc_info=True)
-
-def handle_max_weight_warning(station_index, arduino, **ctx):
-    widgets = ctx.get('station_widgets')
-    app = ctx.get('app')
-    station_max_weight_error[station_index] = True
-    if widgets:
-        widget = widgets[station_index]
-        if hasattr(widget, "set_status"):
-            if app:
-                widget.set_status(f"<b>{app.tr('MAX WEIGHT EXCEEDED')}</b>", color="#FF2222", flashing=True)
-            else:
-                widget.set_status("<b>MAX WEIGHT EXCEEDED</b>", color="#FF2222", flashing=True)
-    if DEBUG:
-        print(f"[WARNING] Station {station_index+1}: MAX_WEIGHT_WARNING received")
-
-def handle_max_weight_end(station_index, arduino, **ctx):
-    widgets = ctx.get('station_widgets')
-    station_max_weight_error[station_index] = False
-    if widgets:
-        widget = widgets[station_index]
-        if hasattr(widget, "clear_status"):
-            widget.clear_status()
-        elif hasattr(widget, "set_status"):
-            widget.set_status("")  # Fallback: clear status text
-    if DEBUG:
-        print(f"[INFO] Station {station_index+1}: MAX_WEIGHT_END received, warning cleared.")
-
-MESSAGE_HANDLERS = {
-    config.REQUEST_TARGET_WEIGHT: handle_request_target_weight,
-    config.REQUEST_CALIBRATION: handle_request_calibration,
-    config.REQUEST_TIME_LIMIT: handle_request_time_limit,
-    config.CURRENT_WEIGHT: handle_current_weight,
-    config.BEGIN_AUTO_FILL: handle_begin_auto_fill,
-    config.BEGIN_SMART_FILL: handle_begin_smart_fill,
-    config.FINAL_WEIGHT: handle_final_weight,
-    config.FILL_TIME: handle_fill_time,
-    config.MAX_WEIGHT_WARNING: handle_max_weight_warning,
-    config.MAX_WEIGHT_END: handle_max_weight_end,  # <-- Register the new handler
-}
-
-# ========== UTILITY FUNCTIONS ==========
-def load_scale_calibrations():
-    """Load scale calibration values from config.txt into the global scale_calibrations list."""
-    global scale_calibrations
-    calibrations = [1.0] * NUM_STATIONS
-    config_path = os.path.join(os.path.dirname(__file__), config_file)
-    try:
-        with open(config_path, "r") as file:
-            for line in file:
-                if line.startswith("station") and "_calibration=" in line:
-                    key, value = line.strip().split("=")
-                    station_num = int(key.replace("station", "").replace("_calibration", ""))
-                    if 1 <= station_num <= NUM_STATIONS:
-                        calibrations[station_num - 1] = float(value)
-    except FileNotFoundError:
-        logging.error(f"{config_file} not found. Using default calibration values.")
-    except Exception as e:
-        logging.error(f"Error reading {config_file}: {e}")
-    scale_calibrations = calibrations
-    if DEBUG:
-        print(f"Loaded scale calibration values: {scale_calibrations}")
-
-def load_station_enabled(config_path):
-    enabled = [False] * NUM_STATIONS
-    try:
-        with open(config_path, "r") as f:
-            for line in f:
-                line = line.strip()
-                for i in range(NUM_STATIONS):
-                    key = f"station{i+1}_enabled="
-                    if line.startswith(key):
-                        value = line.split("=")[1].strip().lower()
-                        enabled[i] = value == "true"
-                        if DEBUG:
-                            print(f"[DEBUG] Found {key}{value} -> enabled[{i}] = {enabled[i]}")
-    except Exception as e:
-        if DEBUG:
-            print(f"Error reading station_enabled from config: {e}")
-    if DEBUG:
-        print(f"[DEBUG] Final enabled list: {enabled}")
-    return enabled
-
-def save_station_enabled(config_path, station_enabled):
-    try:
-        with open(config_path, "r") as f:
-            lines = f.readlines()
-        with open(config_path, "w") as f:
-            for line in lines:
-                written = False
-                for i in range(NUM_STATIONS):
-                    key = f"station{i+1}_enabled="
-                    if line.strip().startswith(key):
-                        f.write(f"{key}{'true' if station_enabled[i] else 'false'}\n")
-                        written = True
-                        break
-                if not written:
-                    f.write(line)
-    except Exception as e:
-        if DEBUG:
-            print(f"Error writing station_enabled to config: {e}")
-
-def load_station_serials():
-    serials = [None] * NUM_STATIONS
-    config_path = os.path.join(os.path.dirname(__file__), config_file)
-    try:
-        with open(config_path, "r") as file:
-            for line in file:
-                if line.startswith("station") and "_serial=" in line:
-                    key, value = line.strip().split("=")
-                    station_num = int(key.replace("station", "").replace("_serial", ""))
-                    if 1 <= station_num <= NUM_STATIONS:
-                        serials[station_num - 1] = value
-    except Exception as e:
-        logging.error(f"Error reading serials from config: {e}")
-    return serials
-
-def load_bottle_sizes(config_path):
-    bottle_sizes = {}
-    try:
-        with open(config_path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("bottle_"):
-                    key, value = line.split("=")
-                    name = key.replace("bottle_", "")
-                    parts = value.split(":")
-                    if len(parts) == 3:
-                        full_weight = float(parts[0])
-                        empty_weight = float(parts[1])
-                        default_time_limit = int(parts[2])
-                        bottle_sizes[name] = (full_weight, empty_weight, default_time_limit)
-                    elif len(parts) == 2:
-                        # fallback for old format
-                        full_weight = float(parts[0])
-                        empty_weight = float(parts[1])
-                        bottle_sizes[name] = (full_weight, empty_weight, None)
-    except Exception as e:
-        if DEBUG:
-            print(f"Error loading bottle sizes: {e}")
-    if DEBUG:
-        print(f"[DEBUG] Loaded bottle sizes: {bottle_sizes}")
-    return bottle_sizes
-
-def load_bottle_weight_ranges(config_path, tolerance=BOTTLE_WEIGHT_TOLERANCE):
-    bottle_ranges = {}
-    try:
-        with open(config_path, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith("bottle_"):
-                    key, value = line.split("=")
-                    name = key.replace("bottle_", "")
-                    parts = value.split(":")
-                    if len(parts) >= 2:
-                        full_weight = float(parts[0])
-                        empty_weight = float(parts[1])
-                        bottle_ranges[name] = {
-                            "full": (full_weight - tolerance, full_weight + tolerance),
-                            "empty": (empty_weight - tolerance, empty_weight + tolerance)
-                        }
-                        # Optionally store time limit if present
-                        if len(parts) == 3:
-                            bottle_ranges[name]["default_time_limit"] = int(parts[2])
-    except Exception as e:
-        if DEBUG:
-            print(f"Error loading bottle weight ranges: {e}")
-    return bottle_ranges
-
-def clear_serial_buffer(arduino):
-    """Read and discard all available bytes from the Arduino serial buffer."""
-    while arduino.in_waiting > 0:
-        arduino.read(arduino.in_waiting)
-
 # ========== GPIO FUNCTIONS ==========
 
 def setup_gpio():
@@ -466,31 +107,31 @@ def setup_gpio():
         if DEBUG:
             print('setting up GPIO')
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(config.UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(config.DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(config.SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(config.E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(config.BUZZER_PIN, GPIO.OUT)
-        GPIO.output(config.BUZZER_PIN, GPIO.LOW)
-        GPIO.setup(config.RELAY_POWER_PIN, GPIO.OUT)
+        GPIO.setup(UP_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(DOWN_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(SELECT_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(E_STOP_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.setup(BUZZER_PIN, GPIO.OUT)
+        GPIO.output(BUZZER_PIN, GPIO.LOW)
+        GPIO.setup(RELAY_POWER_PIN, GPIO.OUT)
         if DEBUG:
             print('GPIO setup complete')
     except Exception as e:
         logging.error(f"Error in setup_gpio: {e}")
 
 def ping_buzzer(duration=0.05):
-    GPIO.output(config.BUZZER_PIN, GPIO.HIGH)
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
     time.sleep(duration)
-    GPIO.output(config.BUZZER_PIN, GPIO.LOW)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 def ping_buzzer_invalid():
-    GPIO.output(config.BUZZER_PIN, GPIO.HIGH)
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
     time.sleep(0.15)
-    GPIO.output(config.BUZZER_PIN, GPIO.LOW)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
     time.sleep(0.05)
-    GPIO.output(config.BUZZER_PIN, GPIO.HIGH)
+    GPIO.output(BUZZER_PIN, GPIO.HIGH)
     time.sleep(0.15)
-    GPIO.output(config.BUZZER_PIN, GPIO.LOW)
+    GPIO.output(BUZZER_PIN, GPIO.LOW)
 
 # ========== SESSION/DATA LOGGING ==========
 
@@ -916,7 +557,7 @@ def reconnect_arduino(station_index, port):
             arduino.read(arduino.in_waiting)
         time.sleep(0.5)
 
-        arduino.write(config.RESET_HANDSHAKE)
+        arduino.write(RESET_HANDSHAKE)
         arduino.flush()
         if DEBUG:
             print(f"Sent RESET_HANDSHAKE to {port}")
@@ -970,7 +611,7 @@ def reconnect_arduino(station_index, port):
 
         station_index = station_serials.index(station_serial_number)
 
-        arduino.write(config.CONFIRM_ID)
+        arduino.write(CONFIRM_ID)
         arduino.flush()
         if DEBUG:
             print(f"Sent CONFIRM_ID to station {station_index+1} on {port}")
@@ -981,12 +622,12 @@ def reconnect_arduino(station_index, port):
         for _ in range(40):
             if arduino.in_waiting > 0:
                 req = arduino.read(1)
-                if req == config.REQUEST_CALIBRATION:
+                if req == REQUEST_CALIBRATION:
                     if DEBUG:
                         print(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
                     else:
                         logging.info(f"Station {station_index+1}: REQUEST_CALIBRATION received, sending calibration: {scale_calibrations[station_index]}")
-                    arduino.write(config.REQUEST_CALIBRATION)
+                    arduino.write(REQUEST_CALIBRATION)
                     arduino.write(f"{scale_calibrations[station_index]}\n".encode('utf-8'))
                     got_request = True
                     break
@@ -1015,7 +656,7 @@ def reconnect_arduino(station_index, port):
         return False
 
 def try_connect_station(station_index):
-    port = config.arduino_ports[station_index]
+    port = arduino_ports[station_index]
     if DEBUG:
         print(f"Attempting to (re)connect to station {station_index+1} on port {port}...")
     try:
@@ -1045,7 +686,7 @@ def poll_hardware(app):
         else:
             station_widgets = getattr(app, "station_widgets", None)
 
-        estop_pressed = GPIO.input(config.E_STOP_PIN) == GPIO.LOW
+        estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
 
         # Handle E-STOP state change
         if estop_pressed and not E_STOP:
@@ -1068,7 +709,7 @@ def poll_hardware(app):
                 )
             for arduino in arduinos:
                 if arduino:
-                    arduino.write(config.E_STOP_ACTIVATED)
+                    arduino.write(E_STOP_ACTIVATED)
                     arduino.flush()
         elif not estop_pressed and E_STOP:
             if DEBUG:
@@ -1117,7 +758,7 @@ def poll_hardware(app):
             except serial.SerialException as e:
                 if DEBUG:
                     print(f"Lost connection to Arduino {station_index+1}: {e}")
-                port = config.arduino_ports[station_index]
+                port = arduino_ports[station_index]
                 reconnect_arduino(station_index, port)
             except Exception as e:
                 if DEBUG:
@@ -1150,13 +791,13 @@ def handle_button_presses(app):
                 app.button_column.flash_icon(index)
 
         # UP BUTTON
-        if GPIO.input(config.UP_BUTTON_PIN) == GPIO.LOW:
+        if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             print(f"UP button pressed, dialog: {dialog}")
             flash_dialog_icon(0)
             if hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("up")
-            while GPIO.input(config.UP_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             dialog.select_prev()
@@ -1165,13 +806,13 @@ def handle_button_presses(app):
             return
 
         # DOWN BUTTON
-        if GPIO.input(config.DOWN_BUTTON_PIN) == GPIO.LOW:
+        if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             print(f"DOWN button pressed, dialog: {dialog}")
             flash_dialog_icon(2)
             if hasattr(dialog, "set_arrow_active"):
                 dialog.set_arrow_active("down")
-            while GPIO.input(config.DOWN_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             dialog.select_next()
@@ -1180,11 +821,11 @@ def handle_button_presses(app):
             return
 
         # SELECT BUTTON
-        if GPIO.input(config.SELECT_BUTTON_PIN) == GPIO.LOW:
+        if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
             ping_buzzer()
             print(f"SELECT button pressed, dialog: {dialog}")
             flash_dialog_icon(1)
-            while GPIO.input(config.SELECT_BUTTON_PIN) == GPIO.LOW:
+            while GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
                 QApplication.processEvents()
                 time.sleep(0.01)
             try:
@@ -1200,116 +841,97 @@ def handle_button_presses(app):
         if DEBUG:
             print(f"Error in handle_button_presses: {e}")
 
-def update_station_status(app, station_index, weight, filling_mode, is_filling, fill_result=None, fill_time=None):
-    """
-    Update the status label for a station.
-    'weight' should be the final fill weight if called from handle_final_weight.
-    """
-    print(f"[DEBUG] update_station_status: idx={station_index}, weight={weight}, mode={filling_mode}, is_filling={is_filling}, fill_result={fill_result}, fill_time={fill_time}")
-    widget = app.station_widgets[station_index]
-    print(f"widget for station {station_index} is {widget}")
-    units = getattr(app, "units", "g")
-    tr = getattr(app, "tr", lambda k: k)
-    if filling_mode == "AUTO":
-        if fill_result == "complete":
-            if units == "oz":
-                weight_str = f"{weight / 28.3495:.2f} oz"
-            else:
-                weight_str = f"{weight} g"
-            if fill_time is not None:
-                status_text = f"{tr('FINAL WEIGHT')}: {weight_str}\n{tr('TIME')}: {fill_time:.2f} s"
-                widget.set_status(status_text, color="#11BD33")
-            else:
-                status_text = f"{tr('FINAL WEIGHT')}: {weight_str}"
-                widget.set_status(status_text, color="#11BD33")
-        elif fill_result == "timeout":
-            if units == "oz":
-                weight_str = f"{weight / 28.3495:.2f} oz"
-            else:
-                weight_str = f"{weight} g"
-            if fill_time is not None:
-                status_text = f"{tr('TIMEOUT')}\n{tr('FINAL WEIGHT')}: {weight_str}\n{tr('TIME')}: {fill_time:.2f} s"
-                widget.set_status(status_text, color="#F6EB61")
-            else:
-                status_text = f"{tr('TIMEOUT')}\n{tr('FINAL WEIGHT')}: {weight_str}"
-                widget.set_status(status_text, color="#F6EB61")
-        elif fill_result is None and is_filling:
-            widget.set_status(tr("AUTO FILL RUNNING"), color="#F6EB61")
-        elif weight < 40:
-            widget.set_status(tr("AUTO FILL READY"), color="#11BD33")
-        else:
-            widget.set_status(tr("READY"), color="#fff")
-    else:
-        widget.set_status(tr("READY"), color="#fff")
-
-
 # ========== MAIN ENTRY POINT ==========
 
 def main():
-        try:
-            logging.info("Starting main application.")
-            load_scale_calibrations()
-            global station_enabled
-            config_path = "config.txt"
-            station_enabled = load_station_enabled(config_path)
-            if DEBUG:
-                print(f"Loaded station_enabled: {station_enabled}")
-            setup_gpio()
+    try:
+        logging.info("Starting main application.")
+        load_scale_calibrations()
+        global station_enabled
+        config_path = "config.txt"
+        station_enabled = load_station_enabled(config_path)
+        if DEBUG:
+            print(f"Loaded station_enabled: {station_enabled}")
+        setup_gpio()
 
-            app_qt = QApplication(sys.argv)
+        app_qt = QApplication(sys.argv)
 
-            signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-            timer = QTimer()
-            button_timer = QTimer()
+        timer = QTimer()
+        button_timer = QTimer()
 
-            # Start button polling timer BEFORE startup
-            button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
-            button_timer.start(50)
+        # Start button polling timer BEFORE startup
+        button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
+        button_timer.start(50)
 
-            # Start poll_hardware BEFORE startup
-            timer.timeout.connect(lambda: poll_hardware(app_qt))
-            timer.start(35)
+        # Start poll_hardware BEFORE startup
+        timer.timeout.connect(lambda: poll_hardware(app_qt))
+        timer.start(35)
 
-            def after_startup():
-                global RELAY_POWER_ENABLED
-                app = RelayControlApp(
-                    station_enabled=station_enabled,
-                    filling_mode_callback=filling_mode_callback
-                )
-                app.set_calibrate = None
-                app.target_weight = target_weight
-                app.time_limit = time_limit
-                app.filling_mode = filling_mode  # Ensure filling_mode is set
+        def after_startup():
+            global RELAY_POWER_ENABLED
+            app = RelayControlApp(
+                station_enabled=station_enabled,
+                filling_mode_callback=filling_mode_callback
+            )
+            app.set_calibrate = None
+            app.target_weight = target_weight
+            app.time_limit = time_limit
+            app.filling_mode = filling_mode  # Ensure filling_mode is set
 
-                for i, widget in enumerate(app.station_widgets):
-                    if station_enabled[i]:
-                        widget.set_weight(0, target_weight, "g")
+            for i, widget in enumerate(app.station_widgets):
+                if station_enabled[i]:
+                    widget.set_weight(0, target_weight, "g")
 
-                timer.timeout.disconnect()
-                timer.timeout.connect(lambda: poll_hardware(app))
-                button_timer.timeout.disconnect()
-                button_timer.timeout.connect(lambda: handle_button_presses(app))
-                app.show()
-                GPIO.output(config.RELAY_POWER_PIN, GPIO.HIGH)
-                RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
+            timer.timeout.disconnect()
+            timer.timeout.connect(lambda: poll_hardware(app))
+            button_timer.timeout.disconnect()
+            button_timer.timeout.connect(lambda: handle_button_presses(app))
+            app.show()
+            GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)
+            RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
-                app.active_dialog = app
+            app.active_dialog = app
 
-            startup(after_startup)
+        wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
+        context = {
+            'wizard': wizard,
+            'app': app_qt,
+            'NUM_STATIONS': NUM_STATIONS,
+            'station_enabled': station_enabled,
+            'station_connected': station_connected,
+            'arduinos': arduinos,
+            'config': config,
+            'SelectionDialog': SelectionDialog,
+            'InfoDialog': InfoDialog,
+            'Qt': Qt,
+            'QTimer': QTimer,
+            'logging': logging,
+            'config_file': config_file,
+            'filling_mode_callback': filling_mode_callback,
+            'ping_buzzer_invalid': ping_buzzer_invalid,
+            'after_startup': after_startup,
+            # ...any other required context items
+        }
 
-            app_qt.exec()
-        except KeyboardInterrupt:
-            if DEBUG:
-                print("Program interrupted by user.")
-            logging.info("Program interrupted by user.")
-        except Exception as e:
-            logging.error(f"Unexpected error: {e}")
-        finally:
-            if DEBUG:
-                print("Shutting down...")
-            logging.info("Shutting down and cleaning up GPIO.")
-            GPIO.cleanup()
+        # --- RUN THE MODULAR STARTUP SEQUENCE ---
+        run_startup_sequence(context)
+
+        # After startup sequence, the after_startup callback will launch RelayControlApp
+
+        app_qt.exec()
+    except KeyboardInterrupt:
+        if DEBUG:
+            print("Program interrupted by user.")
+        logging.info("Program interrupted by user.")
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+    finally:
+        if DEBUG:
+            print("Shutting down...")
+        logging.info("Shutting down and cleaning up GPIO.")
+        GPIO.cleanup()
 
 if __name__ == "__main__":
     main()
