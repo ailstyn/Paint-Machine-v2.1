@@ -847,6 +847,7 @@ def handle_button_presses(app):
 # ========== MAIN ENTRY POINT ==========
 
 def main():
+    global arduinos, station_connected
     try:
         print("[DEBUG] main() started")
         logging.info("Starting main application.")
@@ -937,7 +938,6 @@ def main():
             print(f"[DEBUG] Prestartup step {step_func.__name__} returned: {result}")
 
         # Update global variables from context before main startup
-        global arduinos, station_connected
         if 'arduinos' in context:
             arduinos = context['arduinos']
             print(f"[DEBUG] Updated global arduinos: {arduinos}")
