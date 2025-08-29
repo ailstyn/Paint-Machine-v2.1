@@ -335,7 +335,8 @@ class StationBoxWidget(QWidget):
         self.weight_text = text
         if self.weight_label:
             self.weight_label.setText(text)
-            self.weight_label.setStyleSheet("color: #FF2222;")  # DEBUG: Always set to red
+            # Default style: green, transparent, bold
+            self.weight_label.setStyleSheet("color: #11BD33; background: transparent; font-weight: bold;")
 
     def set_highlight(self, highlighted):
         self._highlighted = highlighted
@@ -2140,9 +2141,9 @@ class StartupWizardDialog(QDialog):
             else:
                 rng = list(full_ranges.values())[0]
             if rng[0] <= weight <= rng[1]:
-                box.weight_label.setStyleSheet("color: #11BD33;")  # Green
+                box.weight_label.setStyleSheet("color: #11BD33; background: transparent; font-weight: bold;")  # Green
             else:
-                box.weight_label.setStyleSheet("color: #FF2222;")  # Red
+                box.weight_label.setStyleSheet("color: #FF2222; background: transparent; font-weight: bold;")  # Red
 
     def update_weight_labels_for_empty_bottle(self, empty_range):
         """
@@ -2154,9 +2155,9 @@ class StartupWizardDialog(QDialog):
                 continue
             weight = self.station_weights[i]
             if empty_range[0] <= weight <= empty_range[1]:
-                box.weight_label.setStyleSheet("color: #11BD33;")  # Green
+                box.weight_label.setStyleSheet("color: #11BD33; background: transparent; font-weight: bold;")  # Green
             else:
-                box.weight_label.setStyleSheet("color: #FF2222;")  # Red
+                box.weight_label.setStyleSheet("color: #FF2222; background: transparent; font-weight: bold;")  # Red
 
     def toggle_station(self, station_index):
         # Toggle enabled/disabled state for a station during verification
