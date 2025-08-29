@@ -94,7 +94,7 @@ void handshake_station_id() {
             if (c == handshake_seq[handshake_pos]) {
                 handshake_pos++;
                 if (handshake_seq[handshake_pos] == '\0') {
-                    break; // Full sequence received
+                        break; // Full sequence received
                 }
             } else {
                 handshake_pos = 0;
@@ -103,20 +103,26 @@ void handshake_station_id() {
         delay(5);
     }
 
-    delay(500);
-    Serial.print("<SERIAL:");
-    Serial.print(station_serial);
-    Serial.println(">");
+        // After receiving PMID, turn LED off
+        digitalWrite(LED_PIN, LOW);
+        delay(500);
 
-    while (true) {
-        if (Serial.available() > 0) {
-            byte cmd = Serial.read();
-            if (cmd == CONFIRM_ID) break;
+        // Send serial, then turn LED on
+        Serial.print("<SERIAL:");
+        Serial.print(station_serial);
+        Serial.println(">");
+        digitalWrite(LED_PIN, HIGH);
+
+        // Wait for CONFIRM_ID, then turn LED off
+        while (true) {
+            if (Serial.available() > 0) {
+                byte cmd = Serial.read();
+                if (cmd == CONFIRM_ID) break;
+            }
+            delay(5);
         }
-        delay(5);
-    }
-    delay(200);
-    digitalWrite(LED_PIN, LOW);
+        delay(200);
+        digitalWrite(LED_PIN, LOW);
 }
 
 void request_and_apply_calibration() {
