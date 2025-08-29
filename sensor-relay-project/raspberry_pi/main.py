@@ -17,7 +17,6 @@ import re
 from message_handlers import MESSAGE_HANDLERS, handle_unknown
 from message_handlers import MESSAGE_HANDLERS
 from startup import (
-    StartupWizardDialog,
     run_startup_sequence,
     step_load_serials_and_ranges,
     step_connect_arduinos,
