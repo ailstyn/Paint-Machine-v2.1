@@ -2088,6 +2088,7 @@ class StartupWizardDialog(QDialog):
         self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
         self.selection_indices = [i for i, c in enumerate(self.station_connected) if c] + ["accept"]
         self.selection_index = len(self.selection_indices) - 1
+        self.back_label.hide()  # Hide Back button for this step
         self.update_highlight()
 
     def show_empty_scale_prompt(self):
@@ -2096,6 +2097,7 @@ class StartupWizardDialog(QDialog):
         self.info_label.setText("Remove all bottles and objects from the scale. Use UP/DOWN to select, CONTINUE or BACK.")
         self.selection_indices = ["back", "accept"]
         self.selection_index = 1
+        self.back_label.show()  # Show Back button for this step
         self.update_highlight()
 
     def show_full_bottle_prompt(self, full_ranges):
@@ -2108,6 +2110,7 @@ class StartupWizardDialog(QDialog):
         self.info_label.setText("\n".join(info_lines))
         self.selection_indices = ["back", "accept"]
         self.selection_index = 1
+        self.back_label.show()  # Show Back button for this step
         self.update_highlight()
 
     def show_empty_bottle_prompt(self, empty_range=(0, 0)):
@@ -2117,6 +2120,7 @@ class StartupWizardDialog(QDialog):
         self.info_label.setText("Replace the full bottle with an empty bottle on each enabled station. Use UP/DOWN to select, CONTINUE or BACK.")
         self.selection_indices = ["back", "accept"]
         self.selection_index = 1
+        self.back_label.show()  # Show Back button for this step
         self.update_highlight()
 
     def complete_step(self, step_name, extra_data=None):
