@@ -122,6 +122,8 @@ def step_connect_arduinos(context):
 
         context['station_connected'] = station_connected
         context['arduinos'] = arduinos
+        print(f"[DEBUG] Final station_connected: {context['station_connected']}")
+        print(f"[DEBUG] Final arduinos: {context['arduinos']}")
         return 'completed'
     except Exception as e:
         logging.error(f"Error in step_connect_arduinos: {e}")

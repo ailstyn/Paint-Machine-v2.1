@@ -669,7 +669,7 @@ def try_connect_station(station_index):
 def poll_hardware(app):
     global E_STOP, FILL_LOCKED
     try:
-        if DEBUG:
+        if not DEBUG:
             print("[poll_hardware] Timer fired!")
             print(f"[poll_hardware] Arduinos: {[str(a) if a else None for a in arduinos]}")
             print(f"[poll_hardware] Station enabled: {station_enabled}")
