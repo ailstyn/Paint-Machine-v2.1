@@ -20,7 +20,6 @@ from startup import (
     run_startup_sequence,
     step_load_serials_and_ranges,
     step_connect_arduinos,
-    step_check_estop,
     step_station_verification,
     step_clear_all_scales,
     step_filling_mode_selection,
