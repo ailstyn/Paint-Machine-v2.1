@@ -728,8 +728,7 @@ def poll_hardware(app):
 
                 while arduino.in_waiting > 0:
                     message_type = arduino.read(1)
-                    # if DEBUG:
-                    #     print(f"[poll_hardware] Station {station_index+1}: message_type={message_type!r}")
+                    print(f"[poll_hardware] Station {station_index+1}: message_type={message_type!r}")
                     handler = MESSAGE_HANDLERS.get(message_type)
                     # --- Unified context for handlers ---
                     ctx = {
