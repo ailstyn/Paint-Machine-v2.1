@@ -23,8 +23,6 @@ from startup import (
     step_station_verification,
     step_clear_all_scales,
     step_filling_mode_selection,
-    step_full_bottle,
-    step_empty_bottle,
     step_full_bottle_check,
     step_empty_bottle_check,
 )
