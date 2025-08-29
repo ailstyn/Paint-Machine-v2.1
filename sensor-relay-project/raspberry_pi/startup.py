@@ -544,10 +544,15 @@ def step_empty_bottle_check(context):
         print(f"[ERROR] Exception in step_empty_bottle_check: {e}")
         return 'error'
 
-# List of step functions in order
-startup_steps = [
+
+# Pre-startup steps: run before main startup sequence
+prestartup_steps = [
     step_load_serials_and_ranges,
     step_connect_arduinos,
+]
+
+# Main startup steps: run after globals are updated
+startup_steps = [
     step_station_verification,
     step_clear_all_scales,
     step_filling_mode_selection,

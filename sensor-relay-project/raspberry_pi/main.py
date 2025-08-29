@@ -15,6 +15,7 @@ from gui.gui import RelayControlApp, MenuDialog, SelectionDialog, InfoDialog, St
 from gui.languages import LANGUAGES
 import re
 from message_handlers import MESSAGE_HANDLERS, handle_unknown
+from startup import prestartup_steps
 from startup import (
     run_startup_sequence,
     step_load_serials_and_ranges,
@@ -929,6 +930,22 @@ def main():
         }
         print("[DEBUG] context built")
 
+        # Run prestartup steps to initialize serials and arduinos
+        for step_func in prestartup_steps:
+            print(f"[DEBUG] Running prestartup step: {step_func.__name__}")
+            result = step_func(context)
+            print(f"[DEBUG] Prestartup step {step_func.__name__} returned: {result}")
+
+        # Update global variables from context before main startup
+        global arduinos, station_connected
+        if 'arduinos' in context:
+            arduinos = context['arduinos']
+            print(f"[DEBUG] Updated global arduinos: {arduinos}")
+        if 'station_connected' in context:
+            station_connected = context['station_connected']
+            print(f"[DEBUG] Updated global station_connected: {station_connected}")
+
+        # Now run the main startup sequence
         print("[DEBUG] Running startup sequence...")
         run_startup_sequence(context)
         print("[DEBUG] startup sequence complete")
