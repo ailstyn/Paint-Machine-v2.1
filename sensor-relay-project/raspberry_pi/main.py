@@ -889,21 +889,11 @@ def main():
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
             app.active_dialog = app
-    except KeyboardInterrupt:
-        if DEBUG:
-            print("Program interrupted by user.")
-        logging.info("Program interrupted by user.")
-    except Exception as e:
-        logging.error(f"Unexpected error: {e}")
-    finally:
-        if DEBUG:
-            print("Shutting down...")
-        logging.info("Shutting down and cleaning up GPIO.")
-        GPIO.cleanup()
 
-    wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
-    app_qt.active_dialog = wizard  # Set wizard as active dialog for button handling
-    context = {
+        # --- Startup Wizard and Sequence ---
+        wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
+        app_qt.active_dialog = wizard  # Set wizard as active dialog for button handling
+        context = {
             'wizard': wizard,
             'app': app_qt,
             'NUM_STATIONS': NUM_STATIONS,
@@ -922,10 +912,18 @@ def main():
             'after_startup': after_startup
         }
 
-    run_startup_sequence(context)
+        run_startup_sequence(context)
 
-    app_qt.exec()
+        app_qt.exec()
 
-
-if __name__ == "__main__":
-    main()
+    except KeyboardInterrupt:
+        if DEBUG:
+            print("Program interrupted by user.")
+        logging.info("Program interrupted by user.")
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+    finally:
+        if DEBUG:
+            print("Shutting down...")
+        logging.info("Shutting down and cleaning up GPIO.")
+        GPIO.cleanup()
