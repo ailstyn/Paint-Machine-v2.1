@@ -264,7 +264,7 @@ void loop() {
             Serial.println("Manual fill started.");
             manual_fill();
         }
-        if (messageType == RESET_HANDSHAKE) {
+        if (messageType == GET_ID) {
             Serial.write(VERBOSE_DEBUG);
             Serial.println("Resetting handshake...");
             handshake_station_id();
