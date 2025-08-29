@@ -670,10 +670,7 @@ def try_connect_station(station_index):
 def poll_hardware(app):
     global E_STOP, FILL_LOCKED
     try:
-        if not DEBUG:
-            print("[poll_hardware] Timer fired!")
-            print(f"[poll_hardware] Arduinos: {[str(a) if a else None for a in arduinos]}")
-            print(f"[poll_hardware] Station enabled: {station_enabled}")
+    # ...existing code...
         # Localize frequently accessed attributes
         active_dialog = getattr(app, "active_dialog", None)
         filling_mode = getattr(app, "filling_mode", "AUTO")
@@ -720,8 +717,7 @@ def poll_hardware(app):
                 overlay_widget.hide_overlay()
 
         for station_index, arduino in enumerate(arduinos):
-            if DEBUG:
-                print(f"[poll_hardware] Station {station_index+1}: arduino={arduino}, enabled={station_enabled[station_index]}")
+            # ...existing code...
             if arduino is None or not station_enabled[station_index]:
                 continue
             try:
@@ -730,14 +726,11 @@ def poll_hardware(app):
                         arduino.read(arduino.in_waiting)
                     continue
 
-                if DEBUG:
-                    print(f"[poll_hardware] Station {station_index+1}: in_waiting={arduino.in_waiting}")
+                # ...existing code...
 
                 while arduino.in_waiting > 0:
-                    if DEBUG:
-                        print(f"[poll_hardware] Station {station_index+1}: about to read message_type, buffer={arduino.in_waiting}")
                     message_type = arduino.read(1)
-                    print(f"[poll_hardware] Station {station_index+1}: message_type={message_type!r}")
+                    # ...existing code...
                     handler = MESSAGE_HANDLERS.get(message_type)
                     # --- Unified context for handlers ---
                     ctx = {

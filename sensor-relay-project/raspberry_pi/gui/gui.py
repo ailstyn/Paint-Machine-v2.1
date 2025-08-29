@@ -288,6 +288,8 @@ class StationBoxWidget(QWidget):
         self.weight_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.weight_label.setMinimumHeight(24)
         self.weight_label.setMaximumHeight(38)
+        # Default: green text, transparent background, bold
+        self.weight_label.setStyleSheet("color: #11BD33; background: transparent; font-weight: bold;")
         layout.addWidget(self.weight_label, alignment=Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignHCenter)
 
         self.setMinimumWidth(216)
