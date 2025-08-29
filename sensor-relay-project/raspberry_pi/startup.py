@@ -303,31 +303,43 @@ def step_clear_all_scales(context):
             app.processEvents()
             time.sleep(0.01)
 
-        scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
-        if any(w > 20 for w in scale_values):
-            options = [("CONFIRM", "CONFIRM"), ("BACK", "BACK")]
-            selection_dialog = context['SelectionDialog'](options=options, title="Confirm All Scales Are Clear")
-            selection_dialog.selected_index = 1
-            selection_dialog.setWindowModality(context['Qt'].WindowModality.ApplicationModal)
-            selection_dialog.show()
-            app.active_dialog = selection_dialog
-            user_choice = None
-            def on_select(opt, idx):
-                nonlocal user_choice
-                user_choice = opt
-                selection_dialog.accept()
-            selection_dialog.on_select_callback = on_select
-            while selection_dialog.isVisible():
-                app.processEvents()
-                time.sleep(0.01)
-            app.active_dialog = wizard
-            if user_choice == "CONFIRM":
-                break
+        action = step_result.get("action")
+        if action == "backup":
+            # Go back to station verification
+            wizard.show_station_verification()
+            wizard.show()
+            step_result.clear()
+            continue
+        elif action == "accept":
+            scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+            if any(w > 20 for w in scale_values):
+                options = [("NO", "NO"), ("YES", "YES")]
+                selection_dialog = context['SelectionDialog'](options=options, title="Are the scales clear?")
+                selection_dialog.selected_index = 0
+                selection_dialog.setWindowModality(context['Qt'].WindowModality.ApplicationModal)
+                selection_dialog.show()
+                app.active_dialog = selection_dialog
+                user_choice = None
+                def on_select(opt, idx):
+                    nonlocal user_choice
+                    user_choice = opt
+                    selection_dialog.accept()
+                selection_dialog.on_select_callback = on_select
+                while selection_dialog.isVisible():
+                    app.processEvents()
+                    time.sleep(0.01)
+                app.active_dialog = wizard
+                if user_choice == "YES":
+                    break
+                else:
+                    step_result.clear()
+                    continue
             else:
-                step_result.clear()
-                continue
+                break
         else:
-            break
+            # Unknown action, just continue loop
+            step_result.clear()
+            continue
 
     # Send TARE_SCALE to each enabled and connected Arduino
     for i, arduino in enumerate(arduinos):
