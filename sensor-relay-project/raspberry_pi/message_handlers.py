@@ -9,7 +9,6 @@ from config import (
     scale_calibrations,
     DEBUG,
     E_STOP,
-    PREV_E_STOP_STATE,
     FILL_LOCKED,
     last_fill_time,
     last_final_weight,
