@@ -55,8 +55,7 @@ def step_connect_arduinos(context):
 
         for port in getattr(config, 'arduino_ports', []):
             try:
-                if DEBUG:
-                    print(f"[DEBUG] Trying port {port}...")
+                print(f"[DEBUG] Trying port {port}...")
                 arduino = serial.Serial(port, 9600, timeout=0.5)
                 # Send RESET_HANDSHAKE before PMID to allow handshake restart
                 arduino.write(config.RESET_HANDSHAKE)
