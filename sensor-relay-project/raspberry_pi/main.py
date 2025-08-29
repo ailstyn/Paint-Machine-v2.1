@@ -911,14 +911,10 @@ def main():
             'config_file': config_file,
             'filling_mode_callback': filling_mode_callback,
             'ping_buzzer_invalid': ping_buzzer_invalid,
-            'after_startup': after_startup,
-            # ...any other required context items
+            'after_startup': after_startup
         }
 
-        # --- RUN THE MODULAR STARTUP SEQUENCE ---
         run_startup_sequence(context)
-
-        # After startup sequence, the after_startup callback will launch RelayControlApp
 
         app_qt.exec()
     except KeyboardInterrupt:
