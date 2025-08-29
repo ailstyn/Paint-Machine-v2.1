@@ -58,6 +58,10 @@ def step_connect_arduinos(context):
                 if DEBUG:
                     print(f"[DEBUG] Trying port {port}...")
                 arduino = serial.Serial(port, 9600, timeout=0.5)
+                # Send RESET_HANDSHAKE before PMID to allow handshake restart
+                arduino.write(config.RESET_HANDSHAKE)
+                arduino.flush()
+                time.sleep(0.05)
                 for b in b'PMID':
                     arduino.write(bytes([b]))
                     arduino.flush()
