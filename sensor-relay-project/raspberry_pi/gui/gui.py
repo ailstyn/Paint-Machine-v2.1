@@ -2169,3 +2169,20 @@ class StartupWizardDialog(QDialog):
                 box.set_connected(connected[i], STATION_COLORS[i])
             if hasattr(box, "set_enabled"):
                 box.set_enabled(enabled[i], STATION_COLORS[i])
+
+    def set_weight(self, station_index, weight, target_weight=None, unit="g"):
+        """
+        Update the weight label for a specific station during startup wizard.
+        """
+        self.station_weights[station_index] = weight
+        box = self.station_boxes[station_index]
+        if hasattr(box, "set_weight"):
+            box.set_weight(weight, target_weight, unit)
+        else:
+            # Fallback: set text directly
+            if hasattr(box, "weight_label") and box.weight_label:
+                if unit == "g":
+                    box.weight_label.setText(f"{int(round(weight))} g")
+                else:
+                    oz = weight / 28.3495
+                    box.weight_label.setText(f"{oz:.1f} oz")
