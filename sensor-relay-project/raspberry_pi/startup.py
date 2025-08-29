@@ -79,6 +79,8 @@ def step_connect_arduinos(context):
                                 print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
                             arduino.write(config.CONFIRM_ID)
                             arduino.flush()
+                            if DEBUG:
+                                print(f"[DEBUG] Sent CONFIRM_ID to station on port {port}")
                             break
                     time.sleep(0.1)
                 matched_entry = None
