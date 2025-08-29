@@ -841,18 +841,22 @@ def handle_button_presses(app):
 
 def main():
     try:
+        print("[DEBUG] main() started")
         logging.info("Starting main application.")
         load_scale_calibrations()
+        print("[DEBUG] load_scale_calibrations() complete")
         global station_enabled
         config_path = "config.txt"
         station_enabled = load_station_enabled(config_path)
-        if DEBUG:
-            print(f"Loaded station_enabled: {station_enabled}")
+        print(f"[DEBUG] Loaded station_enabled: {station_enabled}")
         setup_gpio()
+        print("[DEBUG] setup_gpio() complete")
 
         app_qt = QApplication(sys.argv)
+        print("[DEBUG] QApplication created")
 
         signal.signal(signal.SIGINT, signal.SIG_DFL)
+        print("[DEBUG] signal handler set")
 
         timer = QTimer()
         button_timer = QTimer()
@@ -860,12 +864,15 @@ def main():
         # Start button polling timer BEFORE startup
         button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
         button_timer.start(50)
+        print("[DEBUG] button_timer started")
 
         # Start poll_hardware BEFORE startup
         timer.timeout.connect(lambda: poll_hardware(app_qt))
         timer.start(35)
+        print("[DEBUG] poll_hardware timer started")
 
         def after_startup():
+            print("[DEBUG] after_startup() called")
             global RELAY_POWER_ENABLED
             app = RelayControlApp(
                 station_enabled=station_enabled,
@@ -889,10 +896,13 @@ def main():
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
             app.active_dialog = app
+            print("[DEBUG] after_startup() finished")
 
-        # --- Startup Wizard and Sequence ---
+        print("[DEBUG] Creating StartupWizardDialog...")
         wizard = StartupWizardDialog(num_stations=NUM_STATIONS)
+        print("[DEBUG] StartupWizardDialog created")
         app_qt.active_dialog = wizard  # Set wizard as active dialog for button handling
+        print("[DEBUG] app_qt.active_dialog set to wizard")
         context = {
             'wizard': wizard,
             'app': app_qt,
@@ -911,19 +921,23 @@ def main():
             'ping_buzzer_invalid': ping_buzzer_invalid,
             'after_startup': after_startup
         }
+        print("[DEBUG] context built")
 
+        print("[DEBUG] Running startup sequence...")
         run_startup_sequence(context)
+        print("[DEBUG] startup sequence complete")
 
+        print("[DEBUG] Entering app_qt.exec() event loop")
         app_qt.exec()
+        print("[DEBUG] app_qt.exec() finished")
 
     except KeyboardInterrupt:
-        if DEBUG:
-            print("Program interrupted by user.")
+        print("[DEBUG] Program interrupted by user.")
         logging.info("Program interrupted by user.")
     except Exception as e:
-        logging.error(f"Unexpected error: {e}")
+        print(f"[DEBUG] Exception in main(): {e}")
+        logging.error(f"Unexpected error: {e}", exc_info=True)
     finally:
-        if DEBUG:
-            print("Shutting down...")
+        print("[DEBUG] Shutting down...")
         logging.info("Shutting down and cleaning up GPIO.")
         GPIO.cleanup()
