@@ -45,6 +45,11 @@ def step_connect_arduinos(context):
         config = context['config']
         DEBUG = context.get('DEBUG', False)
 
+        print(f"[DEBUG] NUM_STATIONS: {NUM_STATIONS}")
+        print(f"[DEBUG] station_serials: {station_serials}")
+        print(f"[DEBUG] scale_calibrations: {scale_calibrations}")
+        print(f"[DEBUG] arduino_ports: {getattr(config, 'arduino_ports', [])}")
+
         station_connected = [False] * NUM_STATIONS
         arduinos = [None] * NUM_STATIONS
 
