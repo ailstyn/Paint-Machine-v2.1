@@ -260,6 +260,13 @@ void loop() {
     // --- SERIAL COMMANDS ---
     if (Serial.available() > 0) {
         byte messageType = Serial.read();
+        if (messageType == RESET_HANDSHAKE) {
+            Serial.write(VERBOSE_DEBUG);
+            Serial.println("RESET_HANDSHAKE received. Restarting handshake...");
+            handshake_station_id();
+            request_and_apply_calibration();
+            return; // Skip rest of loop until handshake is complete
+        }
         if (messageType == TARE_SCALE) {
             tare_and_update_offset();
             Serial.write(TARE_CONFIRMED); // Send confirmation byte ONLY after taring
