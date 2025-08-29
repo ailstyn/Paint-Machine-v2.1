@@ -1932,6 +1932,8 @@ class StartupWizardDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(1024, 600)
         self.num_stations = num_stations
+        # Set dark background for consistency
+        self.setStyleSheet("background-color: #222;")
 
         # State
         self.station_enabled = [True] * num_stations
@@ -2160,36 +2162,10 @@ class StartupWizardDialog(QDialog):
         self.station_boxes[station_index].set_enabled(self.station_enabled[station_index], STATION_COLORS[station_index])
 
     def set_station_labels(self, names, connected, enabled):
-        """
-        Update the station labels in the wizard with names, connection, and enabled status.
-        Adds labels to the end of the dialog's layout.
-        """
-        # If station_labels does not exist, create it
-        if not hasattr(self, 'station_labels') or self.station_labels is None:
-            self.station_labels = []
-            # Get the main layout (assume QVBoxLayout or QGridLayout)
-            layout = self.layout() if self.layout() else None
-            for i in range(len(names)):
-                label = QLabel(self)
-                self.station_labels.append(label)
-                if layout:
-                    layout.addWidget(label)  # Adds to the end of the layout
-        for i, name in enumerate(names):
-            label = self.station_labels[i]
-            status = []
-            if connected[i]:
-                status.append("Connected")
-            else:
-                status.append("Disconnected")
-            if enabled[i]:
-                status.append("Enabled")
-            else:
-                status.append("Disabled")
-            label.setText(f"{name}\n" + ", ".join(status))
-            # Optionally, set color or style based on status
-            if not connected[i]:
-                label.setStyleSheet("color: #888;")
-            elif not enabled[i]:
-                label.setStyleSheet("color: #F6EB61;")
-            else:
-                label.setStyleSheet("color: #fff;")
+        for i, box in enumerate(self.station_boxes):
+            if hasattr(box, "set_name"):
+                box.set_name(names[i])
+            if hasattr(box, "set_connected"):
+                box.set_connected(connected[i])
+            if hasattr(box, "set_enabled"):
+                box.set_enabled(enabled[i])
