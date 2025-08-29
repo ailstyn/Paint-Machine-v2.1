@@ -71,6 +71,7 @@ def load_scale_calibrations():
     scale_calibrations = calibrations
     if DEBUG:
         print(f"Loaded scale calibration values: {scale_calibrations}")
+    return calibrations
 
 def load_station_enabled(config_path):
     enabled = [False] * NUM_STATIONS
