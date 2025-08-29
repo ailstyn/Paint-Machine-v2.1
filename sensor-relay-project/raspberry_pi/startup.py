@@ -1,5 +1,4 @@
 import time
-from startup import step_clear_all_scales
 import logging
 import config
 import serial
