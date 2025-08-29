@@ -941,3 +941,6 @@ def main():
         print("[DEBUG] Shutting down...")
         logging.info("Shutting down and cleaning up GPIO.")
         GPIO.cleanup()
+
+if __name__ == "__main__":
+    main()
