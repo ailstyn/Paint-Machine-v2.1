@@ -4,6 +4,7 @@ import config
 import serial
 import re
 import traceback
+from config import GPIO
 
 from utils import (
     load_scale_calibrations,

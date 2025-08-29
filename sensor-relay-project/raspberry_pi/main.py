@@ -5,7 +5,7 @@ import time
 import signal
 import serial
 import config
-import RPi.GPIO as GPIO # type: ignore
+from config import GPIO
 from datetime import datetime
 from PyQt6.QtWidgets import QApplication
 import faulthandler

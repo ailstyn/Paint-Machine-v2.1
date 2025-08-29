@@ -1,3 +1,4 @@
+import RPi.GPIO as GPIO
 # Log directories
 LOG_DIR = "logs"
 ERROR_LOG_DIR = "logs/errors"
