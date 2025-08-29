@@ -66,8 +66,7 @@ def step_connect_arduinos(context):
                 for _ in range(60):
                     if arduino.in_waiting > 0:
                         line = arduino.read_until(b'\n').decode(errors='replace').strip()
-                        if DEBUG:
-                            print(f"[DEBUG] Received from {port}: {repr(line)}")
+                        print(f"[DEBUG] Received from {port}: {repr(line)}")
                         match = re.search(r"SN\d{3,4}", line)
                         if match:
                             serial_match = re.search(r"<SERIAL:([A-Z\-]*SN\d{3,4})>", line)
@@ -75,12 +74,10 @@ def step_connect_arduinos(context):
                                 station_serial_number = serial_match.group(1)
                             else:
                                 station_serial_number = match.group(0)
-                            if DEBUG:
-                                print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
+                            print(f"[DEBUG] Station serial {station_serial_number} detected on {port}")
                             arduino.write(config.CONFIRM_ID)
                             arduino.flush()
-                            if DEBUG:
-                                print(f"[DEBUG] Sent CONFIRM_ID to station on port {port}")
+                            print(f"[DEBUG] Sent CONFIRM_ID to station on port {port}")
                             break
                     time.sleep(0.1)
                 matched_entry = None
