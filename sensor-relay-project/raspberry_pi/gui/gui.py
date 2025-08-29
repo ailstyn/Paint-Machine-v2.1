@@ -2166,6 +2166,6 @@ class StartupWizardDialog(QDialog):
             if hasattr(box, "set_name"):
                 box.set_name(names[i])
             if hasattr(box, "set_connected"):
-                box.set_connected(connected[i])
+                box.set_connected(connected[i], STATION_COLORS[i])
             if hasattr(box, "set_enabled"):
-                box.set_enabled(enabled[i])
+                box.set_enabled(enabled[i], STATION_COLORS[i])
