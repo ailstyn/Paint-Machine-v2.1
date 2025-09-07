@@ -472,6 +472,12 @@ def step_full_bottle_check(context):
         context['selected_bottle_id'] = selected_bottle_id
         context['target_weight'] = target_weight
         context['time_limit'] = time_limit
+        # Set these in config so main.py can read them
+        import config as global_config
+        if target_weight is not None:
+            global_config.target_weight = target_weight
+        if time_limit is not None:
+            global_config.time_limit = time_limit
 
         wizard.show_empty_bottle_prompt()
         wizard.show()
