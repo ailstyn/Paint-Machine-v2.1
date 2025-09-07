@@ -94,7 +94,9 @@ print(f"Logging to: {os.path.abspath(ERROR_LOG_FILE)}")
 
 logging.error("Test error log entry: If you see this, logging is working.")
 
-# ========== GPIO FUNCTIONS ==========
+
+# ========== BUTTON DELAY VARIABLE ========== 
+BUTTON_PRESS_DELAY = 1.0  # Initial delay during startup
 
 def setup_gpio():
     try:
@@ -684,25 +686,31 @@ def poll_hardware(app):
 
         estop_pressed = GPIO.input(E_STOP_PIN) == GPIO.LOW
 
+        # --- E-STOP dialog management ---
+        if not hasattr(app, '_prev_active_dialog'):
+            app._prev_active_dialog = None
+
         # Handle E-STOP state change
         if estop_pressed and not E_STOP:
             if DEBUG:
                 print("E-STOP pressed")
             E_STOP = True
             FILL_LOCKED = True
+            # Save current active dialog before E-STOP
+            app._prev_active_dialog = getattr(app, 'active_dialog', None)
             if active_dialog is not None:
                 try:
                     active_dialog.reject()
                 except Exception as e:
                     logging.error(f"Error rejecting active dialog: {e}")
-                app.active_dialog = None
-
+            # Show overlay and set as active dialog
             if overlay_widget:
                 overlay_widget.show_overlay(
                     f"<span style='font-size:80px; font-weight:bold;'>E-STOP</span><br>"
                     f"<span style='font-size:40px;'>Emergency Stop Activated</span>",
                     color="#CD0A0A"
                 )
+                app.active_dialog = overlay_widget
             for arduino in arduinos:
                 if arduino:
                     arduino.write(E_STOP_ACTIVATED)
@@ -712,8 +720,12 @@ def poll_hardware(app):
                 print("E-STOP released")
             E_STOP = False
             FILL_LOCKED = False
+            # Hide overlay and restore previous active dialog
             if overlay_widget:
                 overlay_widget.hide_overlay()
+            if hasattr(app, '_prev_active_dialog') and app._prev_active_dialog is not None:
+                app.active_dialog = app._prev_active_dialog
+            app._prev_active_dialog = None
 
         for station_index, arduino in enumerate(arduinos):
             # ...existing code...
@@ -768,6 +780,8 @@ def poll_hardware(app):
 
 def handle_button_presses(app):
     global DEBUG
+
+    global BUTTON_PRESS_DELAY
     try:
         dialog = getattr(app, "active_dialog", None)
 
@@ -798,6 +812,7 @@ def handle_button_presses(app):
             dialog.select_prev()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("up")
+            time.sleep(BUTTON_PRESS_DELAY)
             return
 
         # DOWN BUTTON
@@ -813,6 +828,7 @@ def handle_button_presses(app):
             dialog.select_next()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("down")
+            time.sleep(BUTTON_PRESS_DELAY)
             return
 
         # SELECT BUTTON
@@ -829,6 +845,7 @@ def handle_button_presses(app):
                 logging.error("Error in dialog.activate_selected()", exc_info=True)
                 if DEBUG:
                     print(f"Error in dialog.activate_selected(): {e}")
+            time.sleep(BUTTON_PRESS_DELAY)
             return
 
     except Exception as e:
@@ -894,6 +911,10 @@ def main():
             app.show()
             GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
+
+            # Reset button delay to normal value after setup
+            global BUTTON_PRESS_DELAY
+            BUTTON_PRESS_DELAY = 0.05
 
             app.active_dialog = app
             print("[DEBUG] after_startup() finished")

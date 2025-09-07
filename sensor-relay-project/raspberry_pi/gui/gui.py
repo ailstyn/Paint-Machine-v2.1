@@ -587,6 +587,7 @@ class MenuDialog(QDialog):
             "SET LANGUAGE",
             "CHANGE UNITS",
             "SET FILLING MODE",
+            "CALIBRATE",
             "BACK",
             "SHUT DOWN"
         ]
@@ -696,6 +697,37 @@ class MenuDialog(QDialog):
         elif selected_key == "SET FILLING MODE":
             self.hide()
             parent.open_filling_mode_dialog()
+        elif selected_key == "CALIBRATE":
+            self.hide()
+            # Create a new StartupWizardDialog and run calibration sequence
+            from raspberry_pi.startup import step_station_verification, step_clear_all_scales, step_filling_mode_selection, step_full_bottle_check, step_empty_bottle_check
+            from raspberry_pi.gui.gui import StartupWizardDialog
+            # Recreate wizard
+            wizard = StartupWizardDialog(parent)
+            parent.startup_wizard = wizard
+            parent.active_dialog = wizard
+            wizard.show()
+            # Prepare context for calibration sequence
+            context = getattr(parent, 'startup_context', None)
+            if context is None:
+                context = {}
+            context = context.copy() if context else {}
+            context.update({
+                'wizard': wizard,
+                'app': parent,
+            })
+            # Only run steps from station verification onward
+            calibration_steps = [
+                step_station_verification,
+                step_clear_all_scales,
+                step_filling_mode_selection,
+                step_full_bottle_check,
+                step_empty_bottle_check,
+            ]
+            for step_func in calibration_steps:
+                result = step_func(context)
+                if result != 'completed':
+                    break
 
     def show_again(self):
         self.show()
