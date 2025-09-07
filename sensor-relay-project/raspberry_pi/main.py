@@ -505,7 +505,6 @@ def startup(after_startup):
             app.active_dialog = app
             break
 """
-
 def filling_mode_callback(mode):
     global filling_mode
     filling_mode = mode
