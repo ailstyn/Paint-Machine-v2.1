@@ -449,6 +449,7 @@ def step_full_bottle_check(context):
         target_weight = None
         time_limit = None
         if selected_bottle_id:
+            print(f"[DEBUG] step_full_bottle_check: Recognized selected_bottle_id={selected_bottle_id}")
             try:
                 bottle_config_line = None
                 with open(config_file, "r") as f:
@@ -472,6 +473,8 @@ def step_full_bottle_check(context):
         context['selected_bottle_id'] = selected_bottle_id
         context['target_weight'] = target_weight
         context['time_limit'] = time_limit
+        if DEBUG:
+            print(f"[DEBUG] step_full_bottle_check: context set to selected_bottle_id={context['selected_bottle_id']}, target_weight={context['target_weight']}, time_limit={context['time_limit']}")
         # Set these in config so main.py can read them
         import config as global_config
         if target_weight is not None:
