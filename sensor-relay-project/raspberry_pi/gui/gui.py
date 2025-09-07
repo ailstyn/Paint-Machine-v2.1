@@ -2083,6 +2083,7 @@ class StartupWizardDialog(QDialog):
 
     # --- Prompt Methods ---
     def show_station_verification(self):
+        print(f"[DEBUG] show_station_verification: station_enabled={self.station_enabled}")
         self.active_prompt = "station_verification"
         self.main_label.setText("Verify Stations")
         self.info_label.setText("Enable or disable stations as needed. Use UP/DOWN to select, SELECT to toggle, CONTINUE to proceed.")
