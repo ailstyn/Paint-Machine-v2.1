@@ -914,7 +914,7 @@ def main():
             app.button_timer = button_timer  # Attach timer to app for pause access
             app.show()
             GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)
-            RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
+            config.RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
             config.BUTTON_DELAY = 50  # Set button delay to 0.05s after startup
             app.active_dialog = app
