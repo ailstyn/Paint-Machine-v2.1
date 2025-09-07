@@ -313,6 +313,7 @@ def step_clear_all_scales(context):
         if action == "backup":
             return 'backup'  # Signal to main sequence to go back one step
         elif action == "accept":
+            print("[DEBUG] step_clear_all_scales: action == 'accept' reached")
             scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
             if any(w > 20 for w in scale_values):
                 options = [("NO", "NO"), ("YES", "YES")]
@@ -332,11 +333,13 @@ def step_clear_all_scales(context):
                     time.sleep(0.01)
                 app.active_dialog = wizard
                 if user_choice == "YES":
+                    print("[DEBUG] step_clear_all_scales: break reached, moving to tare scales")
                     break
                 else:
                     step_result.clear()
                     continue
             else:
+                print("[DEBUG] step_clear_all_scales: break reached, moving to tare scales")
                 break
         else:
             # Unknown action, just continue loop
