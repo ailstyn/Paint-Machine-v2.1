@@ -1,3 +1,16 @@
+# --- Startup mode flag ---
+STARTUP_MODE = True
+# --- Button debounce helper ---
+BUTTON_PRESS_DELAY = 1.0  # Initial delay during startup
+LAST_BUTTON_PRESS_TIME = 0.0
+def button_delay():
+    global BUTTON_PRESS_DELAY, LAST_BUTTON_PRESS_TIME
+    import time
+    now = time.monotonic()
+    if now - LAST_BUTTON_PRESS_TIME < BUTTON_PRESS_DELAY:
+        return True
+    LAST_BUTTON_PRESS_TIME = now
+    return False
 import os
 import logging
 import sys
@@ -812,7 +825,8 @@ def handle_button_presses(app):
             dialog.select_prev()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("up")
-            time.sleep(BUTTON_PRESS_DELAY)
+            if STARTUP_MODE:
+                button_delay()
             return
 
         # DOWN BUTTON
@@ -828,7 +842,8 @@ def handle_button_presses(app):
             dialog.select_next()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("down")
-            time.sleep(BUTTON_PRESS_DELAY)
+            if STARTUP_MODE:
+                button_delay()
             return
 
         # SELECT BUTTON
@@ -845,7 +860,8 @@ def handle_button_presses(app):
                 logging.error("Error in dialog.activate_selected()", exc_info=True)
                 if DEBUG:
                     print(f"Error in dialog.activate_selected(): {e}")
-            time.sleep(BUTTON_PRESS_DELAY)
+            if STARTUP_MODE:
+                button_delay()
             return
 
     except Exception as e:
@@ -912,8 +928,9 @@ def main():
             GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
 
-            # Reset button delay to normal value after setup
-            global BUTTON_PRESS_DELAY
+            # Disable startup mode after setup
+            global STARTUP_MODE, BUTTON_PRESS_DELAY
+            STARTUP_MODE = False
             BUTTON_PRESS_DELAY = 0.05
 
             app.active_dialog = app
