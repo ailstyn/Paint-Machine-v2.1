@@ -317,7 +317,7 @@ def step_clear_all_scales(context):
             return 'backup'  # Signal to main sequence to go back one step
         elif action == "accept":
             print("[DEBUG] step_clear_all_scales: action == 'accept' reached")
-            scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+            scale_values = [context['station_weights'][i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
             if any(w > 20 for w in scale_values):
                 options = [("NO", "NO"), ("YES", "YES")]
                 selection_dialog = context['SelectionDialog'](options=options, title="Are the scales clear?")
@@ -398,7 +398,7 @@ def step_full_bottle_check(context):
 
             # After CONTINUE is pressed, check all active stations
             active_weights = [
-                wizard.get_weight(i)
+                context['station_weights'][i]
                 for i in range(NUM_STATIONS)
                 if station_enabled[i] and station_connected[i]
             ]
@@ -507,7 +507,7 @@ def step_empty_bottle_check(context):
                 wizard.update_weight_labels_for_empty_bottle(empty_range)
 
             active_weights = [
-                wizard.get_weight(i)
+                context['station_weights'][i]
                 for i in range(NUM_STATIONS)
                 if station_enabled[i] and station_connected[i]
             ]
