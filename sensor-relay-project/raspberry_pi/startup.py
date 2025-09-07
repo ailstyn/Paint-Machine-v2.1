@@ -298,9 +298,11 @@ def step_clear_all_scales(context):
     step_result = {}
 
     def on_step_completed(info):
-        step_result.clear()
-        step_result.update(info)
+            print("[DEBUG] step_clear_all_scales: on_step_completed called with info:", info)
+            step_result.clear()
+            step_result.update(info)
     wizard.step_completed.connect(on_step_completed)
+    print("[DEBUG] step_clear_all_scales: wizard.step_completed.connect(on_step_completed) called")
 
     while True:
         wizard.show_empty_scale_prompt()
