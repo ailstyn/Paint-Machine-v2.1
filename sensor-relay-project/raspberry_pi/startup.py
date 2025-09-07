@@ -312,6 +312,7 @@ def step_clear_all_scales(context):
             time.sleep(0.01)
 
         action = step_result.get("action")
+        print(f"[DEBUG] step_clear_all_scales: action value is {action}")
         if action == "backup":
             return 'backup'  # Signal to main sequence to go back one step
         elif action == "accept":
