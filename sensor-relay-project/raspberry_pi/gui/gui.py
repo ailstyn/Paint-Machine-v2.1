@@ -10,7 +10,7 @@ import logging
 import os
 import weakref
 from startup import step_station_verification, step_clear_all_scales, step_filling_mode_selection, step_full_bottle_check, step_empty_bottle_check
-from .gui import StartupWizardDialog
+
 
 DEBUG = True
 
