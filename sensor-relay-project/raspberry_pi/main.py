@@ -963,15 +963,21 @@ def main():
         print("[DEBUG] Running startup sequence...")
         run_startup_sequence(context)
         print("[DEBUG] startup sequence complete")
+        # Debug: print context values after startup
+        print(f"[DEBUG] Context after startup: target_weight={context.get('target_weight')}, time_limit={context.get('time_limit')}")
         # Set target_weight and time_limit from context after startup
         if 'target_weight' in context and context['target_weight'] is not None:
             global target_weight
             target_weight = context['target_weight']
             print(f"[DEBUG] Set target_weight to {target_weight}")
+        else:
+            print("[DEBUG] target_weight not set in context after startup")
         if 'time_limit' in context and context['time_limit'] is not None:
             global time_limit
             time_limit = context['time_limit']
             print(f"[DEBUG] Set time_limit to {time_limit}")
+        else:
+            print("[DEBUG] time_limit not set in context after startup")
 
         print("[DEBUG] Entering app_qt.exec() event loop")
         app_qt.exec()
