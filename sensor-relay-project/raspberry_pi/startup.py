@@ -139,12 +139,11 @@ def step_station_verification(context):
         app = context['app']
         NUM_STATIONS = context['NUM_STATIONS']
         station_connected = context.get('station_connected', [True] * NUM_STATIONS)
-        station_enabled = context.get('station_enabled', [True] * NUM_STATIONS)
-
+        # Always use the latest context['station_enabled']
         wizard.set_station_labels(
             names=[f"Station {i+1}" for i in range(NUM_STATIONS)],
             connected=station_connected,
-            enabled=station_enabled
+            enabled=context['station_enabled']
         )
 
         step_result = {}
