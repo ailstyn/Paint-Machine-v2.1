@@ -274,7 +274,7 @@ def step_filling_mode_selection(context):
                 while info_dialog.isVisible():
                     app.processEvents()
                     time.sleep(0.01)
-                wizard.finish_wizard()
+                wizard.close()
                 app.active_dialog = app
                 context['after_startup']()  # Call the after_startup callback
                 return 'manual_selected'    # Special result for early exit
@@ -572,7 +572,7 @@ def step_empty_bottle_check(context):
                             print(f"[ERROR] Error parsing bottle config for {selected_bottle_id} in step_empty_bottle_check: {e}")
                     if after_startup:
                         after_startup()
-                    wizard.finish_wizard()
+                    wizard.close()
                     # Properly close the StartupWizardDialog and switch to RelayControlApp
                     wizard.close()
                     if hasattr(app, 'relay_control_app'):
