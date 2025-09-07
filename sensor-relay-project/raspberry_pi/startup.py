@@ -145,6 +145,7 @@ def step_station_verification(context):
             connected=station_connected,
             enabled=context['station_enabled']
         )
+        print(f"[DEBUG] startup.py: set_station_labels enabled={context['station_enabled']}")
 
         step_result = {}
 
