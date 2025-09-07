@@ -16,6 +16,17 @@ from utils import (
     clear_serial_buffer,
 )
 
+def get_current_station_weights(context):
+    """
+    Returns a list of current weights for all enabled and connected stations.
+    Uses context['station_weights'] if available, else returns zeros.
+    """
+    NUM_STATIONS = context.get('NUM_STATIONS', 4)
+    station_enabled = context.get('station_enabled', [True]*NUM_STATIONS)
+    station_connected = context.get('station_connected', [True]*NUM_STATIONS)
+    station_weights = context.get('station_weights', [0]*NUM_STATIONS)
+    return [station_weights[i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+
 def step_load_serials_and_ranges(context):
     try:
         print("Step: Load serials, bottle sizes, ranges, and calibration values")
@@ -317,7 +328,7 @@ def step_clear_all_scales(context):
             return 'backup'  # Signal to main sequence to go back one step
         elif action == "accept":
             print("[DEBUG] step_clear_all_scales: action == 'accept' reached")
-            scale_values = [context['station_weights'][i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+            scale_values = get_current_station_weights(context)
             if any(w > 20 for w in scale_values):
                 options = [("NO", "NO"), ("YES", "YES")]
                 selection_dialog = context['SelectionDialog'](options=options, title="Are the scales clear?")
@@ -397,11 +408,7 @@ def step_full_bottle_check(context):
                 wizard.update_weight_labels_for_full_bottle(full_ranges)
 
             # After CONTINUE is pressed, check all active stations
-            active_weights = [
-                context['station_weights'][i]
-                for i in range(NUM_STATIONS)
-                if station_enabled[i] and station_connected[i]
-            ]
+            active_weights = get_current_station_weights(context)
 
             def in_range(w, rng):
                 return rng[0] <= w <= rng[1]
@@ -506,11 +513,7 @@ def step_empty_bottle_check(context):
                 time.sleep(0.01)
                 wizard.update_weight_labels_for_empty_bottle(empty_range)
 
-            active_weights = [
-                context['station_weights'][i]
-                for i in range(NUM_STATIONS)
-                if station_enabled[i] and station_connected[i]
-            ]
+            active_weights = get_current_station_weights(context)
 
             def in_range(w, rng):
                 return rng[0] <= w <= rng[1]
