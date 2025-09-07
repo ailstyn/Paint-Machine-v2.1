@@ -814,6 +814,9 @@ def handle_button_presses(app):
 
         # UP BUTTON
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
+            global STARTUP_MODE
+            if STARTUP_MODE and button_delay():
+                return
             ping_buzzer()
             print(f"UP button pressed, dialog: {dialog}")
             flash_dialog_icon(0)
@@ -825,12 +828,13 @@ def handle_button_presses(app):
             dialog.select_prev()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("up")
-            if STARTUP_MODE:
-                button_delay()
             return
 
         # DOWN BUTTON
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
+            global STARTUP_MODE
+            if STARTUP_MODE and button_delay():
+                return
             ping_buzzer()
             print(f"DOWN button pressed, dialog: {dialog}")
             flash_dialog_icon(2)
@@ -842,12 +846,13 @@ def handle_button_presses(app):
             dialog.select_next()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("down")
-            if STARTUP_MODE:
-                button_delay()
             return
 
         # SELECT BUTTON
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
+            global STARTUP_MODE
+            if STARTUP_MODE and button_delay():
+                return
             ping_buzzer()
             print(f"SELECT button pressed, dialog: {dialog}")
             flash_dialog_icon(1)
@@ -860,8 +865,6 @@ def handle_button_presses(app):
                 logging.error("Error in dialog.activate_selected()", exc_info=True)
                 if DEBUG:
                     print(f"Error in dialog.activate_selected(): {e}")
-            if STARTUP_MODE:
-                button_delay()
             return
 
     except Exception as e:
