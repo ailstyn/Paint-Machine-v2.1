@@ -403,6 +403,10 @@ def step_full_bottle_check(context):
             if action == "accept":
                 active_weights = get_current_station_weights(context)
 
+                print(f"[DEBUG] step_full_bottle_check: action=accept, active_weights={active_weights}")
+                for bottle_id, rng in full_ranges.items():
+                    print(f"[DEBUG] Checking bottle_id={bottle_id}, range={rng}")
+
                 def in_range(w, rng):
                     return rng[0] <= w <= rng[1]
 
@@ -432,6 +436,7 @@ def step_full_bottle_check(context):
                 else:
                     # Save the selected bottle id and proceed
                     context['selected_bottle_id'] = selected_bottle_id
+                    print(f"[DEBUG] step_full_bottle_check: selected_bottle_id={selected_bottle_id}")
                     break  # Proceed to next step
             else:
                 step_result.clear()
