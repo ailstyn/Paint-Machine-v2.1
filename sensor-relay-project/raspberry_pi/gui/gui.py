@@ -2169,6 +2169,7 @@ class StartupWizardDialog(QDialog):
         self.station_boxes[station_index].set_enabled(self.station_enabled[station_index], STATION_COLORS[station_index])
 
     def set_station_labels(self, names, connected, enabled):
+        self.station_connected = connected  # Ensure selection logic uses correct connection status
         for i, box in enumerate(self.station_boxes):
             if hasattr(box, "set_name"):
                 box.set_name(names[i])
