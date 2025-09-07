@@ -605,6 +605,10 @@ def main():
             target_weight = starter_weight
             time_limit = starter_time
             print(f"[DEBUG] Set target_weight to {target_weight} and time_limit to {time_limit} from startup.py globals")
+            # Also update app_qt.target_weight and app_qt.time_limit for GUI/hardware logic
+            app_qt.target_weight = target_weight
+            app_qt.time_limit = time_limit
+            print(f"[DEBUG] Set app_qt.target_weight to {app_qt.target_weight}, app_qt.time_limit to {app_qt.time_limit}")
         except Exception as e:
             print(f"[DEBUG] Could not import starter_weight/starter_time from startup.py: {e}")
 
