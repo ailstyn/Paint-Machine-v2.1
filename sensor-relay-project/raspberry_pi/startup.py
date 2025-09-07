@@ -25,7 +25,9 @@ def get_current_station_weights(context):
     station_enabled = context.get('station_enabled', [True]*NUM_STATIONS)
     station_connected = context.get('station_connected', [True]*NUM_STATIONS)
     station_weights = context.get('station_weights', [0]*NUM_STATIONS)
-    return [station_weights[i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+    result = [station_weights[i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
+    print(f"[DEBUG] get_current_station_weights: enabled={station_enabled}, connected={station_connected}, weights={station_weights}, returned={result}")
+    return result
 
 def step_load_serials_and_ranges(context):
     try:
