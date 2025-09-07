@@ -523,6 +523,10 @@ def step_empty_bottle_check(context):
                 time.sleep(0.01)
                 wizard.update_weight_labels_for_empty_bottle(empty_range)
 
+            action = step_result.get("action")
+            if action == "backup":
+                return 'backup'
+
             active_weights = get_current_station_weights(context)
 
             def in_range(w, rng):
@@ -575,7 +579,6 @@ def step_empty_bottle_check(context):
                     logging.error(f"Error finalizing step_empty_bottle_check: {e}")
                     print(f"[ERROR] Error finalizing step_empty_bottle_check: {e}")
                     return 'error'
-        return 'completed'
         return 'completed'
     except Exception as e:
         logging.error(f"Error in step_empty_bottle_check: {e}\n{traceback.format_exc()}")
