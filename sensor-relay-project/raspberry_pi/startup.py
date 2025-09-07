@@ -305,11 +305,7 @@ def step_clear_all_scales(context):
 
         action = step_result.get("action")
         if action == "backup":
-            # Go back to station verification
-            wizard.show_station_verification()
-            wizard.show()
-            step_result.clear()
-            continue
+            return 'backup'  # Signal to main sequence to go back one step
         elif action == "accept":
             scale_values = [wizard.get_weight(i) for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
             if any(w > 20 for w in scale_values):
