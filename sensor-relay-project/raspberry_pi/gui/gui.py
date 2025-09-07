@@ -2106,13 +2106,13 @@ class StartupWizardDialog(QDialog):
         self.active_prompt = "full_bottle"
         self.full_bottle_ranges = full_ranges
         self.main_label.setText("Place Full Bottle")
-        info_lines = ["Place a full bottle on each enabled station. Use UP/DOWN to select, CONTINUE or BACK."]
+        info_lines = ["Place a full bottle on each enabled station. Use UP/DOWN to select, CONTINUE."]
         for name, rng in full_ranges.items():
             info_lines.append(f"{name}: {rng[0]}g - {rng[1]}g")
         self.info_label.setText("\n".join(info_lines))
-        self.selection_indices = ["back", "accept"]
-        self.selection_index = 1
-        self.back_label.show()  # Show Back button for this step
+        self.selection_indices = ["accept"]
+        self.selection_index = 0
+        self.back_label.hide()  # Hide Back button for this step
         self.update_highlight()
 
     def show_empty_bottle_prompt(self, empty_range=(0, 0)):
