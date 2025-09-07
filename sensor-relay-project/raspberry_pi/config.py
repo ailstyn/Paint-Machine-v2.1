@@ -1,3 +1,7 @@
+# --- Button debounce and startup flags ---
+STARTUP_MODE = True
+BUTTON_PRESS_DELAY = 1.0
+LAST_BUTTON_PRESS_TIME = 0.0
 import RPi.GPIO as GPIO
 # Log directories
 LOG_DIR = "logs"

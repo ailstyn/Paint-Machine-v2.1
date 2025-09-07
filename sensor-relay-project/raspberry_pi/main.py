@@ -1,16 +1,3 @@
-# --- Startup mode flag ---
-STARTUP_MODE = True
-# --- Button debounce helper ---
-BUTTON_PRESS_DELAY = 1.0  # Initial delay during startup
-LAST_BUTTON_PRESS_TIME = 0.0
-def button_delay():
-    global BUTTON_PRESS_DELAY, LAST_BUTTON_PRESS_TIME
-    import time
-    now = time.monotonic()
-    if now - LAST_BUTTON_PRESS_TIME < BUTTON_PRESS_DELAY:
-        return True
-    LAST_BUTTON_PRESS_TIME = now
-    return False
 import os
 import logging
 import sys
@@ -84,6 +71,9 @@ from config import (
     REQUEST_TIME_LIMIT,
     arduino_ports,
     E_STOP_ACTIVATED,
+    STARTUP_MODE,
+    BUTTON_PRESS_DELAY,
+    LAST_BUTTON_PRESS_TIME,
 )
 
 from config import STATS_LOG_FILE, STATS_LOG_DIR
@@ -790,10 +780,19 @@ def poll_hardware(app):
             print(f"Error in poll_hardware: {e}")
 
 # ========== GUI/BUTTON HANDLING ==========
+def button_delay():
+    global BUTTON_PRESS_DELAY, LAST_BUTTON_PRESS_TIME
+    import time
+    now = time.monotonic()
+    if now - LAST_BUTTON_PRESS_TIME < BUTTON_PRESS_DELAY:
+        return True
+    LAST_BUTTON_PRESS_TIME = now
+    return False
 
 def handle_button_presses(app):
+    global STARTUP_MODE
     global DEBUG
-    global BUTTON_PRESS_DELAY, STARTUP_MODE
+    global BUTTON_PRESS_DELAY
     try:
         dialog = getattr(app, "active_dialog", None)
 
