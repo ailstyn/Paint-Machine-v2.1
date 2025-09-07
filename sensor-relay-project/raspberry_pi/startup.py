@@ -406,14 +406,13 @@ def step_full_bottle_check(context):
                 def in_range(w, rng):
                     return rng[0] <= w <= rng[1]
 
-                found = False
+                selected_bottle_id = None
                 for bottle_id, rng in full_ranges.items():
                     if all(in_range(w, rng) for w in active_weights):
                         selected_bottle_id = bottle_id
-                        found = True
                         break
 
-                if not found:
+                if selected_bottle_id is None:
                     try:
                         dlg = InfoDialog(
                             app.tr("Error") if hasattr(app, 'tr') else "Error",
@@ -431,6 +430,8 @@ def step_full_bottle_check(context):
                         print(f"[ERROR] Error showing InfoDialog in step_full_bottle_check: {e}")
                         return 'error'
                 else:
+                    # Save the selected bottle id and proceed
+                    context['selected_bottle_id'] = selected_bottle_id
                     break  # Proceed to next step
             else:
                 step_result.clear()
