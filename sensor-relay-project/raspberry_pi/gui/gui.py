@@ -589,7 +589,6 @@ class MenuDialog(QDialog):
             "SET LANGUAGE",
             "CHANGE UNITS",
             "SET FILLING MODE",
-            "CALIBRATE",
             "BACK",
             "SHUT DOWN"
         ]
