@@ -2075,9 +2075,10 @@ class StartupWizardDialog(QDialog):
         selected = self.selection_indices[self.selection_index]
         print(f"[DEBUG] activate_selected called, active_prompt={self.active_prompt}, selection={selected}")
         if selected == "accept":
-            self.complete_step(self.active_prompt)
+            # Always include action for all steps
+            self.complete_step(self.active_prompt, {"action": "accept"})
         elif selected == "back":
-            self.step_completed.emit({"step": self.active_prompt, "action": "backup"})
+            self.complete_step(self.active_prompt, {"action": "backup"})
         elif isinstance(selected, int):
             self.toggle_station(selected)
 
