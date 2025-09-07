@@ -474,7 +474,11 @@ def step_full_bottle_check(context):
         context['selected_bottle_id'] = selected_bottle_id
         context['target_weight'] = target_weight
         context['time_limit'] = time_limit
-    # Explicitly update global variables
+        # Set starter_weight and starter_time for main.py to import after startup
+        global starter_weight, starter_time
+        starter_weight = target_weight
+        starter_time = time_limit
+        # Explicitly update global variables
         target_weight = context['target_weight']
         time_limit = context['time_limit']
         if DEBUG:
