@@ -352,6 +352,7 @@ def step_clear_all_scales(context):
             except Exception as e:
                 context['logging'].error(f"Error sending TARE_SCALE to station {i+1}: {e}")
 
+    print("[DEBUG] step_clear_all_scales: break reached, moving to tare scales")
     return 'completed'
 
 
