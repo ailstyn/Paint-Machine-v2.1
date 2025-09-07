@@ -2134,19 +2134,19 @@ class StartupWizardDialog(QDialog):
     def update_weight_labels_for_full_bottle(self, full_ranges, selected_bottle_id=None):
         """
         Update weight label colors for each station during full bottle check.
-        Green if in range, red if out of range.
+        Green if in range of any bottle, red if out of range.
         """
         for i, box in enumerate(self.station_boxes):
             if not self.station_enabled[i] or not self.station_connected[i]:
                 continue
             weight = self.station_weights[i]
-            # Determine which range to use
-            # If a bottle is selected, use its range; otherwise, use the first available
             if selected_bottle_id and selected_bottle_id in full_ranges:
                 rng = full_ranges[selected_bottle_id]
+                in_range = rng[0] <= weight <= rng[1]
             else:
-                rng = list(full_ranges.values())[0]
-            if rng[0] <= weight <= rng[1]:
+                # Check all ranges; green if in any
+                in_range = any(rng[0] <= weight <= rng[1] for rng in full_ranges.values())
+            if in_range:
                 box.weight_label.setStyleSheet("color: #11BD33; background: transparent; font-weight: bold;")  # Green
             else:
                 box.weight_label.setStyleSheet("color: #FF2222; background: transparent; font-weight: bold;")  # Red
