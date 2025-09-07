@@ -506,9 +506,15 @@ def step_empty_bottle_check(context):
             empty_range = (0, 0)
 
         wizard.show_empty_bottle_prompt(empty_range=empty_range)
+        wizard.show_empty_bottle_prompt(empty_range=empty_range)
         wizard.update_weight_labels_for_empty_bottle(empty_range)
         wizard.show()
         step_result = {}
+
+        def on_step_completed(info):
+            step_result.clear()
+            step_result.update(info)
+        wizard.step_completed.connect(on_step_completed)
 
         while True:
             step_result.clear()
@@ -569,6 +575,7 @@ def step_empty_bottle_check(context):
                     logging.error(f"Error finalizing step_empty_bottle_check: {e}")
                     print(f"[ERROR] Error finalizing step_empty_bottle_check: {e}")
                     return 'error'
+        return 'completed'
         return 'completed'
     except Exception as e:
         logging.error(f"Error in step_empty_bottle_check: {e}\n{traceback.format_exc()}")
