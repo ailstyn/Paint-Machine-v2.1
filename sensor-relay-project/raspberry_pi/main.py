@@ -530,15 +530,21 @@ def main():
                 filling_mode_callback=filling_mode_callback
             )
             app.set_calibrate = None
-            # Always update target_weight and time_limit from globals after startup
-            app.target_weight = target_weight
-            app.time_limit = time_limit
-            print(f"[DEBUG] after_startup: app.target_weight set to {app.target_weight}, app.time_limit set to {app.time_limit}")
+            # Always update target_weight and time_limit from startup.py globals
+            try:
+                from startup import starter_weight, starter_time
+                app.target_weight = starter_weight
+                app.time_limit = starter_time
+                print(f"[DEBUG] after_startup: app.target_weight set to {app.target_weight}, app.time_limit set to {app.time_limit} (from startup.py globals)")
+            except Exception as e:
+                app.target_weight = target_weight
+                app.time_limit = time_limit
+                print(f"[DEBUG] after_startup: Could not import starter_weight/starter_time, using global target_weight/time_limit: {e}")
             app.filling_mode = filling_mode  # Ensure filling_mode is set
 
             for i, widget in enumerate(app.station_widgets):
                 if station_enabled[i]:
-                    widget.set_weight(0, target_weight, "g")
+                    widget.set_weight(0, app.target_weight, "g")
 
             timer.timeout.disconnect()
             timer.timeout.connect(lambda: poll_hardware(app))
