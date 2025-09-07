@@ -246,20 +246,9 @@ def step_filling_mode_selection(context):
                 selection_dialog.accept()
             selection_dialog.on_select_callback = on_select
 
-            timeout_seconds = 5.0
-            start_time = time.time()
             while selection_dialog.isVisible():
                 app.processEvents()
                 time.sleep(0.01)
-                if time.time() - start_time > timeout_seconds:
-                    if filling_mode_selected is None:
-                        filling_mode_selected = "AUTO"
-                        try:
-                            filling_mode_callback("AUTO")
-                        except Exception as e:
-                            logging.error(f"Error in filling_mode_callback (timeout): {e}")
-                            print(f"[ERROR] Exception in filling_mode_callback (timeout): {e}")
-                        selection_dialog.accept()
             print("[DEBUG] SelectionDialog no longer visible.")
         except Exception as e:
             logging.error(f"Exception during filling mode dialog: {e}")
