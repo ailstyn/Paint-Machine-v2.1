@@ -296,6 +296,11 @@ def step_clear_all_scales(context):
     config = context['config']
     step_result = {}
 
+    def on_step_completed(info):
+        step_result.clear()
+        step_result.update(info)
+    wizard.step_completed.connect(on_step_completed)
+
     while True:
         wizard.show_empty_scale_prompt()
         wizard.show()
