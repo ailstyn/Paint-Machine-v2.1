@@ -793,8 +793,7 @@ def poll_hardware(app):
 
 def handle_button_presses(app):
     global DEBUG
-
-    global BUTTON_PRESS_DELAY
+    global BUTTON_PRESS_DELAY, STARTUP_MODE
     try:
         dialog = getattr(app, "active_dialog", None)
 
