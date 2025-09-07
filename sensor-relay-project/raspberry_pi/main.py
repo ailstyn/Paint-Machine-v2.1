@@ -791,6 +791,7 @@ def button_delay():
 
 def handle_button_presses(app):
     global STARTUP_MODE
+    global STARTUP_MODE
     global DEBUG
     global BUTTON_PRESS_DELAY
     try:
