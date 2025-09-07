@@ -366,6 +366,7 @@ def step_clear_all_scales(context):
 
 
 def step_full_bottle_check(context):
+    global target_weight, time_limit
     try:
         app = context['app']
         wizard = context['wizard']
@@ -473,6 +474,9 @@ def step_full_bottle_check(context):
         context['selected_bottle_id'] = selected_bottle_id
         context['target_weight'] = target_weight
         context['time_limit'] = time_limit
+    # Explicitly update global variables
+        target_weight = context['target_weight']
+        time_limit = context['time_limit']
         if DEBUG:
             print(f"[DEBUG] step_full_bottle_check: context set to selected_bottle_id={context['selected_bottle_id']}, target_weight={context['target_weight']}, time_limit={context['time_limit']}")
         # Set these in config so main.py can read them
