@@ -162,8 +162,9 @@ def step_station_verification(context):
             app.processEvents()
             time.sleep(0.01)
 
-        # Save the enabled/disabled stations to context
-        context['station_enabled'] = step_result.get("enabled", station_enabled)
+        # Save the enabled/disabled stations to context as soon as user continues
+        if "enabled" in step_result:
+            context['station_enabled'] = step_result["enabled"]
         return 'completed'
     except Exception as e:
         logging.error(f"Error in step_station_verification: {e}\n{traceback.format_exc()}")
