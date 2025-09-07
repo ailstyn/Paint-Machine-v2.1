@@ -382,52 +382,59 @@ def step_full_bottle_check(context):
 
         full_ranges = {name: bottle_ranges[name]["full"] for name in bottle_ranges}
 
-        # Pass full_ranges to wizard so it can update weight label colors
         wizard.show_full_bottle_prompt(full_ranges)
         wizard.update_weight_labels_for_full_bottle(full_ranges)
         wizard.show()
         step_result = {}
 
+        def on_step_completed(info):
+            step_result.clear()
+            step_result.update(info)
+        wizard.step_completed.connect(on_step_completed)
+
         selected_bottle_id = None
         while True:
-            # Wait for user to press CONTINUE
             while not step_result or step_result.get("step") != "full_bottle":
                 app.processEvents()
                 time.sleep(0.01)
                 wizard.update_weight_labels_for_full_bottle(full_ranges)
 
-            # After CONTINUE is pressed, check all active stations
-            active_weights = get_current_station_weights(context)
+            action = step_result.get("action")
+            if action == "accept":
+                active_weights = get_current_station_weights(context)
 
-            def in_range(w, rng):
-                return rng[0] <= w <= rng[1]
+                def in_range(w, rng):
+                    return rng[0] <= w <= rng[1]
 
-            found = False
-            for bottle_id, rng in full_ranges.items():
-                if all(in_range(w, rng) for w in active_weights):
-                    selected_bottle_id = bottle_id
-                    found = True
-                    break
+                found = False
+                for bottle_id, rng in full_ranges.items():
+                    if all(in_range(w, rng) for w in active_weights):
+                        selected_bottle_id = bottle_id
+                        found = True
+                        break
 
-            if not found:
-                try:
-                    dlg = InfoDialog(
-                        app.tr("Error") if hasattr(app, 'tr') else "Error",
-                        app.tr("All bottles must be within the same size range.") if hasattr(app, 'tr') else "All bottles must be within the same size range.",
-                        wizard
-                    )
-                    ping_buzzer_invalid()
-                    dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
-                    dlg.show()
-                    QTimer.singleShot(2000, dlg.accept)
-                    step_result.clear()  # Wait for user to try again
-                    continue
-                except Exception as e:
-                    logging.error(f"Error showing InfoDialog in step_full_bottle_check: {e}")
-                    print(f"[ERROR] Error showing InfoDialog in step_full_bottle_check: {e}")
-                    return 'error'
+                if not found:
+                    try:
+                        dlg = InfoDialog(
+                            app.tr("Error") if hasattr(app, 'tr') else "Error",
+                            app.tr("All bottles must be within the same size range.") if hasattr(app, 'tr') else "All bottles must be within the same size range.",
+                            wizard
+                        )
+                        ping_buzzer_invalid()
+                        dlg.setWindowModality(Qt.WindowModality.ApplicationModal)
+                        dlg.show()
+                        QTimer.singleShot(3000, dlg.accept)
+                        step_result.clear()  # Let user try again
+                        continue
+                    except Exception as e:
+                        logging.error(f"Error showing InfoDialog in step_full_bottle_check: {e}")
+                        print(f"[ERROR] Error showing InfoDialog in step_full_bottle_check: {e}")
+                        return 'error'
+                else:
+                    break  # Proceed to next step
             else:
-                break  # Proceed to next step
+                step_result.clear()
+                continue
 
         # Set target_weight and time_limit based on selected bottle
         target_weight = None
@@ -453,7 +460,6 @@ def step_full_bottle_check(context):
                 print(f"[ERROR] Error parsing bottle config for {selected_bottle_id} in step_full_bottle_check: {e}")
                 return 'error'
 
-        # Store results in context for later steps
         context['selected_bottle_id'] = selected_bottle_id
         context['target_weight'] = target_weight
         context['time_limit'] = time_limit
