@@ -698,6 +698,9 @@ class MenuDialog(QDialog):
         elif selected_key == "SET FILLING MODE":
             self.hide()
             parent.open_filling_mode_dialog()
+        elif selected_key == "CALIBRATE":
+            self.hide()
+            parent.run_calibration_sequence()
 
     def show_again(self):
         self.show()
@@ -1017,6 +1020,29 @@ class RelayControlApp(QWidget):
                 print(f"Error connecting to station {station_index+1}: {e}")
             else:
                 logging.error(f"Error connecting to station {station_index+1}: {e}")
+
+    def run_calibration_sequence(self):
+        # Create a new wizard dialog
+        wizard = StartupWizardDialog(parent=self)
+        self.startup_wizard = wizard
+        self.active_dialog = wizard
+        wizard.show()
+        # Build context for calibration steps
+        context = {
+            'wizard': wizard,
+            'app': self,
+            # ...add any other required context keys...
+        }
+        calibration_steps = [
+            step_clear_all_scales,
+            step_filling_mode_selection,
+            step_full_bottle_check,
+            step_empty_bottle_check,
+        ]
+        for step_func in calibration_steps:
+            result = step_func(context)
+            if result != 'completed':
+                break
 
 class InfoDialog(QDialog):
     def __init__(self, title, message, parent=None):
