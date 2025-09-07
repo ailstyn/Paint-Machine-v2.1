@@ -71,9 +71,6 @@ from config import (
     REQUEST_TIME_LIMIT,
     arduino_ports,
     E_STOP_ACTIVATED,
-    STARTUP_MODE,
-    BUTTON_PRESS_DELAY,
-    LAST_BUTTON_PRESS_TIME,
 )
 
 from config import STATS_LOG_FILE, STATS_LOG_DIR
@@ -99,7 +96,7 @@ logging.error("Test error log entry: If you see this, logging is working.")
 
 
 # ========== BUTTON DELAY VARIABLE ========== 
-BUTTON_PRESS_DELAY = 1.0  # Initial delay during startup
+## BUTTON_DELAY is now managed in config.py
 
 def setup_gpio():
     try:
@@ -781,40 +778,33 @@ def poll_hardware(app):
 
 # ========== GUI/BUTTON HANDLING ==========
 def button_delay():
-    global BUTTON_PRESS_DELAY, LAST_BUTTON_PRESS_TIME
-    import time
-    now = time.monotonic()
-    if now - LAST_BUTTON_PRESS_TIME < BUTTON_PRESS_DELAY:
-        return True
-    LAST_BUTTON_PRESS_TIME = now
+    # Deprecated: replaced by QTimer-based debounce
     return False
 
 def handle_button_presses(app):
-    global STARTUP_MODE
     global DEBUG
-    global BUTTON_PRESS_DELAY
     try:
         dialog = getattr(app, "active_dialog", None)
-
-        # If dialog is None, this is an error state
         if dialog is None:
             error_msg = "ERROR: No active dialog! Button press ignored."
             print(error_msg)
             logging.error(error_msg)
             return
 
-        # Helper: flash icon if button_column exists
         def flash_dialog_icon(index):
             if dialog is not None and hasattr(dialog, "button_column"):
                 dialog.button_column.flash_icon(index)
             elif hasattr(app, "button_column"):
                 app.button_column.flash_icon(index)
 
+        def pause_button_polling():
+            # Pause the button polling timer for BUTTON_DELAY ms
+            if hasattr(app, "button_timer"):
+                app.button_timer.stop()
+                QTimer.singleShot(config.BUTTON_DELAY, app.button_timer.start)
+
         # UP BUTTON
         if GPIO.input(UP_BUTTON_PIN) == GPIO.LOW:
-            global STARTUP_MODE
-            if STARTUP_MODE and button_delay():
-                return
             ping_buzzer()
             print(f"UP button pressed, dialog: {dialog}")
             flash_dialog_icon(0)
@@ -826,13 +816,11 @@ def handle_button_presses(app):
             dialog.select_prev()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("up")
+            pause_button_polling()
             return
 
         # DOWN BUTTON
         if GPIO.input(DOWN_BUTTON_PIN) == GPIO.LOW:
-            global STARTUP_MODE
-            if STARTUP_MODE and button_delay():
-                return
             ping_buzzer()
             print(f"DOWN button pressed, dialog: {dialog}")
             flash_dialog_icon(2)
@@ -844,13 +832,11 @@ def handle_button_presses(app):
             dialog.select_next()
             if hasattr(dialog, "set_arrow_inactive"):
                 dialog.set_arrow_inactive("down")
+            pause_button_polling()
             return
 
         # SELECT BUTTON
         if GPIO.input(SELECT_BUTTON_PIN) == GPIO.LOW:
-            global STARTUP_MODE
-            if STARTUP_MODE and button_delay():
-                return
             ping_buzzer()
             print(f"SELECT button pressed, dialog: {dialog}")
             flash_dialog_icon(1)
@@ -863,6 +849,7 @@ def handle_button_presses(app):
                 logging.error("Error in dialog.activate_selected()", exc_info=True)
                 if DEBUG:
                     print(f"Error in dialog.activate_selected(): {e}")
+            pause_button_polling()
             return
 
     except Exception as e:
@@ -894,8 +881,7 @@ def main():
 
         timer = QTimer()
         button_timer = QTimer()
-
-        # Start button polling timer BEFORE startup
+        app_qt.button_timer = button_timer  # Attach timer to app for pause access
         button_timer.timeout.connect(lambda: handle_button_presses(app_qt))
         button_timer.start(50)
         print("[DEBUG] button_timer started")
@@ -925,14 +911,10 @@ def main():
             timer.timeout.connect(lambda: poll_hardware(app))
             button_timer.timeout.disconnect()
             button_timer.timeout.connect(lambda: handle_button_presses(app))
+            app.button_timer = button_timer  # Attach timer to app for pause access
             app.show()
             GPIO.output(RELAY_POWER_PIN, GPIO.HIGH)
             RELAY_POWER_ENABLED = True  # Set flag after relay power is enabled
-
-            # Disable startup mode after setup
-            global STARTUP_MODE, BUTTON_PRESS_DELAY
-            STARTUP_MODE = False
-            BUTTON_PRESS_DELAY = 0.05
 
             app.active_dialog = app
             print("[DEBUG] after_startup() finished")
