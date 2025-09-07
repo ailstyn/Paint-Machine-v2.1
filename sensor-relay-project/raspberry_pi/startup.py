@@ -24,7 +24,8 @@ def get_current_station_weights(context):
     NUM_STATIONS = context.get('NUM_STATIONS', 4)
     station_enabled = context.get('station_enabled', [True]*NUM_STATIONS)
     station_connected = context.get('station_connected', [True]*NUM_STATIONS)
-    station_weights = context.get('station_weights', [0]*NUM_STATIONS)
+    # Always reference the latest weights from the wizard
+    station_weights = getattr(context.get('wizard'), 'station_weights', [0]*NUM_STATIONS)
     result = [station_weights[i] for i in range(NUM_STATIONS) if station_enabled[i] and station_connected[i]]
     print(f"[DEBUG] get_current_station_weights: enabled={station_enabled}, connected={station_connected}, weights={station_weights}, returned={result}")
     return result
