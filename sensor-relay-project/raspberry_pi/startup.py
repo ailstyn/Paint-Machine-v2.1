@@ -573,7 +573,12 @@ def step_empty_bottle_check(context):
                     if after_startup:
                         after_startup()
                     wizard.finish_wizard()
-                    app.active_dialog = app
+                    # Properly close the StartupWizardDialog and switch to RelayControlApp
+                    wizard.close()
+                    if hasattr(app, 'relay_control_app'):
+                        app.active_dialog = app.relay_control_app
+                    else:
+                        app.active_dialog = app
                     break
                 except Exception as e:
                     logging.error(f"Error finalizing step_empty_bottle_check: {e}")
